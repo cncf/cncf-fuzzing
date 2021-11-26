@@ -3,6 +3,14 @@ set -o pipefail
 set -o errexit
 set -x
 
+# Autogenerate the marshaling fuzzer
+cd $SRC/kubernetes
+mkdir $SRC/kubernetes/test/fuzz/fuzzing
+grep -r ") Marshal()" . > $SRC/grep_result.txt
+mv $SRC/cncf-fuzzing/projects/kubernetes/autogenerate.py ./
+python3 autogenerate.py --input_file $SRC/grep_result.txt
+mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
+
 
 mv $SRC/cncf-fuzzing/projects/kubernetes/internal_kubelet_server_fuzzer.go \
    $SRC/kubernetes/pkg/kubelet/server/
@@ -28,17 +36,12 @@ mv $SRC/kubernetes/pkg/kubelet/kubelet_test.go \
 mv $SRC/kubernetes/pkg/kubelet/kubelet_node_status_test.go \
    $SRC/kubernetes/pkg/kubelet/kubelet_node_status_test_fuzz.go
 
-#rm $SRC/cncf-fuzzing/projects/kubernetes/internal_kubelet_kuberuntime_fuzzer.go
-#rm $SRC/cncf-fuzzing/projects/kubernetes/internal_kubelet_fuzzer.go
-
-
-mkdir $SRC/kubernetes/test/fuzz/fuzzing
 cp $SRC/cncf-fuzzing/projects/kubernetes/*.go \
    $SRC/kubernetes/test/fuzz/fuzzing/
 
 
-cd $SRC/kubernetes
- go mod tidy && go mod vendor
+go mod tidy && go mod vendor
+compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/server FuzzRequest fuzz_request
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/kuberuntime FuzzKubeRuntime fuzz_kube_runtime
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod
@@ -79,3 +82,4 @@ compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseEnv fuzz_parse_en
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQOSReserve fuzz_parse_qos_reserve
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseCPUSet fuzz_parse_cpu_set
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseImageName fuzz_parse_image_name
+
