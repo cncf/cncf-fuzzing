@@ -2,9 +2,7 @@
 This repository is related to fuzzing of CNCF projects. It holds fuzzers as well as documentation on fuzzing
 
 ## CNCF projects and fuzzing
-Fuzzing is a technique for automating stress testing of applications and many CNCF projects use fuzzing to catch reliability and security issues. Integrating fuzzing into a project can take much effort and is often done as a given project matures, and fuzzing infrastructure will usually have to be maintained in parallel with the progress of a given software. 
-
-Example CNCF projects that use fuzzing
+Fuzzing is a technique for automating stress testing of applications and many CNCF projects use fuzzing to catch reliability and security issues. Some example CNCF projects that use fuzzing include:
 - Envoy
 - Fluent-bit
 - Linkerd2-proxy
@@ -14,8 +12,8 @@ Example CNCF projects that use fuzzing
 - RunC
 - Containerd
 
-## Integrate fuzzing into CNCF project
-Fuzzing can be integrated into your project with various levels of maturity. Here we describe three common ways of using fuzzing. We will not go into programming details.
+## Integrate fuzzing into your project
+Integrating fuzzing into a project takes a lot effort and is often done over a longer period of time. Fuzzing can be integrated into your project with various levels of maturity and here we describe three common ways of using fuzzing.
 
 ### 1) Local fuzzing set up
 The first step in integrating fuzzing into a project is to develop a set of fuzzers for your project. The fuzzer to use depends on which programming language your project is written in. The following list provides links to common fuzzers for various languages:
@@ -37,6 +35,9 @@ Once you have developed a fuzzing infrastructure for your project, the next step
 OSS-Fuzz is a service for running fuzzers continuously for open source projects. OSS-Fuzz comes with a convenient management infrastructure with a dashboard as well as bug-tracking features, which makes managing running of the fuzzers easy. We recommend integrating with OSS-Fuzz, and several CNCF projects are integrated already.
 
 ### 3) Integrate fuzzing into CI
+Fuzzing can be integrated in your CI, e.g. a GitHub action, such that the fuzzers run for a short amount of time on pull requests and/or push actions. This is in many ways similar to running tests as part of your CI to ensure regressions don’t occur. Once you have integrated with OSS-Fuzz, you can get CI integration by way of CIFuzz for free.
+
+## What results to expect
 Fuzzing works best with projects that have high code complexity, e.g. parsers, decoders, etc. but can be used in many other projects. You can fuzz projects in many languages and the type of bug you will find depends on which language your project is written in.
 
 - Envoy has invested significantly in fuzzing and OSS-Fuzz has reported more than [700](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=proj%3Denvoy%20Type%3DBug&can=1) bugs as well as [81](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=proj%3Denvoy%20Type%3DBug-Security&can=1) security relevant bugs
