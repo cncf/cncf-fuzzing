@@ -2,18 +2,30 @@
 This repository is related to fuzzing of CNCF projects. It holds fuzzers as well as documentation on fuzzing
 
 ## CNCF projects and fuzzing
-Fuzzing is a technique for automating stress testing of applications and many CNCF projects use fuzzing to catch reliability and security issues. Some example CNCF projects that use fuzzing include:
-- Envoy
-- Fluent-bit
-- Linkerd2-proxy
-- Vitess
-- Prometheus
-- Kubernetes
-- RunC
-- Containerd
+Fuzzing is a technique for automating stress testing of applications
+and it can be used to find reliability and security issues. The technique
+is traditionally used by security researchers to find security vulnerabilities, however,
+fuzzing has become more integrated into the software development lifecycle
+and is increasingly being used by developers. This includes many CNCF projects and
+some example CNCF projects that use fuzzing include:
+- [Envoy](https://github.com/envoyproxy/envoy/tree/main/test/fuzz)
+- [Fluent-bit](https://github.com/fluent/fluent-bit/tree/master/tests/internal/fuzzers)
+- [Linkerd2-proxy](https://github.com/linkerd/linkerd2-proxy/blob/main/docs/FUZZING.md)
+- [Vitess](https://github.com/vitessio/vitess/blob/main/doc/VIT-02-report-fuzzing-audit.pdf)
+- [Prometheus](https://github.com/prometheus/prometheus/blob/4c56a193c518ae6f56008b0a4c850a9c3f1477c6/promql/fuzz.go)
+- [Kubernetes](https://github.com/kubernetes/kubernetes/tree/master/test/fuzz)
+- [RunC](https://github.com/opencontainers/runc/tree/master/tests/fuzzing)
+- [Containerd](https://github.com/containerd/containerd/tree/main/contrib/fuzz)
 
 ## Integrate fuzzing into your project
-Integrating fuzzing into a project takes a lot effort and is often done over a longer period of time. Fuzzing can be integrated into your project with various levels of maturity and here we describe three common ways of using fuzzing.
+Integrating fuzzing into a project takes a lot effort and is often done 
+over a long period of time. Fuzzing can be integrated into your project 
+with various levels of maturity. There are three essential tasks when integrating fuzzing into your project:
+- Develop fuzzers
+- Execute the fuzzers
+- Analyse crashes
+
+The following describes three common steps in integrating fuzzing into your project.
 
 ### 1) Local fuzzing set up
 The first step in integrating fuzzing into a project is to develop a set of fuzzers for your project. The fuzzer to use depends on which programming language your project is written in. The following list provides links to common fuzzers for various languages:
