@@ -28,26 +28,49 @@ with various levels of maturity. There are three essential tasks when integratin
 The following describes three common steps in integrating fuzzing into your project.
 
 ### 1) Local fuzzing set up
-The first step in integrating fuzzing into a project is to develop a set of fuzzers for your project. The fuzzer to use depends on which programming language your project is written in. The following list provides links to common fuzzers for various languages:
-- C/C++: libFuzzer
-- Rust: Cargo-fuzz
-- Go: Go-fuzz and native go fuzzing
-- Python: Atheris fuzzer
-- Java: jazzer fuzzer
+The first step in integrating fuzzing into a project is to develop a set of fuzz 
+drivers for your project. The specific fuzzer you need to use depends on the 
+programming language of your project. The following list provides links to 
+common fuzzers for various languages:
+- C/C++: [libFuzzer](https://llvm.org/docs/LibFuzzer.html)
+- Rust: [Cargo-fuzz](https://github.com/rust-fuzz/cargo-fuzz)
+- Go: [Go-fuzz](https://github.com/dvyukov/go-fuzz) and [native go fuzzing](https://go.dev/blog/fuzz-beta)
+- Python: [Atheris fuzzer](https://github.com/google/atheris)
+- Java: [jazzer fuzzer](https://github.com/CodeIntelligenceTesting/jazzer)
 
-The specific purpose of a fuzzer can vary greatly. In essence, fuzzers are closely related to traditional tests and the difference is the fuzzer takes a random input which is used to enforce diverse code execution of the target code. Common goals of a fuzzer include:
+The specific purpose of a fuzz driver vary greatly. In essence, they are 
+closely related to unit tests and the difference is the fuzz driver takes 
+a random input which is used to enforce diverse code execution of the target 
+code. Common goals of a fuzz driver include:
 
 - Execute large amounts of code to achieve high code coverage
 - Execute a specific complex piece of code, e.g. parsing routines
 - Execute code relative to the threat model of project
 
-### 2) Integrate continuous fuzzing with OSS-Fuzz
-Once you have developed a fuzzing infrastructure for your project, the next step is to run the fuzzers in a continuous manner. Modern fuzzers rely on genetic algorithms to build up an input corpus, which, in a simplified manner, means that the fuzzer by nature increases it’s quality in proportion to how long it has run. Continuously running a fuzzer is thus important to ensure high quality of the fuzzing and continuous fuzzing is also important in order to capture bugs that may occur as a project progresses.
+This step is usually the most time-consuming and making it possible to write fuzz
+ drivers for your project can sometimes be a large effort. However, once you have
+fuzz drivers for you project you should be able to run these locally and observe results.
 
-OSS-Fuzz is a service for running fuzzers continuously for open source projects. OSS-Fuzz comes with a convenient management infrastructure with a dashboard as well as bug-tracking features, which makes managing running of the fuzzers easy. We recommend integrating with OSS-Fuzz, and several CNCF projects are integrated already.
+### 2) Integrate continuous fuzzing with OSS-Fuzz
+Once you have developed a fuzzing infrastructure for your project, the next 
+step is to run the fuzzers in a continuous manner. Modern fuzzers rely on genetic 
+algorithms to build up an input corpus, which, in a simplified manner, means that 
+the fuzzer by nature increases it’s quality in proportion to how long it has run. 
+Continuously running a fuzzer is thus important to ensure high quality of the fuzzing 
+and continuous fuzzing is also important in order to capture bugs that may occur 
+as a project progresses.
+
+[OSS-Fuzz](https://github.com/google/oss-fuzz) is a service for running fuzzers 
+continuously for open source projects. 
+OSS-Fuzz comes with a convenient management infrastructure with a dashboard as well 
+as bug-tracking features, which makes managing running of the fuzzers easy. We recommend 
+integrating with OSS-Fuzz, and several CNCF projects are integrated already.
 
 ### 3) Integrate fuzzing into CI
-Fuzzing can be integrated in your CI, e.g. a GitHub action, such that the fuzzers run for a short amount of time on pull requests and/or push actions. This is in many ways similar to running tests as part of your CI to ensure regressions don’t occur. Once you have integrated with OSS-Fuzz, you can get CI integration by way of CIFuzz for free.
+Fuzzing can be integrated in your CI, e.g. a GitHub action, such that the fuzzers run 
+for a short amount of time on pull requests and/or push actions. This is in many ways 
+similar to running tests as part of your CI to ensure regressions don’t occur. Once 
+you have integrated with OSS-Fuzz, you can get CI integration by way of CIFuzz for free.
 
 ## What results to expect
 Fuzzing works best with projects that have high code complexity, e.g. parsers, decoders, etc. but can be used in many other projects. You can fuzz projects in many languages and the type of bug you will find depends on which language your project is written in.
