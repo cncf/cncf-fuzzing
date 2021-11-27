@@ -6,8 +6,9 @@ Fuzzing is a technique for automating stress testing of applications
 and it can be used to find reliability and security issues. The technique
 is traditionally used by security researchers to find security vulnerabilities, however,
 fuzzing has become more integrated into the software development lifecycle
-and is increasingly being used by developers. This includes many CNCF projects and
-some example CNCF projects that use fuzzing include:
+and is increasingly being used by developers. 
+
+CNCF projects that use fuzzing include:
 - [Envoy](https://github.com/envoyproxy/envoy/tree/main/test/fuzz)
 - [Fluent-bit](https://github.com/fluent/fluent-bit/tree/master/tests/internal/fuzzers)
 - [Linkerd2-proxy](https://github.com/linkerd/linkerd2-proxy/blob/main/docs/FUZZING.md)
@@ -52,7 +53,7 @@ This step is usually the most time-consuming and making it possible to write fuz
 fuzz drivers for you project you should be able to run these locally and observe results.
 
 ### 2) Integrate continuous fuzzing with OSS-Fuzz
-Once you have developed a fuzzing infrastructure for your project, the next 
+Once you have developed a local fuzzing set up for your project, the next 
 step is to run the fuzzers in a continuous manner. Modern fuzzers rely on genetic 
 algorithms to build up an input corpus, which, in a simplified manner, means that 
 the fuzzer by nature increases it’s quality in proportion to how long it has run. 
@@ -70,7 +71,7 @@ integrating with OSS-Fuzz, and several CNCF projects are integrated already.
 Fuzzing can be integrated in your CI, e.g. a GitHub action, such that the fuzzers run 
 for a short amount of time on pull requests and/or push actions. This is in many ways 
 similar to running tests as part of your CI to ensure regressions don’t occur. Once 
-you have integrated with OSS-Fuzz, you can get CI integration by way of CIFuzz for free.
+you have integrated with OSS-Fuzz, you can get CI integration by way of [CIFuzz](https://google.github.io/oss-fuzz/getting-started/continuous-integration/) for free.
 
 ## What results to expect
 Fuzzing works best with projects that have high code complexity, e.g. parsers, decoders, etc. but can be used in many other projects. You can fuzz projects in many languages and the type of bug you will find depends on which language your project is written in.
