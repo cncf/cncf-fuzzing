@@ -45,6 +45,36 @@ func FuzzAdd(data []byte) int {
 	return 1
 }
 
+func FuzzGet(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	dest1 := &pb.GetDestination{}
+	err := f.GenerateStruct(dest1)
+	if err != nil {
+		return 0
+	}
+	dest2 := &pb.GetDestination{}
+	err = f.GenerateStruct(dest2)
+	if err != nil {
+		return 0
+	}
+	dest3 := &pb.GetDestination{}
+	err = f.GenerateStruct(dest3)
+	if err != nil {
+		return 0
+	}
+	t := &testing.T{}
+	server := makeServer(t)
+
+	stream := &bufferingGetStream{
+		updates:          []*pb.Update{},
+		MockServerStream: util.NewMockServerStream(),
+	}
+	_ = server.Get(dest1, stream)
+	_ = server.Get(dest2, stream)
+	_ = server.Get(dest3, stream)
+	return 1
+}
+
 func FuzzGetProfile(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	dest := &pb.GetDestination{}
