@@ -1,3 +1,16 @@
+# Delete the "FORBIDDEN_DEPENDENCY" replacements
+sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
+sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
+
+# backend fuzzer
+echo "building backend fuzzer"
+cd $SRC/etcd/server/storage/backend/testing
+mv $SRC/cncf-fuzzing/projects/etcd/backend_fuzzer.go ./
+pwd
+go get github.com/AdaLogics/go-fuzz-headers
+go-fuzz -tags gofuzz -func FuzzBackend -o FuzzBackend.a .
+$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzBackend.a -lpthread -o $OUT/fuzz_backend
+
 # grpc api fuzzer
 mkdir $SRC/etcd/tests/fuzzing
 mv $SRC/cncf-fuzzing/projects/etcd/v3_grpc_fuzzer.go $SRC/etcd/tests/fuzzing/
@@ -11,10 +24,6 @@ cd -
 mv $SRC/cncf-fuzzing/projects/etcd/raft_api_fuzzer.go $SRC/etcd/server/etcdserver/api/rafthttp/
 mv $SRC/etcd/server/etcdserver/api/rafthttp/functional_test.go \
    $SRC/etcd/server/etcdserver/api/rafthttp/functional_test_fuzz.go
-
-# Delete the "FORBIDDEN_DEPENDENCY" replacements
-sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
-sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
 cd $SRC/etcd/server/etcdserver/api/rafthttp
 go mod tidy
