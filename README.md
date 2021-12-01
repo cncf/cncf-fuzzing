@@ -17,6 +17,7 @@ CNCF projects that use fuzzing include:
 - [Kubernetes](https://github.com/kubernetes/kubernetes/tree/master/test/fuzz)
 - [RunC](https://github.com/opencontainers/runc/tree/master/tests/fuzzing)
 - [Containerd](https://github.com/containerd/containerd/tree/main/contrib/fuzz)
+- [FluxCD](https://github.com/fluxcd/source-controller/pull/443) and [full report, section 5](https://fluxcd.io/FluxFinalReport-v1.1.pdf)
 
 ## Integrate fuzzing into your project
 Integrating fuzzing into a project takes a lot effort and is often done 
