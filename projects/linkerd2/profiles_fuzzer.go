@@ -13,39 +13,52 @@
 // limitations under the License.
 //
 
-package inject
+package profiles
 
 import (
-	l5dcharts "github.com/linkerd/linkerd2/pkg/charts/linkerd2"
-
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"os"
 )
 
-func FuzzInject(data []byte) int {
+func FuzzProfilesValidate(data []byte) int {
+	_ = Validate(data)
+	return 1
+}
+
+func FuzzRenderProto(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	yamlBytes, err := f.GetBytes()
+	protodata, err := f.GetBytes()
 	if err != nil {
 		return 0
 	}
+	namespace, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	name, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	clusterDomain, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	protofile, err := os.Create("protofile")
+	if err != nil {
+		return 0
+	}
+	defer protofile.Close()
+	defer os.Remove(protofile.Name())
 
-	v := &l5dcharts.Values{}
-	err = f.GenerateStruct(v)
+	_, err = protofile.Write(protodata)
 	if err != nil {
 		return 0
 	}
-	conf := NewResourceConfig(v, OriginUnknown)
-	_, _ = conf.ParseMetaAndYAML(yamlBytes)
-	injectProxy, err := f.GetBool()
+	w, err := os.OpenFile("/dev/null", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return 0
 	}
-	_, _ = conf.GetPodPatch(injectProxy)
-	_, _ = conf.CreateOpaquePortsPatch()
-
-	report := &Report{}
-	err = f.GenerateStruct(report)
-	if err == nil {
-		_, _ = conf.Uninject(report)
-	}
+	defer w.Close()
+	_ = RenderProto(protofile.Name(), namespace, name, clusterDomain, w)
 	return 1
 }
