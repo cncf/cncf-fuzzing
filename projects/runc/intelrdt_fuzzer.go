@@ -16,14 +16,14 @@
 package intelrdt
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
+	"bytes"
 	"strings"
-
-	"github.com/opencontainers/runc/libcontainer/configs"
+	"testing"
 )
+
+func init() {
+	testing.Init()
+}
 
 func FuzzFindMpDir(data []byte) int {
 	reader := strings.NewReader(string(data))
@@ -41,6 +41,7 @@ func FuzzParseMonFeatures(data []byte) int {
 }
 
 func FuzzSetCacheScema(data []byte) int {
+	t := &testing.T{}
 	if (len(data) % 2) != 0 {
 		return -1
 	}
@@ -48,83 +49,24 @@ func FuzzSetCacheScema(data []byte) int {
 	firstHalf := data[:halfLen]
 	secondHalf := data[halfLen:]
 
-	helper, err := NewIntelRdtTestUtil()
-	if err != nil {
-		return -1
-	}
-	defer helper.cleanup()
+	helper := NewIntelRdtTestUtil(t)
 
 	l3CacheSchemaBefore := string(firstHalf)
 	l3CacheSchemeAfter := string(secondHalf)
 
-	err = helper.writeFileContents(map[string]string{
+	helper.writeFileContents(map[string]string{
 		"schemata": l3CacheSchemaBefore + "\n",
 	})
-	if err != nil {
-		return 0
-	}
 
-	helper.IntelRdtData.config.IntelRdt.L3CacheSchema = l3CacheSchemeAfter
-	intelrdt := NewManager(helper.IntelRdtData.config, "", helper.IntelRdtPath)
-	if err := intelrdt.Set(helper.IntelRdtData.config); err != nil {
-		fmt.Println(err)
-		return 0
-	}
+	helper.config.IntelRdt.L3CacheSchema = l3CacheSchemeAfter
+	intelrdt := NewManager(helper.config, "", helper.IntelRdtPath)
+	intelrdt.Set(helper.config)
 
-	_, err = getIntelRdtParamString(helper.IntelRdtPath, "schemata")
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
 	return 1
 }
 
-type intelRdtTestUtil struct {
-	// intelRdt data to use in tests
-	IntelRdtData *intelRdtData
-
-	// Path to the mock Intel RDT "resource control" filesystem directory
-	IntelRdtPath string
-
-	// Temporary directory to store mock Intel RDT "resource control" filesystem
-	tempDir string
-}
-
-// Creates a new test util
-func NewIntelRdtTestUtil() (*intelRdtTestUtil, error) {
-	d := &intelRdtData{
-		config: &configs.Config{
-			IntelRdt: &configs.IntelRdt{},
-		},
-	}
-	tempDir, err := ioutil.TempDir("", "intelrdt_test")
-	if err != nil {
-		return nil, err
-	}
-	testIntelRdtPath := filepath.Join(tempDir, "resctrl")
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure the full mock Intel RDT "resource control" filesystem path exists
-	err = os.MkdirAll(testIntelRdtPath, 0o755)
-	if err != nil {
-		return nil, err
-	}
-	return &intelRdtTestUtil{IntelRdtData: d, IntelRdtPath: testIntelRdtPath, tempDir: tempDir}, nil
-}
-
-func (c *intelRdtTestUtil) cleanup() {
-	os.RemoveAll(c.tempDir)
-}
-
-// Write the specified contents on the mock of the specified Intel RDT "resource control" files
-func (c *intelRdtTestUtil) writeFileContents(fileContents map[string]string) error {
-	for file, contents := range fileContents {
-		err := writeFile(c.IntelRdtPath, file, contents)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func FuzzfindIntelRdtMountpointDir(data []byte) int {
+	input := bytes.NewReader(data)
+	_, _ = findIntelRdtMountpointDir(input)
+	return 1
 }
