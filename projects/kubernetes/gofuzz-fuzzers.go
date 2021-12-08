@@ -20,8 +20,9 @@ import (
 	"encoding/binary"
 	"io"
 	"math/rand"
-	//fuzz "github.com/google/gofuzz"
-	//"github.com/google/gofuzz/bytesource"
+	"sync"
+	"testing"
+
 	"k8s.io/apimachinery/pkg/api/apitesting/fuzzer"
 	"k8s.io/apimachinery/pkg/api/apitesting/roundtrip"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,8 +36,6 @@ import (
 	kubeletScheme "k8s.io/kubernetes/pkg/kubelet/apis/config/scheme"
 	proxyFuzzer "k8s.io/kubernetes/pkg/proxy/apis/config/fuzzer"
 	proxyScheme "k8s.io/kubernetes/pkg/proxy/apis/config/scheme"
-	"sync"
-	"testing"
 )
 
 type ByteSource struct {

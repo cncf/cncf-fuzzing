@@ -17,11 +17,12 @@ package fuzzing
 
 import (
 	"fmt"
+	"reflect"
+	"time"
+
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
-	"reflect"
-	"time"
 )
 
 type A struct {

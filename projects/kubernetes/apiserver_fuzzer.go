@@ -18,7 +18,9 @@ package fuzzing
 import (
 	"encoding/json"
 	"fmt"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	auditpolicy "k8s.io/apiserver/pkg/audit/policy"
 )

@@ -19,7 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiServerValidation "k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
@@ -31,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/util/jsonpath"
 	kubeopenapispec "k8s.io/kube-openapi/pkg/validation/spec"
-	"sync"
 )
 
 var scheme = runtime.NewScheme()
