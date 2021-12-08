@@ -2,11 +2,20 @@
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+# auth store fuzzer
+echo "building auth fuzzer"
+cd $SRC/etcd/server/auth
+go get github.com/AdaLogics/go-fuzz-headers
+mv $SRC/cncf-fuzzing/projects/etcd/store_fuzzer.go ./
+mv store_mock_test.go store_mock_test_fuzz.go
+mv store_test.go store_test_fuzz.go
+mv jwt_test.go jwt_test_fuzz.go
+compile_go_fuzzer go.etcd.io/etcd/server/v3/auth FuzzAuthStore fuzz_auth_store
+
 # backend fuzzer
 echo "building backend fuzzer"
 cd $SRC/etcd/server/storage/backend/testing
 mv $SRC/cncf-fuzzing/projects/etcd/backend_fuzzer.go ./
-pwd
 go get github.com/AdaLogics/go-fuzz-headers
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/backend/testing FuzzBackend fuzz_backend
 
