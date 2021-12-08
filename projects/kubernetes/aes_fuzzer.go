@@ -20,10 +20,12 @@ import (
 	"crypto/cipher"
 	"encoding/hex"
 	"fmt"
+	"reflect"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+
 	"k8s.io/apiserver/pkg/storage/value"
 	aestransformer "k8s.io/apiserver/pkg/storage/value/encrypt/aes"
-	"reflect"
 )
 
 func FuzzAesRoundtrip(data []byte) int {

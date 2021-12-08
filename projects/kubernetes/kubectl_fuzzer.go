@@ -17,17 +17,19 @@ package fuzzing
 
 import (
 	"fmt"
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"sigs.k8s.io/yaml"
+
 	"k8s.io/kubectl/pkg/apply"
 	"k8s.io/kubectl/pkg/apply/parse"
 	"k8s.io/kubectl/pkg/apply/strategy"
 	tst "k8s.io/kubectl/pkg/util/openapi/testing"
-	"net/http"
-	"os"
-	"path/filepath"
-	"sigs.k8s.io/yaml"
-	"strings"
 )
 
 var (

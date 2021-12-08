@@ -41,8 +41,10 @@ cp $SRC/cncf-fuzzing/projects/kubernetes/*.go \
 
 
 go mod tidy && go mod vendor
+# disable this fuzzer for now
+#compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/server FuzzRequest fuzz_request
+
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
-compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/server FuzzRequest fuzz_request
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/kuberuntime FuzzKubeRuntime fuzz_kube_runtime
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzStrategicMergePatch fuzz_strategic_merge_patch

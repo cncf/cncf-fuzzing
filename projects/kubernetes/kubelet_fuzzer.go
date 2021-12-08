@@ -18,14 +18,16 @@ package fuzzing
 import (
 	"bytes"
 	"context"
+	"os"
+	"time"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+
 	"k8s.io/api/core/v1"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	apitesting "k8s.io/cri-api/pkg/apis/testing"
 	"k8s.io/kubernetes/pkg/kubelet/kubeletconfig/checkpoint"
 	"k8s.io/kubernetes/pkg/kubelet/kuberuntime/logs"
-	"os"
-	"time"
 )
 
 func FuzzDecodeRemoteConfigSource(data []byte) int {

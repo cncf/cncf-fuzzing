@@ -18,10 +18,12 @@ package fuzzing
 import (
 	"bytes"
 	"reflect"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"k8s.io/kubernetes/pkg/api/legacyscheme"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
 func FuzzDeepCopy(data []byte) int {
@@ -68,4 +70,3 @@ func doDeepCopyTest(kind schema.GroupVersionKind, f *fuzz.ConsumeFuzzer) error {
 	}
 	return nil
 }
-

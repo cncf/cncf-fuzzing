@@ -16,8 +16,10 @@
 package fuzzing
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"io"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"

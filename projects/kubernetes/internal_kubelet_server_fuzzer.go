@@ -20,8 +20,7 @@ import (
 	"net/http"
 	"testing"
 	"time"
-	//api "k8s.io/kubernetes/pkg/apis/core"
-	"github.com/stretchr/testify/require"
+
 	"k8s.io/apimachinery/pkg/util/httpstream/spdy"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -39,7 +38,6 @@ func errorHandler() {
 
 func FuzzRequest(data []byte) int {
 	defer errorHandler()
-
 	t := &testing.T{}
 	f := fuzz.NewConsumer(data)
 	urlString, err := f.GetString()
@@ -47,16 +45,13 @@ func FuzzRequest(data []byte) int {
 		return 0
 	}
 	ss, err := newTestStreamingServer(100 * time.Millisecond)
-	require.NoError(t, err)
+	if err != nil {
+		return 0
+	}
 	defer ss.testHTTPServer.Close()
 	fw := newServerTestWithDebug(true, ss)
 	defer fw.testHTTPServer.Close()
 
-	//podNamespace := "other"
-	//podName := "foo"
-	//expectedContainerName := "baz"
-
-	//url := fw.testHTTPServer.URL + "/exec/" + podNamespace + "/" + podName + "/" + expectedContainerName + "?c=ls&c=-a&" + api.ExecStdinParam + "=1"
 	url := fw.testHTTPServer.URL + urlString
 
 	upgradeRoundTripper := spdy.NewRoundTripper(nil, true, true)
@@ -64,7 +59,7 @@ func FuzzRequest(data []byte) int {
 
 	resp, err := c.Do(makeReq(t, "POST", url, "v4.channel.k8s.io"))
 	if err != nil {
-		//panic(fmt.Sprintf("Got error POSTing: %v\n", err))
+		return 0
 	}
 	defer resp.Body.Close()
 	return 1
