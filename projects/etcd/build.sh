@@ -55,8 +55,6 @@ mv diff_test.go diff_test_fuzz.go
 mv log_test.go log_test_fuzz.go
 mv raft_test.go raft_test_fuzz.go
 
-compile_go_fuzzer go.etcd.io/etcd/raft/v3 FuzzNetworkSend fuzz_network_send
-
 compile_go_fuzzer go.etcd.io/etcd/raft/v3 FuzzStep fuzz_step
 
 # v2auth fuzzer
