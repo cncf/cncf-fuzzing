@@ -2,6 +2,21 @@
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+# snapshot fuzzer
+cd $SRC/etcd/server/etcdserver/api/snap
+mv $SRC/cncf-fuzzing/projects/etcd/snapshot_fuzzer.go ./
+compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/snap FuzzSnapLoad fuzz_snap_load
+
+# mvcc fuzzer
+cd $SRC/etcd/server/storage/mvcc
+mv $SRC/cncf-fuzzing/projects/etcd/mvcc_fuzzer.go ./
+go get github.com/AdaLogics/go-fuzz-headers
+mv kv_test.go kv_test_fuzz.go
+mv kvstore_test.go kvstore_test_fuzz.go
+# disable some logging:
+sed -i '/s.lg.Info("kvstore restored"/c\\/\/s.lg.Info("kvstore restored"' $SRC/etcd/server/storage/mvcc/kvstore.go
+compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/mvcc FuzzMvccStorage fuzz_mvcc_storage
+
 # api marshal fuzzer
 cd $SRC/etcd
 mv $SRC/cncf-fuzzing/projects/etcd/autogenerate_api_marshal_fuzzer.go ./
