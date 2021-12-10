@@ -2,6 +2,16 @@
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+# api marshal fuzzer
+cd $SRC/etcd
+mv $SRC/cncf-fuzzing/projects/etcd/autogenerate_api_marshal_fuzzer.go ./
+grep -r ") Marshal(" .>>"/tmp/marshal_targets.txt"
+go run autogenerate_api_marshal_fuzzer.go
+mkdir fuzzing
+mv api_marshal_fuzzer.go ./fuzzing/
+cd fuzzing
+compile_go_fuzzer . FuzzAPIMarshal fuzz_api_marshal
+
 # proxy fuzzer
 cd $SRC/etcd/pkg/proxy
 mv server_test.go server_test_fuzz.go
