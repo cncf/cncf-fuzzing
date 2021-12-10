@@ -2,6 +2,12 @@
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+# proxy fuzzer
+cd $SRC/etcd/pkg/proxy
+mv server_test.go server_test_fuzz.go
+mv $SRC/cncf-fuzzing/projects/etcd/proxy_fuzzer.go ./
+compile_go_fuzzer go.etcd.io/etcd/pkg/v3/proxy FuzzProxyServer fuzz_proxy_server
+
 # etcdserver fuzzer
 echo "building etcdserver fuzzer"
 cd $SRC/etcd/server/etcdserver
