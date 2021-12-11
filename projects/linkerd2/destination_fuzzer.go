@@ -23,7 +23,6 @@ import (
 	"github.com/linkerd/linkerd2/controller/api/destination/watcher"
 	"github.com/linkerd/linkerd2/controller/api/util"
 	sp "github.com/linkerd/linkerd2/controller/gen/apis/serviceprofile/v1alpha2"
-	ts "github.com/servicemeshinterface/smi-sdk-go/pkg/apis/split/v1alpha1"
 	logging "github.com/sirupsen/logrus"
 )
 
@@ -108,19 +107,5 @@ func FuzzProfileTranslatorUpdate(data []byte) int {
 		log:    logging.WithField("test", t.Name()),
 	}
 	translator.Update(profile)
-	return 1
-}
-
-func FuzzUpdateTrafficSplit(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	split := &ts.TrafficSplit{}
-	err := f.GenerateStruct(split)
-	if err != nil {
-		return 0
-	}
-	listener := watcher.NewBufferingProfileListener()
-	adaptor := newTrafficSplitAdaptor(listener, watcher.ServiceID{Name: "foo", Namespace: "ns"}, watcher.Port(80), "cluster.local")
-
-	adaptor.UpdateTrafficSplit(split)
 	return 1
 }
