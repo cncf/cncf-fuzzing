@@ -21,7 +21,6 @@ compile_go_fuzzer github.com/linkerd/linkerd2/controller/api/destination FuzzAdd
 compile_go_fuzzer github.com/linkerd/linkerd2/controller/api/destination FuzzGet FuzzGet
 compile_go_fuzzer github.com/linkerd/linkerd2/controller/api/destination FuzzGetProfile FuzzGetProfile
 compile_go_fuzzer github.com/linkerd/linkerd2/controller/api/destination FuzzProfileTranslatorUpdate FuzzProfileTranslatorUpdate
-compile_go_fuzzer github.com/linkerd/linkerd2/controller/api/destination FuzzUpdateTrafficSplit FuzzUpdateTrafficSplit
 compile_go_fuzzer github.com/linkerd/linkerd2/pkg/healthcheck FuzzFetchCurrentConfiguration FuzzFetchCurrentConfiguration
 compile_go_fuzzer github.com/linkerd/linkerd2/pkg/inject FuzzInject FuzzInject
 compile_go_fuzzer github.com/linkerd/linkerd2/pkg/identity FuzzServiceCertify FuzzServiceCertify

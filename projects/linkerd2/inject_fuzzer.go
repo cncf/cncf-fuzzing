@@ -33,7 +33,7 @@ func FuzzInject(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	conf := NewResourceConfig(v, OriginUnknown)
+	conf := NewResourceConfig(v, OriginUnknown, "linkerd")
 	_, _ = conf.ParseMetaAndYAML(yamlBytes)
 	injectProxy, err := f.GetBool()
 	if err != nil {
