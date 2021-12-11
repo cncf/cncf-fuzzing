@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sync"
 	"path/filepath"
 	"strings"
 
@@ -33,11 +34,12 @@ import (
 )
 
 var (
+	downloader sync.Once
 	crdURL        = "https://raw.githubusercontent.com/kubernetes/kubernetes/master/staging/src/k8s.io/kubectl/testdata/openapi/swagger.json"
 	fakeResources *tst.FakeResources
 )
 
-func init() {
+func downloadCrd() {
 	err := DownloadFile("./swagger.json", crdURL)
 	if err != nil {
 		panic(err)
@@ -65,6 +67,7 @@ func DownloadFile(filepath string, url string) error {
 }
 
 func FuzzCreateElement(data []byte) int {
+	downloader.Do(downloadCrd)
 	f := fuzz.NewConsumer(data)
 	recordedString, err := f.GetString()
 	if err != nil {
