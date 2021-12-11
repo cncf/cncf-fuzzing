@@ -44,6 +44,16 @@ go mod tidy && go mod vendor
 # disable this fuzzer for now
 #compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/server FuzzRequest fuzz_request
 
+# Add the swagger.json content to the kubectl fuzzer
+cd $SRC/kubernetes/test/fuzz/fuzzing
+apt-get update && apt-get install -y wget
+wget https://raw.githubusercontent.com/kubernetes/kubernetes/master/staging/src/k8s.io/kubectl/testdata/openapi/swagger.json
+sed -i 's/`//g' swagger.json
+echo -e "\nvar swaggerjson = \`">>kubectl_fuzzer.go
+cat swagger.json>>kubectl_fuzzer.go
+echo -e "\`">>kubectl_fuzzer.go
+compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCreateElement fuzz_create_element
+
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/kuberuntime FuzzKubeRuntime fuzz_kube_runtime
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod
@@ -62,7 +72,6 @@ compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzControllerRoundtrip fu
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzKubeletSchemeRoundtrip fuzz_kubelet_scheme_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzProxySchemeRoundtrip fuzz_proxy_scheme_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzRoundTripType fuzz_rountrip_type
-compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCreateElement fuzz_create_element
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzDecodeRemoteConfigSource fuzz_decode_remote_config_source
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzReadLogs fuzz_read_logs
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzRoundtrip fuzz_roundtrip
