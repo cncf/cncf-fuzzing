@@ -17,6 +17,7 @@ package fuzzing
 
 import (
 	"bytes"
+	"errors"
 	"reflect"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -26,10 +27,29 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
+// FuzzDeepCopy implements a fuzzer for the logic defined in:
+// https://github.com/kubernetes/kubernetes/blob/master/pkg/api/testing/copy_test.go
 func FuzzDeepCopy(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	for _, version := range []schema.GroupVersion{{Group: "", Version: runtime.APIVersionInternal}, {Group: "", Version: "v1"}} {
-		for kind := range legacyscheme.Scheme.KnownTypes(version) {
+
+	// get groupversion
+	versionIndex, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	groupVersions := []schema.GroupVersion{{Group: "", Version: runtime.APIVersionInternal}, {Group: "", Version: "v1"}}
+	version := groupVersions[versionIndex%len(groupVersions)]
+
+	// pick a kind and do the deepcopy test
+	knownTypes := legacyscheme.Scheme.KnownTypes(version)
+	kindIndex, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	kindIndex = kindIndex % len(knownTypes)
+	i := 0
+	for kind := range knownTypes {
+		if i == kindIndex {
 			doDeepCopyTest(version.WithKind(kind), f)
 		}
 	}
@@ -47,12 +67,12 @@ func doDeepCopyTest(kind schema.GroupVersionKind, f *fuzz.ConsumeFuzzer) error {
 	}
 	itemCopy := item.DeepCopyObject()
 	if !reflect.DeepEqual(item, itemCopy) {
-		panic("err")
+		panic("Items should be equal but are not.")
 	}
 
 	prefuzzData := &bytes.Buffer{}
 	if err := legacyscheme.Codecs.LegacyCodec(kind.GroupVersion()).Encode(item, prefuzzData); err != nil {
-		panic(err)
+		return errors.New("Could not encode original")
 	}
 
 	err = f.GenerateStruct(itemCopy)
@@ -62,11 +82,11 @@ func doDeepCopyTest(kind schema.GroupVersionKind, f *fuzz.ConsumeFuzzer) error {
 
 	postfuzzData := &bytes.Buffer{}
 	if err := legacyscheme.Codecs.LegacyCodec(kind.GroupVersion()).Encode(item, postfuzzData); err != nil {
-		panic(err)
+		return errors.New("Could not encode the copy")
 	}
 
 	if !bytes.Equal(prefuzzData.Bytes(), postfuzzData.Bytes()) {
-		panic(err)
+		panic("Bytes should be equal but are not")
 	}
 	return nil
 }
