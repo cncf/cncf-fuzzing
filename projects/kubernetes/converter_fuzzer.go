@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -77,6 +79,7 @@ func doUnrecognized(jsonData string, item interface{}) error {
 	}
 
 	if !reflect.DeepEqual(unmarshalledObj, newObj) {
+		fmt.Println(cmp.Diff(unmarshalledObj, newObj))
 		panic(fmt.Sprintf("DeepEqual failed\n"))
 	}
 	return nil
