@@ -30,13 +30,33 @@ func FuzzLoadPolicyFromBytes(data []byte) int {
 	return 1
 }
 
+// tests https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store_test.go#L386
 func RegistryFuzzer(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	in := &metav1.UpdateOptions{}
-	err := f.GenerateStruct(in)
+
+	// set in.DryRun
+	dryRuns := make([]string, 0)
+	noOfDryRyns, err := f.GetInt()
 	if err != nil {
 		return 0
 	}
+	for i:=0;i<noOfDryRyns%30;i++ {
+		dr, err := f.GetString()
+		if err != nil {
+			return 0
+		}
+		dryRuns = append(dryRuns, dr)
+	}
+	in.DryRun = dryRuns
+	
+	// set in.Fieldmanager
+	fm, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	in.FieldManager = fm
+
 	in.TypeMeta.SetGroupVersionKind(metav1.SchemeGroupVersion.WithKind("CreateOptions"))
 	out := newCreateOptionsFromUpdateOptions(in)
 
