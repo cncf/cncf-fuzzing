@@ -2,6 +2,15 @@
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+mkdir $SRC/etcd/tests/fuzzing
+
+# grpc proxy fuzzer
+echo "building grpc proxy fuzzer"
+mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
+cd $SRC/etcd/tests/fuzzing
+sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
+compile_go_fuzzer . FuzzKVProxy fuzz_kv_proxy
+
 # snapshot fuzzer
 cd $SRC/etcd/server/etcdserver/api/snap
 mv $SRC/cncf-fuzzing/projects/etcd/snapshot_fuzzer.go ./
@@ -59,7 +68,6 @@ go get github.com/AdaLogics/go-fuzz-headers
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/backend/testing FuzzBackend fuzz_backend
 
 # grpc api fuzzer
-mkdir $SRC/etcd/tests/fuzzing
 mv $SRC/cncf-fuzzing/projects/etcd/v3_grpc_fuzzer.go $SRC/etcd/tests/fuzzing/
 cd $SRC/etcd/tests/fuzzing
 sed -i '220d' $SRC/etcd/tests/framework/integration/cluster.go
