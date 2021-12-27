@@ -24,6 +24,7 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"go.uber.org/zap/zaptest"
 
+	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/pkg/v3/wait"
 	"go.etcd.io/etcd/raft/v3/raftpb"
@@ -35,8 +36,37 @@ import (
 	"go.etcd.io/etcd/server/v3/storage/schema"
 )
 
+var (
+	ab applierV3
+)
+
 func init() {
 	testing.Init()
+	t := &testing.T{}
+	lg := zaptest.NewLogger(t)
+
+	cl := membership.NewCluster(zaptest.NewLogger(t))
+	cl.SetStore(v2store.New())
+	cl.AddMember(&membership.Member{ID: types.ID(1)}, true)
+
+	be, _ := betesting.NewDefaultTmpBackend(t)
+	defer betesting.Close(t, be)
+
+	schema.CreateMetaBucket(be.BatchTx())
+
+	ci := cindex.NewConsistentIndex(be)
+	srv := &EtcdServer{
+		lgMu:         new(sync.RWMutex),
+		lg:           lg,
+		id:           1,
+		r:            *realisticRaftNode(lg),
+		cluster:      cl,
+		w:            wait.New(),
+		consistIndex: ci,
+		beHooks:      serverstorage.NewBackendHooks(lg, ci),
+	}
+	srv.applyV3Internal = srv.newApplierV3Internal()
+	ab = srv.newApplierV3Backend()
 }
 
 // Fuzzapply runs into panics that should not happen in production
@@ -114,5 +144,42 @@ func Fuzzapply(data []byte) int {
 
 	// Pass entries to (s *EtcdServer).apply()
 	_, _, _ = srv.apply(ents, &raftpb.ConfState{})
+	return 1
+}
+
+func catchPanics2() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "is not in dotted-tri format") {
+			return
+		} else if strings.Contains(err, "strconv.ParseInt: parsing") {
+			return
+		} else if strings.Contains(err, "is not a valid semver identifier") {
+			return
+		} else if strings.Contains(err, "invalid downgrade; server version is lower than determined cluster version") {
+			return
+		} else {
+			panic(err)
+		}
+	}
+}
+
+func FuzzapplierV3backendApply(data []byte) int {
+	defer catchPanics2()
+	f := fuzz.NewConsumer(data)
+	rr := &pb.InternalRaftRequest{}
+	err := f.GenerateStruct(rr)
+	if err != nil {
+		return 0
+	}
+	_ = ab.Apply(rr, true)
 	return 1
 }

@@ -49,6 +49,7 @@ go get github.com/AdaLogics/go-fuzz-headers
 mv server_test.go server_test_fuzz.go
 mv $SRC/cncf-fuzzing/projects/etcd/etcdserver_fuzzer.go ./
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver Fuzzapply fuzz_etcdserver_apply
+compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzapplierV3backendApply fuzz_applier_v3_backend_apply
 
 # auth store fuzzer
 echo "building auth fuzzer"
