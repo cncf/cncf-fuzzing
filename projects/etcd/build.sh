@@ -1,3 +1,8 @@
+set -o nounset
+set -o pipefail
+set -o errexit
+set -x
+
 # Delete the "FORBIDDEN_DEPENDENCY" replacements
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
@@ -10,6 +15,8 @@ mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
 cd $SRC/etcd/tests/fuzzing
 sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
 compile_go_fuzzer . FuzzKVProxy fuzz_kv_proxy
+# Remove fuzzer to avoid duplicate global variables:
+rm grpc_proxy_fuzzer.go
 
 # snapshot fuzzer
 cd $SRC/etcd/server/etcdserver/api/snap
