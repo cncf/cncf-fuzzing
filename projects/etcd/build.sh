@@ -17,6 +17,10 @@ sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
 compile_go_fuzzer . FuzzKVProxy fuzz_kv_proxy
 # Remove fuzzer to avoid duplicate global variables:
 rm grpc_proxy_fuzzer.go
+if [ "$SANITIZER" != "coverage" ]
+then
+	rm fuzzkvproxy_test.go
+fi	
 
 # snapshot fuzzer
 cd $SRC/etcd/server/etcdserver/api/snap
