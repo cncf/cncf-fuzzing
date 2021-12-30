@@ -7,6 +7,9 @@ set -x
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+# Prevent panic when using testing.T
+sed -i '220d' $SRC/etcd/tests/framework/integration/cluster.go
+
 mkdir $SRC/etcd/tests/fuzzing
 
 # grpc proxy fuzzer
@@ -14,13 +17,26 @@ echo "building grpc proxy fuzzer"
 mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
 cd $SRC/etcd/tests/fuzzing
 sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
-compile_go_fuzzer . FuzzKVProxy fuzz_kv_proxy
+compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzKVProxy fuzz_kv_proxy
 # Remove fuzzer to avoid duplicate global variables:
 rm grpc_proxy_fuzzer.go
-if [ "$SANITIZER" != "coverage" ]
+if [ "$SANITIZER" = "coverage" ]
 then
 	rm fuzzkvproxy_test.go
-fi	
+fi
+
+# grpc api fuzzer
+mv $SRC/cncf-fuzzing/projects/etcd/v3_grpc_fuzzer.go $SRC/etcd/tests/fuzzing/
+cd $SRC/etcd/tests/fuzzing
+compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzGRPCApis fuzz_grpc_apis
+cd -
+
+# v2_http_kv_fuzzer.go
+echo "building v2 http kv fuzzer"
+mv $SRC/cncf-fuzzing/projects/etcd/v2_http_kv_fuzzer.go $SRC/etcd/tests/fuzzing/
+cd $SRC/etcd/tests/fuzzing
+go mod tidy
+compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzV2HTTP fuzz_v2_http
 
 # snapshot fuzzer
 cd $SRC/etcd/server/etcdserver/api/snap
@@ -78,13 +94,6 @@ cd $SRC/etcd/server/storage/backend/testing
 mv $SRC/cncf-fuzzing/projects/etcd/backend_fuzzer.go ./
 go get github.com/AdaLogics/go-fuzz-headers
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/backend/testing FuzzBackend fuzz_backend
-
-# grpc api fuzzer
-mv $SRC/cncf-fuzzing/projects/etcd/v3_grpc_fuzzer.go $SRC/etcd/tests/fuzzing/
-cd $SRC/etcd/tests/fuzzing
-sed -i '220d' $SRC/etcd/tests/framework/integration/cluster.go
-compile_go_fuzzer . FuzzGRPCApis fuzz_grpc_apis
-cd -
 
 
 # rafthttp fuzzer
