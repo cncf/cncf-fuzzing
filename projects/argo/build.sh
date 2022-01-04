@@ -14,7 +14,31 @@
 # limitations under the License.
 #
 
+
+# argo-events
+cd $SRC/argo-events
+mv $SRC/cncf-fuzzing/projects/argo/eventbus_controller_fuzzer.go $SRC/argo-events/controllers/eventbus/
+mv $SRC/cncf-fuzzing/projects/argo/eventsource_controller_fuzzer.go $SRC/argo-events/controllers/eventsource/
+mv $SRC/cncf-fuzzing/projects/argo/sensor_controller_fuzzer.go $SRC/argo-events/controllers/sensor/
+compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEventbusReconciler fuzz_eventbus_reconciler
+compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
+compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorControllerReconcile fuzz_sensor_controller_reconcile
+
+if [ "$SANITIZER" = "address" ]
+then
+	# These fuzzer need to link with ztsd
+
+	echo "building fuzz_eventsource_reconciler"
+	go-fuzz -tags gofuzz -func FuzzEventsourceReconciler -o FuzzEventsourceReconciler.a github.com/argoproj/argo-events/controllers/eventsource
+	$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzEventsourceReconciler.a /src/zstd-1.4.2/lib/libzstd.a -lpthread -o $OUT/fuzz_eventsource_reconciler
+
+	echo "building fuzz_resource_reconcile"
+	go-fuzz -tags gofuzz -func FuzzResourceReconcile -o FuzzResourceReconcile.a github.com/argoproj/argo-events/controllers/eventsource
+	$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzResourceReconcile.a /src/zstd-1.4.2/lib/libzstd.a -lpthread -o $OUT/fuzz_resource_reconcile
+fi
+
 # argo-cd fuzzers
+cd $SRC/argo-cd
 mv $SRC/cncf-fuzzing/projects/argo/diff_fuzzer.go $SRC/argo-cd/util/argo/diff/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/diff FuzzStateDiff fuzz_state_diff
 
