@@ -18,12 +18,6 @@ mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
 cd $SRC/etcd/tests/fuzzing
 sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
 compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzKVProxy fuzz_kv_proxy
-# Remove fuzzer to avoid duplicate global variables:
-rm grpc_proxy_fuzzer.go
-if [ "$SANITIZER" = "coverage" ]
-then
-	rm fuzzkvproxy_test.go
-fi
 
 # grpc api fuzzer
 mv $SRC/cncf-fuzzing/projects/etcd/v3_grpc_fuzzer.go $SRC/etcd/tests/fuzzing/

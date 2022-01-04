@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	t = &testing.T{}
+	t1 = &testing.T{}
 
 	// numberOfExecs is the number of executions inbetween
 	// new initializations.
@@ -35,16 +35,16 @@ var (
 
 func init() {
 	testing.Init()
-	integration2.BeforeTest(t)
+	integration2.BeforeTest(t1)
 
 	numberOfExecs = 0
-	clus = integration2.NewClusterV3(t, &integration2.ClusterConfig{Size: 1})
+	clus = integration2.NewClusterV3(t1, &integration2.ClusterConfig{Size: 1})
 	payloads = make([][]byte, 0)
 	cfg = clientv3.Config{
 		Endpoints:   []string{clus.Members[0].GRPCURL()},
 		DialTimeout: 5 * time.Second,
 	}
-	client, err := integration2.NewClient(t, cfg)
+	client, err := integration2.NewClient(t1, cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -53,14 +53,14 @@ func init() {
 
 func checkAndDoReset() {
 	if numberOfExecs == 50000 {
-		clus.Terminate(t)
-		clus = integration2.NewClusterV3(t, &integration2.ClusterConfig{Size: 1})
+		clus.Terminate(t1)
+		clus = integration2.NewClusterV3(t1, &integration2.ClusterConfig{Size: 1})
 		payloads = make([][]byte, 0)
 		cfg = clientv3.Config{
 			Endpoints:   []string{clus.Members[0].GRPCURL()},
 			DialTimeout: 5 * time.Second,
 		}
-		client, err := integration2.NewClient(t, cfg)
+		client, err := integration2.NewClient(t1, cfg)
 		if err != nil {
 			panic(err)
 		}
