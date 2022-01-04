@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -38,11 +39,12 @@ var (
 	tc             *testHttpClient
 	clusterInitter sync.Once
 	cl             *integration.Cluster
+	t3             = &testing.T{}
 )
 
 func initCluster() {
-	cl = integration.NewCluster(t, 1)
-	cl.Launch(t)
+	cl = integration.NewCluster(t3, 1)
+	cl.Launch(t3)
 	//defer cl.Terminate(t)
 
 	u = cl.URL(0)

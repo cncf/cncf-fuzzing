@@ -31,7 +31,7 @@ var (
 		3: "txnRequest",
 		4: "compactionRequest"}
 	maxRequestTypes    = len(requestTypes)
-	t                  = &testing.T{}
+	t2                 = &testing.T{}
 	putRequests        []*pb.PutRequest
 	rangeRequests      []*pb.RangeRequest
 	deleteRequests     []*pb.DeleteRangeRequest
@@ -41,7 +41,7 @@ var (
 
 func init() {
 	testing.Init()
-	integration.BeforeTestExternal(t)
+	integration.BeforeTestExternal(t2)
 }
 
 func resetRequests() {
@@ -157,8 +157,8 @@ func FuzzGRPCApis(data []byte) int {
 	}
 
 	// Create test cluster
-	clus := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 3})
-	defer clus.Terminate(t)
+	clus := integration.NewClusterV3(t2, &integration.ClusterConfig{Size: 3})
+	defer clus.Terminate(t2)
 	kvc := integration.ToGRPC(clus.RandClient()).KV
 
 	// Send the requests
