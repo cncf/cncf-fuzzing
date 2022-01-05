@@ -12,6 +12,11 @@ sed -i '220d' $SRC/etcd/tests/framework/integration/cluster.go
 
 mkdir $SRC/etcd/tests/fuzzing
 
+# wal fuzzer
+echo "building wal fuzzer"
+cp $SRC/cncf-fuzzing/projects/etcd/wal_fuzzer.go $SRC/etcd/server/storage/wal/
+compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzWalCreate fuzz_wal_create
+
 # grpc proxy fuzzer
 echo "building grpc proxy fuzzer"
 mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
