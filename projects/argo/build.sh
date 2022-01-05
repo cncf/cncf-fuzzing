@@ -14,8 +14,15 @@
 # limitations under the License.
 #
 
+# gitops-engine fuzzers
+cd $SRC 
+git clone https://github.com/argoproj/gitops-engine 
+cd gitops-engine
+mv $SRC/cncf-fuzzing/projects/argo/gitops-eng_diff_fuzzer.go ./pkg/diff/
+compile_go_fuzzer github.com/argoproj/gitops-engine/pkg/diff FuzzGitopsDiff fuzz_gitops_diff
 
-# argo-events
+
+# argo-events fuzzers
 cd $SRC/argo-events
 mv $SRC/cncf-fuzzing/projects/argo/eventbus_controller_fuzzer.go $SRC/argo-events/controllers/eventbus/
 mv $SRC/cncf-fuzzing/projects/argo/eventsource_controller_fuzzer.go $SRC/argo-events/controllers/eventsource/
