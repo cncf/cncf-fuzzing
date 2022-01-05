@@ -49,7 +49,7 @@ func FuzzRoundTripSpecificKind(data []byte) int {
 	t := &testing.T{}
 	internalGVK := schema.GroupVersionKind{Group: "apps", Version: runtime.APIVersionInternal, Kind: "DaemonSet"}
 
-	seed := New(data)
+	seed := bytesource.New(data)
 	fuzzer := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, seed, legacyscheme.Codecs)
 
 	roundtrip.RoundTripSpecificKind(t, internalGVK, legacyscheme.Scheme, legacyscheme.Codecs, fuzzer, nil)
@@ -72,7 +72,7 @@ func FuzzKubeletSchemeRoundtrip(data []byte) int {
 	initter.Do(initForFuzzing)
 	t := &testing.T{}
 
-	seed := New(data)
+	seed := bytesource.New(data)
 	f := fuzzer.FuzzerFor(kubeletFuzzer.Funcs, seed, legacyscheme.Codecs)
 
 	klScheme, _, err := kubeletScheme.NewSchemeAndCodecs()
@@ -88,7 +88,7 @@ func FuzzProxySchemeRoundtrip(data []byte) int {
 	initter.Do(initForFuzzing)
 	t := &testing.T{}
 
-	seed := New(data)
+	seed := bytesource.New(data)
 	f := fuzzer.FuzzerFor(proxyFuzzer.Funcs, seed, legacyscheme.Codecs)
 
 	codecFactory := runtimeserializer.NewCodecFactory(proxyScheme.Scheme)
@@ -100,7 +100,7 @@ func FuzzRoundTripType(data []byte) int {
 	initter.Do(initForFuzzing)
 	t := &testing.T{}
 
-	seed := New(data)
+	seed := bytesource.New(data)
 	f := fuzzer.FuzzerFor(apitesting.FuzzerFuncs, seed, legacyscheme.Codecs)
 	nonRoundTrippableTypes := map[schema.GroupVersionKind]bool{}
 
