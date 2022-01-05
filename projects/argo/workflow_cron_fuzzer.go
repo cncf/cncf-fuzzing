@@ -42,6 +42,8 @@ func catchPanics() {
 			return
 		} else if strings.Contains(err, "failed to read file") {
 			return
+		} else if strings.Contains(err, "no text to unmarshal") {
+			return
 		} else {
 			panic(err)
 		}
