@@ -178,12 +178,12 @@ func FuzzBlob(data []byte) int {
 	// Get the size of our random tarfile
 	randomDataSize, err := seekerSize(randomDataReader)
 	if err != nil {
-		panic(err)
+		return 0
 	}
 
 	nn, err := io.Copy(blobUpload, rd)
 	if err != nil {
-		panic(err)
+		return 0
 	}
 
 	if nn != randomDataSize {
@@ -194,18 +194,18 @@ func FuzzBlob(data []byte) int {
 
 	offset := blobUpload.Size()
 	if offset != nn {
-		panic("err")
+		return 0
 	}
 
 	// Do a resume, for good fun
 	blobUpload, err = bs.Resume(ctx, blobUpload.ID())
 	if err != nil {
-		panic(err)
+		return 0
 	}
 
 	_, err = blobUpload.Commit(ctx, distribution.Descriptor{Digest: dgst})
 	if err != nil {
-		panic(err)
+		return 0
 	}
 	return 1
 }
