@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func bytesToUnstructured(jsonBytes []byte) (*unstructured.Unstructured, error) {
+func bytesToUnstructuredFuzz(jsonBytes []byte) (*unstructured.Unstructured, error) {
 	obj := make(map[string]interface{})
 	err := yaml.Unmarshal(jsonBytes, &obj)
 	if err != nil {
@@ -66,7 +66,7 @@ func FuzzGitopsDiff(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		us, err := bytesToUnstructured(usBytes)
+		us, err := bytesToUnstructuredFuzz(usBytes)
 		if err != nil {
 			return 0
 		}
@@ -83,7 +83,7 @@ func FuzzGitopsDiff(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		us, err := bytesToUnstructured(usBytes)
+		us, err := bytesToUnstructuredFuzz(usBytes)
 		if err != nil {
 			return 0
 		}
