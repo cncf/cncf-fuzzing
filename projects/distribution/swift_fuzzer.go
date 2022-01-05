@@ -100,12 +100,12 @@ func FuzzSwift(data []byte) int {
 
 	prefix, err := ioutil.TempDir("", "driver-")
 	if err != nil {
-		panic(err)
+		return 0
 	}
 	defer os.Remove(prefix)
 	d, err := newSwiftDriver(prefix)
 	if err != nil {
-		panic(err)
+		return 0
 	}
 
 	err = d.PutContent(context.Background(), "/test", putContent)
@@ -115,7 +115,7 @@ func FuzzSwift(data []byte) int {
 
 	w, err := d.Writer(context.Background(), "/test", true)
 	if err != nil {
-		panic(err)
+		return 0
 	}
 
 	_, err = w.Write(writeContent)
