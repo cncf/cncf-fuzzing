@@ -57,10 +57,9 @@ cd $SRC/etcd
 mv $SRC/cncf-fuzzing/projects/etcd/autogenerate_api_marshal_fuzzer.go ./
 grep -r ") Marshal(" .>>"/tmp/marshal_targets.txt"
 go run autogenerate_api_marshal_fuzzer.go
-mkdir fuzzing
-mv api_marshal_fuzzer.go ./fuzzing/
-cd fuzzing
-compile_go_fuzzer . FuzzAPIMarshal fuzz_api_marshal
+mv api_marshal_fuzzer.go ./tests/fuzzing/
+cd tests/fuzzing
+compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marshal
 
 # proxy fuzzer
 cd $SRC/etcd/pkg/proxy
