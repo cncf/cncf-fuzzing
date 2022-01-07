@@ -38,9 +38,13 @@ go mod tidy
 compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzV2HTTP fuzz_v2_http
 
 # snapshot fuzzer
-cd $SRC/etcd/server/etcdserver/api/snap
-mv $SRC/cncf-fuzzing/projects/etcd/snapshot_fuzzer.go ./
-compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/snap FuzzSnapLoad fuzz_snap_load
+# timeouts during coverage build
+if [ "$SANITIZER" != "coverage" ]
+then
+	cd $SRC/etcd/server/etcdserver/api/snap
+	mv $SRC/cncf-fuzzing/projects/etcd/snapshot_fuzzer.go ./
+	compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/snap FuzzSnapLoad fuzz_snap_load
+fi
 
 # mvcc fuzzer
 cd $SRC/etcd/server/storage/mvcc
