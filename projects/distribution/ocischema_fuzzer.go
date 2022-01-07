@@ -24,26 +24,26 @@ import (
 	"github.com/distribution/distribution/v3"
 )
 
-type mockBlobService struct {
+type fuzzMockBlobService struct {
 	descriptors map[digest.Digest]distribution.Descriptor
 }
 
-func (bs *mockBlobService) Stat(ctx context.Context, dgst digest.Digest) (distribution.Descriptor, error) {
+func (bs *fuzzMockBlobService) Stat(ctx context.Context, dgst digest.Digest) (distribution.Descriptor, error) {
 	if descriptor, ok := bs.descriptors[dgst]; ok {
 		return descriptor, nil
 	}
 	return distribution.Descriptor{}, distribution.ErrBlobUnknown
 }
 
-func (bs *mockBlobService) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
+func (bs *fuzzMockBlobService) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
 	panic("not implemented")
 }
 
-func (bs *mockBlobService) Open(ctx context.Context, dgst digest.Digest) (distribution.ReadSeekCloser, error) {
+func (bs *fuzzMockBlobService) Open(ctx context.Context, dgst digest.Digest) (distribution.ReadSeekCloser, error) {
 	panic("not implemented")
 }
 
-func (bs *mockBlobService) Put(ctx context.Context, mediaType string, p []byte) (distribution.Descriptor, error) {
+func (bs *fuzzMockBlobService) Put(ctx context.Context, mediaType string, p []byte) (distribution.Descriptor, error) {
 	d := distribution.Descriptor{
 		Digest:    digest.FromBytes(p),
 		Size:      int64(len(p)),
@@ -53,11 +53,11 @@ func (bs *mockBlobService) Put(ctx context.Context, mediaType string, p []byte) 
 	return d, nil
 }
 
-func (bs *mockBlobService) Create(ctx context.Context, options ...distribution.BlobCreateOption) (distribution.BlobWriter, error) {
+func (bs *fuzzMockBlobService) Create(ctx context.Context, options ...distribution.BlobCreateOption) (distribution.BlobWriter, error) {
 	panic("not implemented")
 }
 
-func (bs *mockBlobService) Resume(ctx context.Context, id string) (distribution.BlobWriter, error) {
+func (bs *fuzzMockBlobService) Resume(ctx context.Context, id string) (distribution.BlobWriter, error) {
 	panic("not implemented")
 }
 
@@ -76,7 +76,7 @@ func FuzzManifestBuilder(data []byte) int {
 	}
 	configDigest := digest.FromBytes(imgJSON)
 
-	bs := &mockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
+	bs := &fuzzMockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
 	builder := NewManifestBuilder(bs, imgJSON, annotations)
 	_, err = builder.Build(context.Background())
 	if err != nil {
