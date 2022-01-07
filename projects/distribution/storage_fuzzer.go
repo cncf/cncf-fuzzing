@@ -122,10 +122,10 @@ func CreateRandomTarFile(f *fuzz.ConsumeFuzzer) (rs io.ReadSeeker, dgst digest.D
 	return bytes.NewReader(target.Bytes()), dgst, nil
 }
 
-// seekerSize seeks to the end of seeker, checks the size and returns it to
+// seekerSizeFuzz seeks to the end of seeker, checks the size and returns it to
 // the original state, returning the size. The state of the seeker should be
 // treated as unknown if an error is returned.
-func seekerSize(seeker io.ReadSeeker) (int64, error) {
+func seekerSizeFuzz(seeker io.ReadSeeker) (int64, error) {
 	current, err := seeker.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return 0, err
@@ -176,7 +176,7 @@ func FuzzBlob(data []byte) int {
 	}
 
 	// Get the size of our random tarfile
-	randomDataSize, err := seekerSize(randomDataReader)
+	randomDataSize, err := seekerSizeFuzz(randomDataReader)
 	if err != nil {
 		return 0
 	}
