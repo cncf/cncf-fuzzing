@@ -6,6 +6,7 @@ package fuzzing
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,12 +32,12 @@ var (
 	cfg    clientv3.Config
 	client *clientv3.Client
 	kvp    pb.KVServer
+	initFuzzKVProxy sync.Once
 )
 
-func init() {
+func initFuncFuzzKVProxy() {
 	testing.Init()
 	integration2.BeforeTest(t1)
-
 	numberOfExecs = 0
 	clus = integration2.NewClusterV3(t1, &integration2.ClusterConfig{Size: 1})
 	payloads = make([][]byte, 0)
@@ -99,6 +100,7 @@ func validateRangeRequest(r *pb.RangeRequest) error {
 }
 
 func FuzzKVProxy(data []byte) int {
+	initFuzzKVProxy.Do(initFuncFuzzKVProxy)
 	checkAndDoReset()
 	f := fuzz.NewConsumer(data)
 	rr := &pb.RangeRequest{}

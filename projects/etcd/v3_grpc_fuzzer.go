@@ -39,11 +39,6 @@ var (
 	compactionRequests []*pb.CompactionRequest
 )
 
-func init() {
-	testing.Init()
-	integration.BeforeTestExternal(t2)
-}
-
 func resetRequests() {
 	putRequests = make([]*pb.PutRequest, 0)
 	rangeRequests = make([]*pb.RangeRequest, 0)
