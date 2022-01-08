@@ -12,6 +12,16 @@ sed -i '220d' $SRC/etcd/tests/framework/integration/cluster.go
 
 mkdir $SRC/etcd/tests/fuzzing
 
+# api marshal fuzzer
+cd $SRC/etcd
+mv $SRC/cncf-fuzzing/projects/etcd/autogenerate_api_marshal_fuzzer.go ./
+grep -r ") Marshal(" .>>"/tmp/marshal_targets.txt"
+go run autogenerate_api_marshal_fuzzer.go
+rm autogenerate_api_marshal_fuzzer.go
+mv api_marshal_fuzzer.go ./tests/fuzzing/
+cd tests/fuzzing
+compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marshal
+
 # wal fuzzer
 echo "building wal fuzzer"
 cp $SRC/cncf-fuzzing/projects/etcd/wal_fuzzer.go $SRC/etcd/server/storage/wal/
@@ -55,15 +65,6 @@ mv kvstore_test.go kvstore_test_fuzz.go
 # disable some logging:
 sed -i '/s.lg.Info("kvstore restored"/c\\/\/s.lg.Info("kvstore restored"' $SRC/etcd/server/storage/mvcc/kvstore.go
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/mvcc FuzzMvccStorage fuzz_mvcc_storage
-
-# api marshal fuzzer
-cd $SRC/etcd
-mv $SRC/cncf-fuzzing/projects/etcd/autogenerate_api_marshal_fuzzer.go ./
-grep -r ") Marshal(" .>>"/tmp/marshal_targets.txt"
-go run autogenerate_api_marshal_fuzzer.go
-mv api_marshal_fuzzer.go ./tests/fuzzing/
-cd tests/fuzzing
-compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marshal
 
 # proxy fuzzer
 cd $SRC/etcd/pkg/proxy
