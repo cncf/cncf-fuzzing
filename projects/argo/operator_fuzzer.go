@@ -13,34 +13,25 @@
 // limitations under the License.
 //
 
-package validate
+package controller
 
 import (
+	"context"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
-	fakewfclientset "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned/fake"
-	"github.com/argoproj/argo-workflows/v3/workflow/templateresolution"
 )
 
-var (
-	wfClientsetFuzz   = fakewfclientset.NewSimpleClientset()
-	wftmplGetterFuzz  = templateresolution.WrapWorkflowTemplateInterface(wfClientsetFuzz.ArgoprojV1alpha1().WorkflowTemplates(metav1.NamespaceDefault))
-	cwftmplGetterFuzz = templateresolution.WrapClusterWorkflowTemplateInterface(wfClientsetFuzz.ArgoprojV1alpha1().ClusterWorkflowTemplates())
-)
-
-func FuzzValidateWorkflow(data []byte) int {
+func FuzzOperator(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	wf := &wfv1.Workflow{}
 	err := f.GenerateStruct(wf)
 	if err != nil {
 		return 0
 	}
-	if wf.Spec.WorkflowTemplateRef  == nil {
-		return 0
-	}
-	opts := ValidateOpts{}
-	_, _ = ValidateWorkflow(wftmplGetterFuzz, cwftmplGetterFuzz, wf, opts)
+	cancel, controller := newController(wf)
+	defer cancel()
+	ctx := context.Background()
+	woc := newWorkflowOperationCtx(wf, controller)
+	woc.operate(ctx)
 	return 1
 }
