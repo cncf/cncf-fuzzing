@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+
 # gitops-engine fuzzers
 cd $SRC 
 git clone https://github.com/argoproj/gitops-engine 
@@ -46,11 +47,29 @@ fi
 
 # argo-cd fuzzers
 cd $SRC/argo-cd
-mv $SRC/cncf-fuzzing/projects/argo/diff_fuzzer.go $SRC/argo-cd/util/argo/diff/
-compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/diff FuzzStateDiff fuzz_state_diff
+mv $SRC/cncf-fuzzing/projects/argo/argo-cd_db_fuzzer.go $SRC/argo-cd/util/db/
+mv $SRC/argo-cd/util/db/certificate_test.go $SRC/argo-cd/util/db/certificate_test_fuzz.go
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/db FuzzCreateRepoCertificate fuzz_create_repo_certificate
+
+mv $SRC/cncf-fuzzing/projects/argo/argo-cd_util_grpc_fuzzer.go $SRC/argo-cd/util/grpc/
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/grpc FuzzUserAgentUnaryServerInterceptor fuzz_user_agent_unary_server_interceptor
+
+mv $SRC/cncf-fuzzing/projects/argo/argo-cd_rbac_fuzzer.go $SRC/argo-cd/util/rbac/
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/rbac FuzzLoadPolicy fuzz_load_policy
+
+mv $SRC/cncf-fuzzing/projects/argo/argo-cd_resource_tracking_fuzzer.go $SRC/argo-cd/util/argo/
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo FuzzParseAppInstanceValue fuzz_parse_app_instance_value
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo FuzzGetAppName fuzz_get_app_name
 
 mv $SRC/cncf-fuzzing/projects/argo/gpg_fuzzer.go $SRC/argo-cd/util/gpg/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/gpg FuzzImportPGPKeys fuzz_import_pgp_keys
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/gpg FuzzValidatePGPKeysFromString fuzz_validate_pgp_keys
+
+mv $SRC/cncf-fuzzing/projects/argo/argo-cd_validate_project_fuzzer.go $SRC/argo-cd/pkg/apis/application/v1alpha1/
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1 FuzzValidateAppProject fuzz_validate_app_project
+
+mv $SRC/cncf-fuzzing/projects/argo/diff_fuzzer.go $SRC/argo-cd/util/argo/diff/
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/diff FuzzStateDiff fuzz_state_diff
 
 mv $SRC/cncf-fuzzing/projects/argo/project_fuzzer.go $SRC/argo-cd/server/project/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzValidateProject fuzz_validate_project
@@ -69,6 +88,29 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNorma
 
 # argo-workflows fuzzers
 cd $SRC/argo-workflows
+
+mv $SRC/cncf-fuzzing/projects/argo/artifacts_fuzzer.go $SRC/argo-workflows/server/artifacts/
+mv $SRC/argo-workflows/server/artifacts/artifact_server_test.go $SRC/argo-workflows/server/artifacts/artifact_server_test_fuzz.go 
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/server/artifacts FuzzGetOutputArtifact fuzz_get_output_artifact
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/server/artifacts FuzzGetOutputArtifactByUID fuzz_get_output_artifact_by_uuid
+
+mv $SRC/cncf-fuzzing/projects/argo/ancestry_fuzzer.go $SRC/argo-workflows/workflow/common/
+mv $SRC/argo-workflows/workflow/common/ancestry_test.go $SRC/argo-workflows/workflow/common/ancestry_test_fuzz.go 
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/common FuzzGetTaskDependencies fuzz_get_task_dependencies
+
+mv $SRC/cncf-fuzzing/projects/argo/operator_fuzzer.go $SRC/argo-workflows/workflow/controller/
+mv $SRC/argo-workflows/workflow/controller/controller_test.go $SRC/argo-workflows/workflow/controller/controller_test_fuzz.go 
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/controller FuzzOperator fuzz_operator
+
+mv $SRC/cncf-fuzzing/projects/argo/workflow_controller_fuzzer.go $SRC/argo-workflows/workflow/controller/
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/controller FuzzWorkflowController fuzz_workflow_controller
+
+mv $SRC/cncf-fuzzing/projects/argo/workflows_sync_fuzzer.go $SRC/argo-workflows/workflow/sync/
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/sync FuzzDecodeLockName fuzz_decode_lock_name
+
+mv $SRC/cncf-fuzzing/projects/argo/workflows_sso_fuzzer.go $SRC/argo-workflows/server/auth/sso
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/server/auth/sso FuzzSSOAuthorize fuzz_sso_authorize
+
 mv $SRC/cncf-fuzzing/projects/argo/workflow_util_fuzzer.go $SRC/argo-workflows/workflow/util/
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/util FuzzSubmitWorkflow fuzz_submit_workflow
 
@@ -81,6 +123,4 @@ compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/validate FuzzVa
 mv $SRC/cncf-fuzzing/projects/argo/workflow_parser_fuzzer.go $SRC/argo-workflows/workflow/common/
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/common FuzzParseObjects fuzz_parse_objects
 
-mv $SRC/cncf-fuzzing/projects/argo/workflow_controller_fuzzer.go $SRC/argo-workflows/workflow/controller/
-mv $SRC/argo-workflows/workflow/controller/controller_test.go $SRC/argo-workflows/workflow/controller/controller_fuzz.go
-compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/controller FuzzWorkflowController fuzz_workflow_controller
+
