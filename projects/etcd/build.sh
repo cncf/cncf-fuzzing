@@ -85,7 +85,7 @@ compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzapplierV3backendApply
 echo "building auth fuzzer"
 cd $SRC/etcd/server/auth
 go get github.com/AdaLogics/go-fuzz-headers
-mv $SRC/cncf-fuzzing/projects/etcd/store_fuzzer.go ./
+mv $SRC/cncf-fuzzing/projects/etcd/auth_store_fuzzer.go ./
 mv store_mock_test.go store_mock_test_fuzz.go
 mv store_test.go store_test_fuzz.go
 mv jwt_test.go jwt_test_fuzz.go
