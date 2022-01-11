@@ -13,9 +13,9 @@
 // limitations under the License.
 //
 
-package reference
+package challenge
 
-func FuzzParseNormalizedNamed(data []byte) int {
-	_, _ = ParseNormalizedNamed(string(data))
+func FuzzParseValueAndParams(data []byte) int {
+	_, _ = parseValueAndParams(string(data))
 	return 1
 }

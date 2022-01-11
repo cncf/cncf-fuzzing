@@ -13,9 +13,28 @@
 // limitations under the License.
 //
 
-package v2
+package token
 
-func FuzzParseForwardedHeader(data []byte) int {
-	_, _, _ = parseForwardedHeader(string(data))
+import (
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+)
+
+func FuzzToken(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	rawToken, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	verifyOps := VerifyOptions{}
+	err = f.GenerateStruct(&verifyOps)
+	if err != nil {
+		return 0
+	}
+	token, err := NewToken(rawToken)
+	if err != nil {
+		return 0
+	}
+	token.Verify(verifyOps)
+	_, _ = token.VerifySigningKey(verifyOps)
 	return 1
 }

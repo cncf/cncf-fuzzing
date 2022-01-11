@@ -225,3 +225,28 @@ func testServerForFuzz(rrm testutil.RequestResponseMap) (string, func()) {
 	s := httptest.NewServer(h)
 	return s.URL, s.Close
 }
+
+func FuzzBlobGet(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	dgst, blob, err := newRandomBlobForFuzz(f)
+	if err != nil {
+		return 0
+	}
+	var m testutil.RequestResponseMap
+	addTestFetch("test.example.com/repo1", dgst, blob, &m)
+	e, c := testServerForFuzz(m)
+	defer c()
+	ctx := context.Background()
+	repo, _ := reference.WithName("test.example.com/repo1")
+	r, err := NewRepository(repo, e, nil)
+	if err != nil {
+		return 0
+	}
+	l := r.Blobs(ctx)
+
+	_, err = l.Get(ctx, dgst)
+	if err != nil {
+		return 0
+	}
+	return 1
+}

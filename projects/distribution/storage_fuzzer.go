@@ -36,6 +36,7 @@ import (
 	"github.com/distribution/distribution/v3/registry/storage/cache/memory"
 	"github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
 	"github.com/distribution/distribution/v3/registry/storage/driver/testdriver"
+	"github.com/distribution/distribution/v3/testutil"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
@@ -237,5 +238,109 @@ func FuzzSchema2ManifestHandler(data []byte) int {
 	if err != nil {
 
 	}
+	return 1
+}
+
+// CreateRandomLayers returns a map of n digests. We don't particularly care
+// about the order of said digests (since they're all random anyway).
+func CreateRandomLayersFuzz(n int, f *fuzz.ConsumeFuzzer) (map[digest.Digest]io.ReadSeeker, error) {
+	digestMap := map[digest.Digest]io.ReadSeeker{}
+	for i := 0; i < n; i++ {
+		rs, ds, err := CreateRandomTarFile(f)
+		if err != nil {
+			return nil, fmt.Errorf("unexpected error generating test layer file: %v", err)
+		}
+
+		digestMap[ds] = rs
+	}
+	return digestMap, nil
+}
+
+func FuzzMarkAndSweep(data []byte) int {
+	f := fuzz.NewConsumer(data)
+
+	// Create random layers
+	randomLayers1, err := CreateRandomLayersFuzz(3, f)
+	if err != nil {
+		return 0
+	}
+
+	randomLayers2, err := CreateRandomLayersFuzz(3, f)
+	if err != nil {
+		return 0
+	}
+
+	t := &testing.T{}
+	ctx := context.Background()
+	inmemoryDriver := inmemory.New()
+
+	registry := createRegistry(t, inmemoryDriver)
+	repo := makeRepository(t, registry, "deletemanifests")
+	manifestService, _ := repo.Manifests(ctx)
+
+	// Upload all layers
+	err = testutil.UploadBlobs(repo, randomLayers1)
+	if err != nil {
+		return 0
+	}
+
+	err = testutil.UploadBlobs(repo, randomLayers2)
+	if err != nil {
+		return 0
+	}
+
+	// Construct manifests
+	manifest1, err := testutil.MakeSchema1Manifest(getKeys(randomLayers1))
+	if err != nil {
+		return 0
+	}
+
+	manifest2, err := testutil.MakeSchema1Manifest(getKeys(randomLayers2))
+	if err != nil {
+		return 0
+	}
+
+	_, err = manifestService.Put(ctx, manifest1)
+	if err != nil {
+		return 0
+	}
+
+	_, err = manifestService.Put(ctx, manifest2)
+	if err != nil {
+		return 0
+	}
+
+	manifestEnumerator, _ := manifestService.(distribution.ManifestEnumerator)
+	manifestEnumerator.Enumerate(ctx, func(dgst digest.Digest) error {
+		repo.Tags(ctx).Tag(ctx, "test", distribution.Descriptor{Digest: dgst})
+		return nil
+	})
+
+	before1 := allBlobs(t, registry)
+	before2 := allManifests(t, manifestService)
+
+	// run GC with dry-run (should not remove anything)
+	err = MarkAndSweep(context.Background(), inmemoryDriver, registry, GCOpts{
+		DryRun:         true,
+		RemoveUntagged: true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	afterDry1 := allBlobs(t, registry)
+	afterDry2 := allManifests(t, manifestService)
+	if len(before1) != len(afterDry1) {
+		panic(fmt.Sprintf("Garbage collection affected blobs storage: %d != %d\n", len(before1), len(afterDry1)))
+	}
+	if len(before2) != len(afterDry2) {
+		panic(fmt.Sprintf("Garbage collection affected manifest storage: %d != %d", len(before2), len(afterDry2)))
+	}
+
+	// Run GC (removes everything because no manifests with tags exist)
+	_ = MarkAndSweep(context.Background(), inmemoryDriver, registry, GCOpts{
+		DryRun:         false,
+		RemoveUntagged: true,
+	})
+
 	return 1
 }
