@@ -28,7 +28,7 @@ func FuzzInmemoryDriver(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	maxExecs := noOfExecs % 100
+	maxExecs := noOfExecs % 10
 	for i := 0; i < maxExecs; i++ {
 		err = doRandomOp(d, f)
 		if err != nil {
