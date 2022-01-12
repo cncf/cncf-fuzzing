@@ -49,6 +49,7 @@ fi
 cd $SRC/argo-cd
 mv $SRC/cncf-fuzzing/projects/argo/argo-cd_db_fuzzer.go $SRC/argo-cd/util/db/
 mv $SRC/argo-cd/util/db/certificate_test.go $SRC/argo-cd/util/db/certificate_test_fuzz.go
+mv $SRC/argo-cd/util/db/db_test.go $SRC/argo-cd/util/db/db_test_fuzz.go
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/db FuzzCreateRepoCertificate fuzz_create_repo_certificate
 
 mv $SRC/cncf-fuzzing/projects/argo/argo-cd_util_grpc_fuzzer.go $SRC/argo-cd/util/grpc/

@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	testNamespace = "default"
+	fuzzTestNamespace = "default"
 )
 
 func FuzzCreateRepoCertificate(data []byte) int {
@@ -38,7 +38,7 @@ func FuzzCreateRepoCertificate(data []byte) int {
 		return 0
 	}
 	clientset := getCertClientset()
-	db := NewDB(testNamespace, settings.NewSettingsManager(context.Background(), clientset, testNamespace), clientset)
+	db := NewDB(fuzzTestNamespace, settings.NewSettingsManager(context.Background(), clientset, fuzzTestNamespace), clientset)
 	_, _ = db.CreateRepoCertificate(context.Background(), repocertlist, upsert)
 	return 1
 }
