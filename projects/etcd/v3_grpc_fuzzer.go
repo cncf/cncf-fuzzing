@@ -17,6 +17,8 @@ package fuzzing
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -152,8 +154,13 @@ func FuzzGRPCApis(data []byte) int {
 	}
 
 	// Create test cluster
-	clus := integration.NewClusterV3(t2, &integration.ClusterConfig{Size: 3})
+	clus, err := integration.NewClusterV3Fuzz(t2, &integration.ClusterConfig{Size: 3}, f)
+	if err != nil {
+		return 0
+	}
 	defer clus.Terminate(t2)
+	defer cleanUpDir()
+
 	kvc := integration.ToGRPC(clus.RandClient()).KV
 
 	// Send the requests
@@ -197,4 +204,21 @@ func FuzzGRPCApis(data []byte) int {
 		}
 	}
 	return 1
+}
+
+// A cluster creates files named "127.0.0.1:*" and "localhost:*",
+// and these are deleted after each iteration.
+func cleanUpDir() {
+	items, err := os.ReadDir(".")
+	if err != nil {
+		panic(err)
+	}
+	for _, item := range items {
+		if strings.Contains(item.Name(), "127.0.0.1:") {
+			os.RemoveAll(item.Name())
+			//fmt.Println(item.Name())
+		} else if strings.Contains(item.Name(), "localhost:") {
+			os.RemoveAll(item.Name())
+		}
+	}
 }

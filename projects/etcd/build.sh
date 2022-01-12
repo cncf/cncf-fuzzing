@@ -9,6 +9,8 @@ sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
 # Prevent panic when using testing.T
 sed -i '220d' $SRC/etcd/tests/framework/integration/cluster.go
+mv $SRC/cncf-fuzzing/projects/etcd/cluster_utils.go \
+   $SRC/etcd/tests/framework/integration/
 
 mkdir $SRC/etcd/tests/fuzzing
 
