@@ -1,16 +1,34 @@
-/*
-remove the "Short" testing thing in etcd/client/pkg/testutil/testutil.go
-*/
+// Copyright 2021 ADA Logics Ltd
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package fuzzing
 
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"strings"
 	"sync"
 	"testing"
+
 	"time"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"google.golang.org/grpc"
+
 	pb "go.etcd.io/etcd/api/v3/etcdserverpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/server/v3/proxy/grpcproxy"
@@ -18,55 +36,20 @@ import (
 )
 
 var (
-	t1 = &testing.T{}
-
-	// numberOfExecs is the number of executions inbetween
-	// new initializations.
-	numberOfExecs int
-
-	// payloads is a slice of payloads. It is reset everytime
-	// "resetAfterExecs" is reset. This is kept for reproduceability.
-	payloads [][]byte
-
-	clus   *integration2.ClusterV3
-	cfg    clientv3.Config
-	client *clientv3.Client
-	kvp    pb.KVServer
 	initFuzzKVProxy sync.Once
+
+	URLScheme           = "unix"
+	URLSchemeTLS        = "unixs"
+	availableOperations = map[int]string{
+		0: "Put",
+		1: "Range",
+		2: "DeleteRange",
+	}
 )
 
 func initFuncFuzzKVProxy() {
 	testing.Init()
-	integration2.BeforeTest(t1)
-	numberOfExecs = 0
-	clus = integration2.NewClusterV3(t1, &integration2.ClusterConfig{Size: 1})
-	payloads = make([][]byte, 0)
-	cfg = clientv3.Config{
-		Endpoints:   []string{clus.Members[0].GRPCURL()},
-		DialTimeout: 5 * time.Second,
-	}
-	client, err := integration2.NewClient(t1, cfg)
-	if err != nil {
-		panic(err)
-	}
-	kvp, _ = grpcproxy.NewKvProxy(client)
-}
 
-func checkAndDoReset() {
-	if numberOfExecs == 50000 {
-		clus.Terminate(t1)
-		clus = integration2.NewClusterV3(t1, &integration2.ClusterConfig{Size: 1})
-		payloads = make([][]byte, 0)
-		cfg = clientv3.Config{
-			Endpoints:   []string{clus.Members[0].GRPCURL()},
-			DialTimeout: 5 * time.Second,
-		}
-		client, err := integration2.NewClient(t1, cfg)
-		if err != nil {
-			panic(err)
-		}
-		kvp, _ = grpcproxy.NewKvProxy(client)
-	}
 }
 
 func validatePutRequest(r *pb.PutRequest) error {
@@ -101,43 +84,222 @@ func validateRangeRequest(r *pb.RangeRequest) error {
 
 func FuzzKVProxy(data []byte) int {
 	initFuzzKVProxy.Do(initFuncFuzzKVProxy)
-	checkAndDoReset()
+	t1 := &testing.T{}
 	f := fuzz.NewConsumer(data)
-	rr := &pb.RangeRequest{}
-	err := f.GenerateStruct(rr)
+	oh := newrequestHolder(f)
+	err := oh.createRequests()
 	if err != nil {
 		return 0
 	}
-	err = validateRangeRequest(rr)
+	if len(oh.opCodes) < 10 {
+		return 0
+	}
+
+	defer cleanupDir()
+	clus, err := integration2.NewClusterV3Fuzz(t1, &integration2.ClusterConfig{Size: 1}, f)
 	if err != nil {
 		return 0
 	}
+	defer clus.Terminate(t1)
+
+	kvts := newKVProxyServer([]string{clus.Members[0].GRPCURL()}, t1)
+	defer kvts.close()
+
+	oh.kp = kvts.kp
+	for _, op := range oh.opCodes {
+		oh.makeRequest(op)
+	}
+	return 1
+}
+
+type requestHolder struct {
+	kp                    pb.KVServer
+	f                     *fuzz.ConsumeFuzzer
+	putOperations         []*pb.PutRequest
+	rangeOperations       []*pb.RangeRequest
+	deleteRangeOperations []*pb.DeleteRangeRequest
+	opCodes               []int
+}
+
+func newrequestHolder(f *fuzz.ConsumeFuzzer) *requestHolder {
+	oh := &requestHolder{}
+	po := make([]*pb.PutRequest, 0)
+	ro := make([]*pb.RangeRequest, 0)
+	dro := make([]*pb.DeleteRangeRequest, 0)
+	opCodes := make([]int, 0)
+	oh.putOperations = po
+	oh.rangeOperations = ro
+	oh.deleteRangeOperations = dro
+	oh.opCodes = opCodes
+	oh.f = f
+	return oh
+}
+
+func (oh *requestHolder) createRequests() error {
+	numOfRequests, err := oh.f.GetInt()
+	if err != nil {
+		return err
+	}
+	for i := 0; i < numOfRequests%30; i++ {
+		opType, err := oh.f.GetInt()
+		if err != nil {
+			return err
+		}
+		switch availableOperations[opType%len(availableOperations)] {
+		case "Put":
+			r, err := createPutRequest(oh.f)
+			if err != nil {
+				return err
+			}
+			oh.putOperations = append(oh.putOperations, r)
+			oh.opCodes = append(oh.opCodes, 0)
+		case "Range":
+			r, err := createRangeRequest(oh.f)
+			if err != nil {
+				return err
+			}
+			oh.rangeOperations = append(oh.rangeOperations, r)
+			oh.opCodes = append(oh.opCodes, 1)
+		case "DeleteRange":
+			r, err := createDeleteRangeRequest(oh.f)
+			if err != nil {
+				return err
+			}
+			oh.deleteRangeOperations = append(oh.deleteRangeOperations, r)
+			oh.opCodes = append(oh.opCodes, 2)
+		}
+	}
+	return nil
+}
+
+func createPutRequest(f *fuzz.ConsumeFuzzer) (*pb.PutRequest, error) {
 	pr := &pb.PutRequest{}
-	err = f.GenerateStruct(pr)
+	err := f.GenerateStruct(pr)
 	if err != nil {
-		return 0
+		return nil, err
 	}
 	err = validatePutRequest(pr)
 	if err != nil {
-		return 0
+		return nil, err
 	}
-	dr := &pb.DeleteRangeRequest{}
-	err = f.GenerateStruct(dr)
+	return pr, nil
+}
+
+func createRangeRequest(f *fuzz.ConsumeFuzzer) (*pb.RangeRequest, error) {
+	rr := &pb.RangeRequest{}
+	err := f.GenerateStruct(rr)
 	if err != nil {
-		return 0
+		return nil, err
+	}
+	err = validateRangeRequest(rr)
+	if err != nil {
+		return nil, err
+	}
+	return rr, nil
+}
+
+func createDeleteRangeRequest(f *fuzz.ConsumeFuzzer) (*pb.DeleteRangeRequest, error) {
+	dr := &pb.DeleteRangeRequest{}
+	err := f.GenerateStruct(dr)
+	if err != nil {
+		return nil, err
 	}
 	err = validateDeleteRangeRequest(dr)
 	if err != nil {
-		return 0
+		return nil, err
 	}
-	// since we now know that the fuzzer has created valid bytes
-	// for both the RangeRequest, the PutRequest, the DeleteRangeRequest,
-	// the bytes can be added and we can count a valid execution.
-	numberOfExecs++
-	payloads = append(payloads, data)
+	return dr, nil
+}
 
-	_, _ = kvp.Range(context.Background(), rr)
-	_, _ = kvp.Put(context.Background(), pr)
-	_, _ = kvp.DeleteRange(context.Background(), dr)
-	return 1
+func (oh *requestHolder) makeRequest(op int) {
+	switch availableOperations[op] {
+	case "Put":
+		oh.makePutRequest()
+	case "Range":
+		oh.makeRangeRequest()
+	case "DeleteRange":
+		oh.makeDeleteRangeRequest()
+	}
+}
+
+func (oh *requestHolder) makePutRequest() {
+	r := oh.putOperations[0]
+	_, _ = oh.kp.Put(context.Background(), r)
+	oh.putOperations = oh.putOperations[1:]
+	oh.opCodes = oh.opCodes[1:]
+}
+
+func (oh *requestHolder) makeRangeRequest() {
+	r := oh.rangeOperations[0]
+	_, _ = oh.kp.Range(context.Background(), r)
+	oh.rangeOperations = oh.rangeOperations[1:]
+	oh.opCodes = oh.opCodes[1:]
+}
+
+func (oh *requestHolder) makeDeleteRangeRequest() {
+	r := oh.deleteRangeOperations[0]
+	_, _ = oh.kp.DeleteRange(context.Background(), r)
+	oh.deleteRangeOperations = oh.deleteRangeOperations[1:]
+	oh.opCodes = oh.opCodes[1:]
+}
+
+type kvproxyTestServer struct {
+	kp     pb.KVServer
+	c      *clientv3.Client
+	server *grpc.Server
+	l      net.Listener
+}
+
+func (kts *kvproxyTestServer) close() {
+	kts.server.Stop()
+	kts.l.Close()
+	kts.c.Close()
+}
+
+func newKVProxyServer(endpoints []string, t *testing.T) *kvproxyTestServer {
+	cfg := clientv3.Config{
+		Endpoints:   endpoints,
+		DialTimeout: 5 * time.Second,
+	}
+	client, err := integration2.NewClient(t, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	kvp, _ := grpcproxy.NewKvProxy(client)
+
+	kvts := &kvproxyTestServer{
+		kp: kvp,
+		c:  client,
+	}
+
+	var opts []grpc.ServerOption
+	kvts.server = grpc.NewServer(opts...)
+	pb.RegisterKVServer(kvts.server, kvts.kp)
+
+	kvts.l, err = net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go kvts.server.Serve(kvts.l)
+
+	return kvts
+}
+
+// A cluster creates files named "127.0.0.1:*" and "localhost:*",
+// and these are deleted after each iteration.
+func cleanupDir() {
+	items, err := os.ReadDir(".")
+	if err != nil {
+		panic(err)
+	}
+	for _, item := range items {
+		if strings.Contains(item.Name(), "127.0.0.1:") {
+			os.RemoveAll(item.Name())
+			//fmt.Println(item.Name())
+		} else if strings.Contains(item.Name(), "localhost:") {
+			os.RemoveAll(item.Name())
+		}
+	}
 }
