@@ -16,10 +16,36 @@
 package grpc
 
 import (
+	"runtime"
+	"strings"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
+// We ignore these panics, as they don't represent real bugs.
+func catchPanicsGrpcFuzzer() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "improper constraint") {
+			return
+		} else if strings.Contains(err, "constraint Parser Error") {
+			return
+		} else {
+			panic(err)
+		}
+	}
+}
+
 func FuzzUserAgentUnaryServerInterceptor(data []byte) int {
+	defer catchPanicsGrpcFuzzer()
 	f := fuzz.NewConsumer(data)
 	clientName, err := f.GetString()
 	if err != nil {
