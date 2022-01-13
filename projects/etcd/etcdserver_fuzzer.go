@@ -180,6 +180,33 @@ func FuzzapplierV3backendApply(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	if !shouldPass(rr, f) {
+		return 0
+	}
 	_ = ab.Apply(rr, true)
 	return 1
+}
+
+func shouldPass(r *pb.InternalRaftRequest, f *fuzz.ConsumeFuzzer) bool {
+	switch {
+	case r.ClusterVersionSet != nil:
+		shouldContinue, err := f.GetBool()
+		if err != nil || !shouldContinue {
+			return false
+		}
+		return true
+	case r.ClusterMemberAttrSet != nil:
+		shouldContinue, err := f.GetBool()
+		if err != nil || !shouldContinue {
+			return false
+		}
+		return true
+	case r.DowngradeInfoSet != nil:
+		shouldContinue, err := f.GetBool()
+		if err != nil || !shouldContinue {
+			return false
+		}
+		return true
+	}
+	return true
 }
