@@ -47,6 +47,12 @@ fi
 
 # argo-cd fuzzers
 cd $SRC/argo-cd
+mv $SRC/cncf-fuzzing/projects/argo/project_fuzzer.go $SRC/argo-cd/server/project/
+mv $SRC/argo-cd/server/project/project_test.go $SRC/argo-cd/server/project/project_test_fuzz.go
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzValidateProject fuzz_validate_project
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzParseUnverified fuzz_parse_unverified
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzCreateToken fuzz_create_token
+
 mv $SRC/cncf-fuzzing/projects/argo/argo-cd_db_fuzzer.go $SRC/argo-cd/util/db/
 mv $SRC/argo-cd/util/db/certificate_test.go $SRC/argo-cd/util/db/certificate_test_fuzz.go
 mv $SRC/argo-cd/util/db/db_test.go $SRC/argo-cd/util/db/db_test_fuzz.go
@@ -71,10 +77,6 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1 F
 
 mv $SRC/cncf-fuzzing/projects/argo/diff_fuzzer.go $SRC/argo-cd/util/argo/diff/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/diff FuzzStateDiff fuzz_state_diff
-
-mv $SRC/cncf-fuzzing/projects/argo/project_fuzzer.go $SRC/argo-cd/server/project/
-compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzValidateProject fuzz_validate_project
-compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzParseUnverified fuzz_parse_unverified
 
 mv $SRC/cncf-fuzzing/projects/argo/sessionmanager_fuzzer.go $SRC/argo-cd/util/session/
 mv $SRC/argo-cd/util/session/sessionmanager_test.go $SRC/argo-cd/util/session/sessionmanager_fuzz.go
