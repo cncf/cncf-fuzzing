@@ -17,7 +17,7 @@ package project
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 )
