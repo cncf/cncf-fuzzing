@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+apt-get update && apt-get install -y zip
 
 # gitops-engine fuzzers
 cd $SRC 
@@ -91,6 +92,14 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNorma
 
 # argo-workflows fuzzers
 cd $SRC/argo-workflows
+
+mv $SRC/cncf-fuzzing/projects/argo/workflow_server_fuzzer.go $SRC/argo-workflows/server/workflow/
+mv $SRC/argo-workflows/server/workflow/workflow_server_test.go $SRC/argo-workflows/server/workflow/workflow_server_test_fuzz.go 
+mv $SRC/argo-workflows/server/workflow/test_server_stream_test.go $SRC/argo-workflows/server/workflow/test_server_stream_test_fuzz.go
+compile_go_fuzzer github.com/argoproj/argo-workflows/v3/server/workflow FuzzWorkflowServer fuzz_workflow_server
+# seed files:
+zip -r $OUT/fuzz_workflow_server_seed_corpus.zip $SRC/cncf-fuzzing/projects/argo/seeds/workflow_server_fuzzer/*
+
 
 mv $SRC/cncf-fuzzing/projects/argo/artifacts_fuzzer.go $SRC/argo-workflows/server/artifacts/
 mv $SRC/argo-workflows/server/artifacts/artifact_server_test.go $SRC/argo-workflows/server/artifacts/artifact_server_test_fuzz.go 

@@ -1,0 +1,47 @@
+{
+  "apiVersion": "argoproj.io/v1alpha1",
+  "kind": "WorkflowTemplate",
+  "metadata": {
+    "name": "workflow-template-whalesay-template",
+    "namespace": "workflows"
+  },
+  "spec": {
+	"workflowMetadata": {
+	 "Labels": {
+		"labelTest": "test"
+	 },
+	 "annotations": {
+		"annotationTest": "test"
+	 }
+	},
+    "entrypoint": "whalesay-template",
+    "arguments": {
+      "parameters": [
+        {
+          "name": "message"
+        }
+      ]
+    },
+    "templates": [
+      {
+        "name": "whalesay-template",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message"
+            }
+          ]
+        },
+        "container": {
+          "image": "docker/whalesay",
+          "command": [
+            "cowsay"
+          ],
+          "args": [
+            "{{inputs.parameters.message}}"
+          ]
+        }
+      }
+    ]
+  }
+}
