@@ -39,6 +39,9 @@ mv $SRC/kubernetes/pkg/kubelet/kubelet_node_status_test.go \
 cp $SRC/cncf-fuzzing/projects/kubernetes/*.go \
    $SRC/kubernetes/test/fuzz/fuzzing/
 
+mv $SRC/cncf-fuzzing/projects/kubernetes/deployment_util_fuzzer.go \
+   $SRC/kubernetes/pkg/controller/deployment/util/
+
 
 go mod tidy && go mod vendor
 # disable this fuzzer for now
@@ -60,6 +63,9 @@ compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzStrategicMergePatch fuzz_strategic_merge_patch
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzconvertToAPIContainerStatuses fuzz_convert_to_api_container_statuses
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzHandlePodCleanups fuzz_handle_pod_cleanups
+compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzMakeEnvironmentVariables fuzz_make_environment_variables
+
+compile_go_fuzzer k8s.io/kubernetes/pkg/controller/deployment/util FuzzEntireDeploymentUtil fuzz_entire_deployment_util
 
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzDeepCopy fuzz_deep_copy
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzAesRoundtrip fuzz_aes_roundtrip

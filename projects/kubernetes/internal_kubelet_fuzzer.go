@@ -189,3 +189,31 @@ func FuzzHandlePodCleanups(data []byte) int {
 
 	return 1
 }
+
+func FuzzMakeEnvironmentVariables(data []byte) int {
+	t := &testing.T{}
+	f := fuzz.NewConsumer(data)
+	testPod := &v1.Pod{}
+	err := f.GenerateStruct(testPod)
+	if err != nil {
+		return 0
+	}
+	container := &v1.Container{}
+	err = f.GenerateStruct(container)
+	if err != nil {
+		return 0
+	}
+	podIP, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	podIPs := make([]string, 0)
+	err = f.CreateSlice(&podIPs)
+	if err != nil {
+		return 0
+	}
+	kl := newTestKubelet(t, false /* controllerAttachDetachEnabled */)
+	defer kl.Cleanup()
+	_, _ = kl.kubelet.makeEnvironmentVariables(testPod, container, podIP, podIPs)
+	return 1
+}
