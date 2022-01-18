@@ -17,9 +17,32 @@ package controller
 
 import (
 	"context"
+	"runtime"
+	"strings"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 )
+
+func catchOperatorPanics() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "failed to convert to unstructured: error decoding from json: empty value") {
+			return
+		} else if strings.Contains(err, "failed to convert to unstructured: error decoding number from json") {
+			return
+		} else {
+			panic(err)
+		}
+	}
+}
 
 func FuzzOperator(data []byte) int {
 	f := fuzz.NewConsumer(data)
@@ -28,6 +51,7 @@ func FuzzOperator(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	defer catchOperatorPanics()
 	cancel, controller := newController(wf)
 	defer cancel()
 	ctx := context.Background()
