@@ -1,0 +1,25 @@
+{
+    "apiVersion": "argoproj.io/v1alpha1",
+    "kind": "Workflow",
+    "metadata": {
+        "name": "failed",
+        "namespace": "workflows",
+        "labels": {
+            "workflows.argoproj.io/controller-instanceid": "my-instanceid"
+        }
+    },
+    "spec": {
+        "entrypoint": "whalesay",
+        "templates": [
+            {
+                "container": {
+                    "image": "docker/whalesay:latest"
+                },
+                "name": "whalesay"
+            }
+        ]
+    },
+    "status": {
+        "phase": "Failed"
+    }
+}
