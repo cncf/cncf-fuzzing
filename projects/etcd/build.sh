@@ -33,6 +33,7 @@ compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzWalCreate fuzz_wal_c
 echo "building grpc proxy fuzzer"
 mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
 cd $SRC/etcd/tests/fuzzing
+go mod tidy
 sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
 compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzKVProxy fuzz_kv_proxy
 
@@ -119,12 +120,17 @@ go mod tidy
 mv diff_test.go diff_test_fuzz.go
 mv log_test.go log_test_fuzz.go
 mv raft_test.go raft_test_fuzz.go
-
 compile_go_fuzzer go.etcd.io/etcd/raft/v3 FuzzStep fuzz_step
 
 # v2auth fuzzer
 cd $SRC/etcd/server/etcdserver/api/v2auth
 mv $SRC/cncf-fuzzing/projects/etcd/v2auth_fuzzer.go ./
 mv auth_test.go auth_test_fuzz.go
-
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/v2auth FuzzCreateOrUpdateUser FuzzCreateOrUpdateUser
+
+# file_purge_fuzzer
+cd $SRC/etcd/client/pkg/fileutil
+go get github.com/AdaLogics/go-fuzz-headers
+mv $SRC/cncf-fuzzing/projects/etcd/filepurge_fuzzer.go $SRC/etcd/client/pkg/fileutil/
+compile_go_fuzzer go.etcd.io/etcd/client/pkg/v3/fileutil FuzzPurgeFile fuzz_purge_file
+cd -
