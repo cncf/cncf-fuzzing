@@ -33,6 +33,8 @@ compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEvent
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorControllerReconcile fuzz_sensor_controller_reconcile
 
+
+
 if [ "$SANITIZER" = "address" ]
 then
 	# These fuzzer need to link with ztsd
@@ -44,6 +46,11 @@ then
 	echo "building fuzz_resource_reconcile"
 	go-fuzz -tags gofuzz -func FuzzResourceReconcile -o FuzzResourceReconcile.a github.com/argoproj/argo-events/controllers/eventsource
 	$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzResourceReconcile.a /src/zstd-1.4.2/lib/libzstd.a -lpthread -o $OUT/fuzz_resource_reconcile
+
+	echo "building fuzz_validate_event_source"
+	mv $SRC/cncf-fuzzing/projects/argo/validate_event_source_fuzzer.go $SRC/argo-events/controllers/eventsource/
+	go-fuzz -tags gofuzz -func FuzzValidateEventSource -o FuzzValidateEventSource.a github.com/argoproj/argo-events/controllers/eventsource
+	$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzValidateEventSource.a /src/zstd-1.4.2/lib/libzstd.a -lpthread -o $OUT/fuzz_validate_event_source
 fi
 
 # argo-cd fuzzers

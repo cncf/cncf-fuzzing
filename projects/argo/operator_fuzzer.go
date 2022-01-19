@@ -38,6 +38,8 @@ func catchOperatorPanics() {
 			return
 		} else if strings.Contains(err, "failed to convert to unstructured: error decoding number from json") {
 			return
+		} else if strings.Contains(err, "error calling MarshalJSON for type *v1alpha1.Item: invalid character") {
+			return
 		} else {
 			panic(err)
 		}
