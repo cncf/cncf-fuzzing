@@ -1,4 +1,3 @@
-
 // Copyright 2021 ADA Logics Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +17,8 @@ package server
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/containerd/go-cni"
@@ -33,6 +34,9 @@ import (
 	"github.com/containerd/containerd/pkg/registrar"
 
 	runtime "k8s.io/cri-api/pkg/apis/runtime/v1"
+	//_ "github.com/containerd/containerd/cmd/containerd"
+	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/cmd/containerd/command"
 )
 
 var (
@@ -63,12 +67,43 @@ var (
 	}
 )
 
+const (
+	defaultRoot    = "/var/lib/containerd"
+	defaultState   = "/tmp/containerd"
+	defaultAddress = "/tmp/containerd/containerd.sock"
+)
+
+var (
+	initDaemon sync.Once
+)
+
+func startDaemon() {
+	args := []string{"--log-level", "debug"}
+	go func() {
+		// This is similar to invoking the
+		// containerd binary.
+		// See contrib/fuzz/oss_fuzz_build.sh
+		// for more info.
+		command.StartDaemonForFuzzing(args)
+	}()
+	time.Sleep(time.Second * 4)
+}
+
 // FuzzCRI implements a fuzzer that tests CRI APIs.
 func FuzzCRI(data []byte) int {
+	initDaemon.Do(startDaemon)
+
 	f := fuzz.NewConsumer(data)
-	c := newTestCRIServiceForFuzzing(f)
-	if c == nil {
+
+	client, err := containerd.New(defaultAddress)
+	if err != nil {
 		return 0
+	}
+	defer client.Close()
+
+	c, err := NewCRIService(criconfig.Config{}, client)
+	if err != nil {
+		panic(err)
 	}
 
 	calls, err := f.GetInt()
@@ -80,54 +115,53 @@ func FuzzCRI(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		numberOfOps := 22
-		opType := op % numberOfOps
+		opType := op % len(ops)
 
 		switch ops[opType] {
 		case "createContainer":
-			createContainerFuzz(c, f)
+			createContainerFuzz(c.(*criService), f)
 		case "removeContainer":
-			removeContainerFuzz(c, f)
+			removeContainerFuzz(c.(*criService), f)
 		case "addSandboxes":
-			addSandboxesFuzz(c, f)
+			addSandboxesFuzz(c.(*criService), f)
 		case "listContainers":
-			listContainersFuzz(c, f)
+			listContainersFuzz(c.(*criService), f)
 		case "startContainer":
-			startContainerFuzz(c, f)
+			startContainerFuzz(c.(*criService), f)
 		case "containerStats":
-			containerStatsFuzz(c, f)
+			containerStatsFuzz(c.(*criService), f)
 		case "listContainerStats":
-			listContainerStatsFuzz(c, f)
+			listContainerStatsFuzz(c.(*criService), f)
 		case "containerStatus":
-			containerStatusFuzz(c, f)
+			containerStatusFuzz(c.(*criService), f)
 		case "stopContainer":
-			stopContainerFuzz(c, f)
+			stopContainerFuzz(c.(*criService), f)
 		case "updateContainerResources":
-			updateContainerResourcesFuzz(c, f)
+			updateContainerResourcesFuzz(c.(*criService), f)
 		case "listImages":
-			listImagesFuzz(c, f)
+			listImagesFuzz(c.(*criService), f)
 		case "removeImages":
-			removeImagesFuzz(c, f)
+			removeImagesFuzz(c.(*criService), f)
 		case "imageStatus":
-			imageStatusFuzz(c, f)
+			imageStatusFuzz(c.(*criService), f)
 		case "imageFsInfo":
-			imageFsInfoFuzz(c, f)
+			imageFsInfoFuzz(c.(*criService), f)
 		case "listPodSandbox":
-			listPodSandboxFuzz(c, f)
+			listPodSandboxFuzz(c.(*criService), f)
 		case "portForward":
-			portForwardFuzz(c, f)
+			portForwardFuzz(c.(*criService), f)
 		case "removePodSandbox":
-			removePodSandboxFuzz(c, f)
+			removePodSandboxFuzz(c.(*criService), f)
 		case "runPodSandbox":
-			runPodSandboxFuzz(c, f)
+			runPodSandboxFuzz(c.(*criService), f)
 		case "podSandboxStatus":
-			podSandboxStatusFuzz(c, f)
+			podSandboxStatusFuzz(c.(*criService), f)
 		case "stopPodSandbox":
-			stopPodSandboxFuzz(c, f)
+			stopPodSandboxFuzz(c.(*criService), f)
 		case "status":
-			statusFuzz(c, f)
+			statusFuzz(c.(*criService), f)
 		case "updateRuntimeConfig":
-			updateRuntimeConfigFuzz(c, f)
+			updateRuntimeConfigFuzz(c.(*criService), f)
 		}
 	}
 	return 1
