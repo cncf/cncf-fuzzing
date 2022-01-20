@@ -24,6 +24,12 @@ mv $SRC/cncf-fuzzing/projects/containerd/cri_fuzzer2.go $SRC/containerd/pkg/cri/
 mv pkg/cri/server/service_test.go pkg/cri/server/service_fuzz.go
 compile_go_fuzzer github.com/containerd/containerd/pkg/cri/server FuzzCRI fuzz_cri
 
+mv $SRC/cncf-fuzzing/projects/containerd/apparmor_fuzzer.go $SRC/containerd/contrib/apparmor/
+compile_go_fuzzer github.com/containerd/containerd/contrib/apparmor FuzzLoadDefaultProfile fuzz_load_default_profile
+
+mv $SRC/cncf-fuzzing/projects/containerd/compression_fuzzer.go $SRC/containerd/archive/compression/
+compile_go_fuzzer github.com/containerd/containerd/archive/compression FuzzDecompressStream fuzz_decompress_stream
+
 mv $SRC/cncf-fuzzing/projects/containerd/*.go $SRC/containerd/contrib/fuzz/
 compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzConvertManifest fuzz_convert_manifest
 compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzImagesCheck fuzz_images_check

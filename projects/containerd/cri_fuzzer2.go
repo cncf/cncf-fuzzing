@@ -16,7 +16,10 @@
 package server
 
 import (
+	"fmt"
 	"context"
+	golangruntime "runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -75,6 +78,8 @@ const (
 
 var (
 	initDaemon sync.Once
+
+	executionOrder []string
 )
 
 func startDaemon() {
@@ -89,9 +94,32 @@ func startDaemon() {
 	time.Sleep(time.Second * 4)
 }
 
+func printExecutions() {
+    if r := recover(); r != nil {
+    	var err string
+        switch r.(type) {
+        case string:
+			err = r.(string)
+        case golangruntime.Error:
+			err = r.(golangruntime.Error).Error()
+        case error:
+			err = r.(error).Error()
+		default:
+			err = "uknown error type"
+        }
+        fmt.Println("Executions:")
+        for _, eo := range executionOrder {
+        	fmt.Println(eo)
+        }
+        panic(err)
+    }
+}
+
 // FuzzCRI implements a fuzzer that tests CRI APIs.
 func FuzzCRI(data []byte) int {
 	initDaemon.Do(startDaemon)
+
+	executionOrder = make([]string, 0)
 
 	f := fuzz.NewConsumer(data)
 
@@ -110,6 +138,8 @@ func FuzzCRI(data []byte) int {
 	if err != nil {
 		return 0
 	}
+
+	defer printExecutions()
 	for i := 0; i < calls%40; i++ {
 		op, err := f.GetInt()
 		if err != nil {
@@ -167,6 +197,12 @@ func FuzzCRI(data []byte) int {
 	return 1
 }
 
+func logExecution(apiName, request string) {
+	var logString strings.Builder
+	logString.WriteString(fmt.Sprintf("Calling %s with \n %s \n\n", apiName, request))
+	executionOrder = append(executionOrder, logString.String())
+}
+
 // createContainerFuzz creates a CreateContainerRequest and passes
 // it to c.CreateContainer
 func createContainerFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
@@ -175,10 +211,9 @@ func createContainerFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.CreateContainer(context.Background(), r)
-	if err != nil {
-		return err
-	}
+	_, _ = c.CreateContainer(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.CreateContainer", reqString)
 	return nil
 }
 
@@ -191,6 +226,8 @@ func removeContainerFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.RemoveContainer(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.RemoveContainer", reqString)
 	return nil
 }
 
@@ -225,6 +262,10 @@ func getSandboxFuzz(f *fuzz.ConsumeFuzzer) (sandboxstore.Sandbox, error) {
 	if err != nil {
 		return sandboxstore.Sandbox{}, err
 	}
+
+	reqString := fmt.Sprintf("metadata: %+v\nstatus: %s", metadata, status)
+	logExecution("sandboxstore.NewSandbox", reqString)
+
 	return sandboxstore.NewSandbox(metadata, status), nil
 }
 
@@ -237,6 +278,8 @@ func listContainersFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ListContainers(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ListContainers", reqString)
 	return nil
 }
 
@@ -249,6 +292,8 @@ func startContainerFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.StartContainer(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.StartContainer", reqString)
 	return nil
 }
 
@@ -261,6 +306,8 @@ func containerStatsFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ContainerStats(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ContainerStats", reqString)
 	return nil
 }
 
@@ -273,6 +320,8 @@ func listContainerStatsFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ListContainerStats(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ListContainerStats", reqString)
 	return nil
 }
 
@@ -285,6 +334,8 @@ func containerStatusFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ContainerStatus(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ContainerStatus", reqString)
 	return nil
 }
 
@@ -297,6 +348,8 @@ func stopContainerFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.StopContainer(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.StopContainer", reqString)
 	return nil
 }
 
@@ -309,6 +362,8 @@ func updateContainerResourcesFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.UpdateContainerResources(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.UpdateContainerResources", reqString)
 	return nil
 }
 
@@ -321,6 +376,8 @@ func listImagesFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ListImages(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ListImages", reqString)
 	return nil
 }
 
@@ -333,6 +390,8 @@ func removeImagesFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.RemoveImage(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.RemoveImage", reqString)
 	return nil
 }
 
@@ -345,6 +404,8 @@ func imageStatusFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ImageStatus(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ImageStatus", reqString)
 	return nil
 }
 
@@ -357,6 +418,8 @@ func imageFsInfoFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ImageFsInfo(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ImageFsInfo", reqString)
 	return nil
 }
 
@@ -369,6 +432,8 @@ func listPodSandboxFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.ListPodSandbox(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.ListPodSandbox", reqString)
 	return nil
 }
 
@@ -381,6 +446,8 @@ func portForwardFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.PortForward(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.PortForward", reqString)
 	return nil
 }
 
@@ -393,6 +460,8 @@ func removePodSandboxFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.RemovePodSandbox(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.RemovePodSandbox", reqString)
 	return nil
 }
 
@@ -405,6 +474,8 @@ func runPodSandboxFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.RunPodSandbox(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.RunPodSandbox", reqString)
 	return nil
 }
 
@@ -417,6 +488,8 @@ func podSandboxStatusFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.PodSandboxStatus(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.PodSandboxStatus", reqString)
 	return nil
 }
 
@@ -429,6 +502,8 @@ func stopPodSandboxFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.StopPodSandbox(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.StopPodSandbox", reqString)
 	return nil
 }
 
@@ -440,6 +515,8 @@ func statusFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.Status(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.Status", reqString)
 	return nil
 }
 
@@ -450,6 +527,8 @@ func updateRuntimeConfigFuzz(c *criService, f *fuzz.ConsumeFuzzer) error {
 		return err
 	}
 	_, _ = c.UpdateRuntimeConfig(context.Background(), r)
+	reqString := fmt.Sprintf("%+v", r)
+	logExecution("c.UpdateRuntimeConfig", reqString)
 	return nil
 }
 
