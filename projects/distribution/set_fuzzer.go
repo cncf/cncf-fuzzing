@@ -13,19 +13,24 @@
 // limitations under the License.
 //
 
-package manifestlist
+package digestset
 
-func FuzzUnmarshalJSON(data []byte) int {
-	m := new(DeserializedManifestList)
-	err := m.UnmarshalJSON(b)
-	if err != nil {
+import (
+	_ "crypto/sha256"
+	digest "github.com/opencontainers/go-digest"
+)
+
+func FuzzSet(data []byte) int {
+	dset := NewSet()
+	newDgst := digest.NewDigestFromBytes("sha256", data)
+	if err := dset.Add(newDgst); err != nil {
 		return 0
 	}
-	b, err := m.MarshalSON()
-	if err != nil {
+
+	if err := dset.Add(digest.Digest(string(data))); err != nil {
 		return 0
 	}
-	_, _, _ = m.Payload()
-	_ = m.References()
+
+	_, _ = dset.Lookup(string(newDgst))
 	return 1
 }
