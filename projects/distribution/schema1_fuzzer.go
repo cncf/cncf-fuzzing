@@ -13,45 +13,48 @@
 // limitations under the License.
 //
 
-package token
+package schema1
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/distribution/distribution/v3"
+	dcontext "github.com/distribution/distribution/v3/context"
+	"github.com/distribution/distribution/v3/reference"
+	"github.com/docker/libtrust"
+	"github.com/opencontainers/go-digest"
 )
 
-func FuzzToken(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	rawToken, err := f.GetString()
+func FuzzSchema1Build(data []byte) int {
+
+	pk, err := libtrust.GenerateECP256PrivateKey()
 	if err != nil {
 		return 0
 	}
-	verifyOps := VerifyOptions{}
-	err = f.GenerateStruct(&verifyOps)
+
+	ref, err := reference.WithName("testrepo")
 	if err != nil {
 		return 0
 	}
-	token, err := NewToken(rawToken)
+	ref, err = reference.WithTag(ref, "testtag")
 	if err != nil {
 		return 0
 	}
-	token.Verify(verifyOps)
-	_, _ = token.VerifySigningKey(verifyOps)
+
+	bs := &mockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
+
+	builder := NewConfigManifestBuilder(bs, pk, ref, data)
+
+	_, _ = builder.Build(dcontext.Background())
 	return 1
 }
 
-func FuzzToken2(data []byte) int {
+func FuzzSchema1Verify(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	verifyOps := VerifyOptions{}
-	err := f.GenerateStruct(&verifyOps)
+	sm := &SignedManifest{}
+	err := f.GenerateStruct(sm)
 	if err != nil {
 		return 0
 	}
-	token := &Token{}
-	err = f.GenerateStruct(token)
-	if err != nil {
-		return 0
-	}
-	token.Verify(verifyOps)
-	_, _ = token.VerifySigningKey(verifyOps)
+	_, _ = Verify(sm)
 	return 1
 }
