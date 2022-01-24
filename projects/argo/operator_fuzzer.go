@@ -40,6 +40,10 @@ func catchOperatorPanics() {
 			return
 		} else if strings.Contains(err, "error calling MarshalJSON for type *v1alpha1.Item: invalid character") {
 			return
+		} else if strings.Contains(err, "error calling MarshalJSON for type *v1alpha1.Item: unexpected end of JSON input") {
+			return
+		} else if strings.Contains(err, "failed to convert to unstructured: json: error calling MarshalJSON for type *v1alpha1.Plugin: unexpected end of JSON input") {
+			return
 		} else {
 			panic(err)
 		}
