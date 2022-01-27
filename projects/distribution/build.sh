@@ -1,3 +1,4 @@
+#!/bin/bash -eu
 set -o nounset
 set -o pipefail
 set -o errexit
@@ -6,8 +7,6 @@ set -x
 export CNCFPATH="${SRC}/"cncf-fuzzing/projects/distribution
 export DISTRIBUTION="github.com/distribution/distribution/v3"
 export REGISTRYPATH="${DISTRIBUTION}/registry"
-
-$SRC/distribution/script/oss_fuzz_build.sh
 
 mv $CNCFPATH/inmemory_fuzzer.go $SRC/distribution/registry/storage/driver/inmemory/
 
@@ -40,7 +39,11 @@ mv $CNCFPATH/authchallenge_fuzzer.go $SRC/distribution/registry/client/auth/chal
 mv $CNCFPATH/token_fuzzer.go $SRC/distribution/registry/auth/token/
 mv $CNCFPATH/set_fuzzer.go $SRC/distribution/digestset/
 
-go mod tidy && go mod vendor
+go mod edit -dropreplace google.golang.org/grpc
+go mod download && go mod tidy && go mod vendor
+
+$SRC/distribution/script/oss_fuzz_build.sh
+
 compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_normalized_named
 compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_manifest_builder
 
