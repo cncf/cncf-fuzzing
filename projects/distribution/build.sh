@@ -38,6 +38,7 @@ mv $CNCFPATH/schema1_fuzzer.go $SRC/distribution/manifest/schema1/
 mv $CNCFPATH/authchallenge_fuzzer.go $SRC/distribution/registry/client/auth/challenge/
 mv $CNCFPATH/token_fuzzer.go $SRC/distribution/registry/auth/token/
 mv $CNCFPATH/set_fuzzer.go $SRC/distribution/digestset/
+mv $CNCFPATH/reference_fuzzer2.go $SRC/distribution/reference/
 
 go mod edit -dropreplace google.golang.org/grpc
 go mod download && go mod tidy && go mod vendor
@@ -45,6 +46,7 @@ go mod download && go mod tidy && go mod vendor
 $SRC/distribution/script/oss_fuzz_build.sh
 
 compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_normalized_named
+compile_go_fuzzer $DISTRIBUTION/reference FuzzWithNameAndWithTag fuzz_with_name_and_tag
 compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_manifest_builder
 
 compile_go_fuzzer $REGISTRYPATH/auth/htpasswd FuzzAccessController fuzz_access_controller
