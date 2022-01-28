@@ -16,6 +16,7 @@
 package repository
 
 import (
+	"context"
 	"os"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -37,6 +38,6 @@ func FuzzGenerateManifests(data []byte) int {
 	}
 	src := argoappv1.ApplicationSource{Path: "manifests/base"}
 	q := apiclient.ManifestRequest{Repo: &argoappv1.Repository{}, ApplicationSource: &src}
-	_, _ = GenerateManifests(dir, "/", "", &q, false)
+	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false)
 	return 1
 }
