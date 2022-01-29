@@ -19,6 +19,9 @@ export RUNC_FUZZERS=/src/cncf-fuzzing/projects/runc
 
 compile_go_fuzzer $RUNC_PATH/libcontainer/userns FuzzUIDMap fuzz_uid_map
 
+mv $RUNC_FUZZERS/libcontainer_utils_fuzzer.go $SRC/runc/libcontainer/utils/
+compile_go_fuzzer $RUNC_PATH/libcontainer/utils FuzzstripRoot fuzz_strip_root
+
 mv $RUNC_FUZZERS/fs2_fuzzer.go $SRC/runc/libcontainer/cgroups/fs2/
 compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/fs2 FuzzGetStats get_stats_fuzzer
 compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/fs2 FuzzCgroupReader cgroup_reader_fuzzer
