@@ -16,22 +16,12 @@
 package intelrdt
 
 import (
-	"bytes"
 	"strings"
 	"testing"
 )
 
 func init() {
 	testing.Init()
-}
-
-func FuzzFindMpDir(data []byte) int {
-	reader := strings.NewReader(string(data))
-	_, err := findIntelRdtMountpointDir(reader)
-	if err != nil {
-		return 0
-	}
-	return 1
 }
 
 func FuzzParseMonFeatures(data []byte) int {
@@ -62,11 +52,5 @@ func FuzzSetCacheScema(data []byte) int {
 	intelrdt := NewManager(helper.config, "", helper.IntelRdtPath)
 	intelrdt.Set(helper.config)
 
-	return 1
-}
-
-func FuzzfindIntelRdtMountpointDir(data []byte) int {
-	input := bytes.NewReader(data)
-	_, _ = findIntelRdtMountpointDir(input)
 	return 1
 }

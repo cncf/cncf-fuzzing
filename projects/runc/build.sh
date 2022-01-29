@@ -1,11 +1,15 @@
 #!/bin/bash -eu
+set -o nounset
+set -o pipefail
+set -o errexit
+set -x
 
 go clean --modcache
 go mod tidy
 go mod vendor
 
 # This one has a fuzzer that breaks
-rm /root/go/pkg/mod/github.com/cilium/ebpf@v0.7.0/internal/btf/fuzz.go
+#rm /root/go/pkg/mod/github.com/cilium/ebpf@v0.7.0/internal/btf/fuzz.go
 
 rm -r $SRC/runc/vendor
 go get github.com/AdaLogics/go-fuzz-headers
@@ -30,9 +34,7 @@ compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/fscommon FuzzSecurejoin secure
 
 mv $RUNC_FUZZERS/intelrdt_fuzzer.go $SRC/runc/libcontainer/intelrdt/
 mv $SRC/runc/libcontainer/intelrdt/util_test.go $SRC/runc/libcontainer/intelrdt/util_test_fuzz.go
-compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzFindMpDir find_mountpoint_dir_fuzzer
 compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzSetCacheScema set_cache_schema_fuzzer
-compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzfindIntelRdtMountpointDir fuzz_find_intel_rdt_mountpoint_dir
 compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzParseMonFeatures parse_mon_features_fuzzer
 
 mv $RUNC_FUZZERS/libcontainer_fuzzer.go $SRC/runc/libcontainer/
