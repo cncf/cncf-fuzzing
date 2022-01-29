@@ -18,6 +18,7 @@ package mvcc
 import (
 	"context"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -25,6 +26,10 @@ import (
 	"go.etcd.io/etcd/server/v3/lease"
 	betesting "go.etcd.io/etcd/server/v3/storage/backend/testing"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest"
+
+	"github.com/google/btree"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
@@ -101,4 +106,164 @@ func FuzzMvccStorage(data []byte) int {
 	}()
 
 	return 1
+}
+
+func catchFuzzMvccIndex() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "'put' with an unexpected smaller revision") {
+			return
+		} else {
+			panic(err)
+		}
+	}
+
+}
+
+func FuzzMvccIndex(data []byte) int {
+	defer catchFuzzMvccIndex()
+	ops := map[int]string{
+		0: "Put",
+		1: "Get",
+		2: "Range",
+		3: "Equal",
+	}
+	f := fuzz.NewConsumer(data)
+	t := &testing.T{}
+	lg := zaptest.NewLogger(t, zaptest.Level(zapcore.FatalLevel))
+	ti := newTreeIndex(lg)
+
+	noOfCalls, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+
+	for i := 0; i < noOfCalls%10; i++ {
+		opType, err := f.GetInt()
+		if err != nil {
+			return 0
+		}
+		switch ops[opType] {
+		case "Put":
+			putBytes, err := f.GetBytes()
+			if err != nil {
+				return 0
+			}
+			rev, err := createRev(f)
+			if err != nil {
+				return 0
+			}
+			ti.Put(putBytes, rev)
+		case "Get":
+			getBytes, err := f.GetBytes()
+			if err != nil {
+				return 0
+			}
+			atRev, err := f.GetInt()
+			if err != nil {
+				return 0
+			}
+			_, _, _, _ = ti.Get(getBytes, int64(atRev))
+		case "Range":
+			key, err := f.GetBytes()
+			if err != nil {
+				return 0
+			}
+			end, err := f.GetBytes()
+			if err != nil {
+				return 0
+			}
+			atRev, err := f.GetInt()
+			if err != nil {
+				return 0
+			}
+			_, _ = ti.Range(key, end, int64(atRev))
+		case "Equal":
+			numb, err := f.GetInt()
+			if err != nil {
+				return 0
+			}
+			newInd, err := f.GetInt()
+			if err != nil {
+				return 0
+			}
+			am := ti.Compact(int64(newInd))
+			keep := ti.Keep(int64(newInd))
+			if !(reflect.DeepEqual(am, keep)) {
+				return 0
+			}
+			lg2 := zaptest.NewLogger(t, zaptest.Level(zapcore.FatalLevel))
+			wti := &treeIndex{tree: btree.New(32), lg: lg2}
+			for i := 0; i < numb%10; i++ {
+				rev1, err := createRev(f)
+				if err != nil {
+					return 0
+				}
+				rev2, err := createRev(f)
+				if err != nil {
+					return 0
+				}
+				key, err := f.GetBytes()
+				if err != nil {
+					return 0
+				}
+				ver, err := f.GetInt()
+				if err != nil {
+					return 0
+				}
+				created, err := createRev(f)
+				if err != nil {
+					return 0
+				}
+				if _, ok := am[rev1]; ok || rev1.GreaterThan(rev2) {
+					remove, err := f.GetBool()
+					if err != nil {
+						return 0
+					}
+					if remove {
+						wti.Tombstone(key, rev1)
+					} else {
+						restoreFuzz(wti, key, created, rev1, int64(ver))
+					}
+				}
+			}
+			_ = ti.Equal(wti)
+		}
+	}
+	return 1
+}
+
+func createRev(f *fuzz.ConsumeFuzzer) (revision, error) {
+	mainInt64, err := f.GetInt()
+	if err != nil {
+		return revision{}, err
+	}
+	subInt64, err := f.GetInt()
+	if err != nil {
+		return revision{}, err
+	}
+	return revision{main: int64(mainInt64), sub: int64(subInt64)}, nil
+}
+
+func restoreFuzz(ti *treeIndex, key []byte, created, modified revision, ver int64) {
+	keyi := &keyIndex{key: key}
+
+	ti.Lock()
+	defer ti.Unlock()
+	item := ti.tree.Get(keyi)
+	if item == nil {
+		keyi.restore(ti.lg, created, modified, ver)
+		ti.tree.ReplaceOrInsert(keyi)
+		return
+	}
+	okeyi := item.(*keyIndex)
+	okeyi.put(ti.lg, modified.main, modified.sub)
 }
