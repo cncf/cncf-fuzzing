@@ -23,6 +23,8 @@ import (
 	"go.etcd.io/etcd/raft/v3/raftpb"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
 	"go.uber.org/zap"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func FuzzWalCreate(data []byte) int {
@@ -54,5 +56,24 @@ func FuzzWalCreate(data []byte) int {
 	if !bytes.Equal(data, metadata) {
 		panic("data and metadata are not equal, but they should be")
 	}
+	return 1
+}
+
+func FuzzMinimalEtcdVersion(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	noOfEnts, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	ents := make([]raftpb.Entry, 0)
+	for i := 0; i < noOfEnts%10; i++ {
+		newEnt := raftpb.Entry{}
+		err = f.GenerateStruct(&newEnt)
+		if err != nil {
+			return 0
+		}
+		ents = append(ents, newEnt)
+	}
+	_ = MinimalEtcdVersion(ents)
 	return 1
 }

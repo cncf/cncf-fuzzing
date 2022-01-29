@@ -24,6 +24,7 @@ compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marsh
 echo "building wal fuzzer"
 cp $SRC/cncf-fuzzing/projects/etcd/wal_fuzzer.go $SRC/etcd/server/storage/wal/
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzWalCreate fuzz_wal_create
+compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzMinimalEtcdVersion fuzz_minimal_etcd_version
 
 # grpc proxy fuzzer
 echo "building grpc proxy fuzzer"
@@ -64,6 +65,7 @@ mv kvstore_test.go kvstore_test_fuzz.go
 # disable some logging:
 sed -i '/s.lg.Info("kvstore restored"/c\\/\/s.lg.Info("kvstore restored"' $SRC/etcd/server/storage/mvcc/kvstore.go
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/mvcc FuzzMvccStorage fuzz_mvcc_storage
+compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/mvcc FuzzMvccIndex fuzz_mvcc_index
 
 # proxy fuzzer
 cd $SRC/etcd/pkg/proxy
