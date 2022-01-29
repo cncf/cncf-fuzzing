@@ -43,7 +43,7 @@ var (
 )
 
 func initCluster() {
-	cl = integration.NewCluster(t3, 1)
+	cl = integration.NewCluster(t3, &integration.ClusterConfig{Size: 3})
 	cl.Launch(t3)
 	//defer cl.Terminate(t)
 
