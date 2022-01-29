@@ -155,12 +155,8 @@ func FuzzGRPCApis(data []byte) int {
 
 	// Create test cluster
 	defer cleanupDir()
-	clus, err := integration.NewClusterV3Fuzz(t2, &integration.ClusterConfig{Size: 3}, f)
-	if err != nil {
-		return 0
-	}
+	clus := integration.NewCluster(t2, &integration.ClusterConfig{Size: 3})
 	defer clus.Terminate(t2)
-	defer cleanUpDir()
 
 	kvc := integration.ToGRPC(clus.RandClient()).KV
 

@@ -96,10 +96,8 @@ func FuzzKVProxy(data []byte) int {
 	}
 
 	defer cleanupDir()
-	clus, err := integration2.NewClusterV3Fuzz(t1, &integration2.ClusterConfig{Size: 1}, f)
-	if err != nil {
-		return 0
-	}
+	clus := integration2.NewCluster(t1, &integration2.ClusterConfig{Size: 1})
+
 	defer clus.Terminate(t1)
 
 	kvts := newKVProxyServer([]string{clus.Members[0].GRPCURL()}, t1)
