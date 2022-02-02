@@ -68,6 +68,7 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/db FuzzCreateRepoCertifica
 
 mv $SRC/cncf-fuzzing/projects/argo/argo-cd_util_grpc_fuzzer.go $SRC/argo-cd/util/grpc/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/grpc FuzzUserAgentUnaryServerInterceptor fuzz_user_agent_unary_server_interceptor
+compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/grpc FuzzuserAgentEnforcer fuzz_user_agent_enforcer
 
 mv $SRC/cncf-fuzzing/projects/argo/argo-cd_rbac_fuzzer.go $SRC/argo-cd/util/rbac/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/rbac FuzzLoadPolicy fuzz_load_policy
