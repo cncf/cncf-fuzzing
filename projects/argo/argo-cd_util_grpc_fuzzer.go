@@ -16,8 +16,12 @@
 package grpc
 
 import (
+	"context"
 	"runtime"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
+	"google.golang.org/grpc/metadata"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
@@ -56,5 +60,27 @@ func FuzzUserAgentUnaryServerInterceptor(data []byte) int {
 		return 0
 	}
 	_ = UserAgentUnaryServerInterceptor(clientName, contraintStr)
+	return 1
+}
+
+func FuzzuserAgentEnforcer(data []byte) int {
+	clientName := "argo-cd"
+	f := fuzz.NewConsumer(data)
+	constraintStr, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	semverConstraint, err := semver.NewConstraint(constraintStr)
+	if err != nil {
+		return 0
+	}
+	mdMap := make(map[string]string)
+	err = f.FuzzMap(&mdMap)
+	if err != nil {
+		return 0
+	}
+	md := metadata.New(mdMap)
+	ctx := metadata.NewIncomingContext(context.Background(), md)
+	_ = userAgentEnforcer(ctx, clientName, constraintStr, semverConstraint)
 	return 1
 }
