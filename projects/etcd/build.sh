@@ -40,13 +40,6 @@ cd $SRC/etcd/tests/fuzzing
 compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzGRPCApis fuzz_grpc_apis
 cd -
 
-# v2_http_kv_fuzzer.go
-echo "building v2 http kv fuzzer"
-mv $SRC/cncf-fuzzing/projects/etcd/v2_http_kv_fuzzer.go $SRC/etcd/tests/fuzzing/
-cd $SRC/etcd/tests/fuzzing
-go mod tidy
-compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzV2HTTP fuzz_v2_http
-
 # snapshot fuzzer
 # timeouts during coverage build
 if [ "$SANITIZER" != "coverage" ]
@@ -119,12 +112,6 @@ mv diff_test.go diff_test_fuzz.go
 mv log_test.go log_test_fuzz.go
 mv raft_test.go raft_test_fuzz.go
 compile_go_fuzzer go.etcd.io/etcd/raft/v3 FuzzStep fuzz_step
-
-# v2auth fuzzer
-cd $SRC/etcd/server/etcdserver/api/v2auth
-mv $SRC/cncf-fuzzing/projects/etcd/v2auth_fuzzer.go ./
-mv auth_test.go auth_test_fuzz.go
-compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/v2auth FuzzCreateOrUpdateUser FuzzCreateOrUpdateUser
 
 # file_purge_fuzzer
 cd $SRC/etcd/client/pkg/fileutil
