@@ -18,7 +18,55 @@ package common
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+	"runtime"
+	"strings"
+	"time"
 )
+
+func catchPanics() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "The task was nil.") {
+			return
+		} else {
+			panic(err)
+		}
+	}
+}
+
+type testFuzzContext struct {
+	status    map[string]time.Time
+	testTasks []*wfv1.DAGTask
+}
+
+func (d *testFuzzContext) GetTask(taskName string) *wfv1.DAGTask {
+	for _, task := range d.testTasks {
+		if task.Name == taskName {
+			return task
+		}
+	}
+	panic("The task was nil.")
+	return nil
+}
+
+func (d *testFuzzContext) GetTaskDependencies(taskName string) []string {
+	return d.GetTask(taskName).Dependencies
+}
+
+func (d *testFuzzContext) GetTaskFinishedAtTime(taskName string) time.Time {
+	if finished, ok := d.status[taskName]; ok {
+		return finished
+	}
+	return time.Now()
+}
 
 func FuzzGetTaskDependencies(data []byte) int {
 	f := fuzz.NewConsumer(data)
@@ -41,9 +89,10 @@ func FuzzGetTaskDependencies(data []byte) int {
 		}
 		testTasks = append(testTasks, testTask)
 	}
-	ctx := &testContext{
+	ctx := &testFuzzContext{
 		testTasks: testTasks,
 	}
+	defer catchPanics()
 	_, _ = GetTaskDependencies(task, ctx)
 	return 1
 }
