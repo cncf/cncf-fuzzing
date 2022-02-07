@@ -663,10 +663,18 @@ func catchPanics() {
 			err = r.(string)
 		case runtime.Error:
 			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
 		}
-		if !strings.Contains(err, "should never fail") {
-			// Getting to this point means that the fuzzer
-			// did not stop because of a manually added panic.
+		if strings.Contains(err, "unknown entry type; must be either EntryNormal or EntryConfChange") {
+			return
+		} else if strings.Contains(err, "should never fail") {
+			return
+		} else if strings.Contains(err, "failed to unmarshal confChangeContext") {
+			return
+		} else if strings.Contains(err, "unknown ConfChange type") {
+			return
+		} else {
 			panic(err)
 		}
 	}
@@ -748,6 +756,8 @@ func catchPanics2() {
 		} else if strings.Contains(err, "is not a valid semver identifier") {
 			return
 		} else if strings.Contains(err, "invalid downgrade; server version is lower than determined cluster version") {
+			return
+		} else if strings.Contains(err, "unexpected sort target") {
 			return
 		} else {
 			panic(err)
