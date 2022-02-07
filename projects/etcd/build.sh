@@ -7,6 +7,9 @@ set -x
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 
+# Change panic message so we can catch them:
+sed 's/panic(err)/panic("GOT A FUZZ ERROR")/g' -i $SRC/etcd/raft/raft.go
+
 
 mkdir $SRC/etcd/tests/fuzzing
 

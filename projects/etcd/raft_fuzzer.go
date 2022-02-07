@@ -18,9 +18,20 @@ package raft
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	pb "go.etcd.io/etcd/raft/v3/raftpb"
+	"os"
 	"runtime"
 	"strings"
+	"sync"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
+
+var initter sync.Once
+
+func initFunc() {
+	SetLogger(discardLogger)
+}
 
 func getMsgType(i int) pb.MessageType {
 	allTypes := map[int]pb.MessageType{0: pb.MsgHup,
@@ -63,6 +74,17 @@ func shouldReport(err string) bool {
 	if (strings.Contains(err, "unable to restore config")) && (strings.Contains(err, "removed all voters")) {
 		return false
 	}
+	if strings.Contains(err, "ENCOUNTERED A PANIC OR FATAL") {
+		return false
+	}
+	// This string is found in raft.go because we change all
+	// occurrences from panic(err) to panic("GOT A FUZZ ERROR").
+	// This is done in build.sh as a simple solution to catch
+	// all the panic(err)'s that would otherwise be fuzz
+	// blockers.
+	if strings.Contains(err, "GOT A FUZZ ERROR") {
+		return false
+	}
 
 	return true
 }
@@ -84,7 +106,21 @@ func catchPanics() {
 	}
 }
 
+func silentLogger(options ...zap.Option) *zap.Logger {
+	encoderCfg := zapcore.EncoderConfig{
+		MessageKey:     "msg",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+	}
+	core := zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), os.Stdout, zap.FatalLevel)
+	return zap.New(core).WithOptions(options...)
+}
+
 func FuzzStep(data []byte) int {
+	initter.Do(initFunc)
 	defer catchPanics()
 	f := fuzz.NewConsumer(data)
 	msg := pb.Message{}
@@ -99,11 +135,76 @@ func FuzzStep(data []byte) int {
 	}
 	msg.Type = getMsgType(msgTypeIndex)
 
-	r := newTestRaft(1, 5, 1, newTestMemoryStorage(withPeers(1, 2)))
+	cfg := newTestConfig(1, 5, 1, newTestMemoryStorage(withPeers(1, 2)))
+	raftLogger := NewRaftLoggerZap(silentLogger())
+	cfg.Logger = raftLogger
+	r := newRaft(cfg)
 	r.becomeCandidate()
 	r.becomeLeader()
 	r.prs.Progress[2].BecomeReplicate()
 	_ = r.Step(msg)
 	_ = r.readMessages()
 	return 1
+}
+
+// NewRaftLoggerZap converts "*zap.Logger" to "raft.Logger".
+func NewRaftLoggerZap(lg *zap.Logger) Logger {
+	return &zapRaftLogger{lg: lg, sugar: lg.Sugar()}
+}
+
+type zapRaftLogger struct {
+	lg    *zap.Logger
+	sugar *zap.SugaredLogger
+}
+
+func (zl *zapRaftLogger) Debug(args ...interface{}) {
+	zl.sugar.Debug(args...)
+}
+
+func (zl *zapRaftLogger) Debugf(format string, args ...interface{}) {
+	zl.sugar.Debugf(format, args...)
+}
+
+func (zl *zapRaftLogger) Error(args ...interface{}) {
+	zl.sugar.Error(args...)
+}
+
+func (zl *zapRaftLogger) Errorf(format string, args ...interface{}) {
+	zl.sugar.Errorf(format, args...)
+}
+
+func (zl *zapRaftLogger) Info(args ...interface{}) {
+	zl.sugar.Info(args...)
+}
+
+func (zl *zapRaftLogger) Infof(format string, args ...interface{}) {
+	zl.sugar.Infof(format, args...)
+}
+
+func (zl *zapRaftLogger) Warning(args ...interface{}) {
+	zl.sugar.Warn(args...)
+}
+
+func (zl *zapRaftLogger) Warningf(format string, args ...interface{}) {
+	zl.sugar.Warnf(format, args...)
+}
+
+func (zl *zapRaftLogger) Fatal(args ...interface{}) {
+	panic("ENCOUNTERED A PANIC OR FATAL")
+	zl.sugar.Fatal(args...)
+}
+
+func (zl *zapRaftLogger) Fatalf(format string, args ...interface{}) {
+	panic("ENCOUNTERED A PANIC OR FATAL")
+	zl.sugar.Fatalf(format, args...)
+}
+
+func (zl *zapRaftLogger) Panic(args ...interface{}) {
+	panic("ENCOUNTERED A PANIC OR FATAL")
+	zl.sugar.Panic(args...)
+}
+
+func (zl *zapRaftLogger) Panicf(format string, args ...interface{}) {
+	panic("ENCOUNTERED A PANIC OR FATAL")
+	zl.sugar.Panicf(format, args...)
 }
