@@ -759,6 +759,8 @@ func catchPanics2() {
 			return
 		} else if strings.Contains(err, "unexpected sort target") {
 			return
+		} else if strings.Contains(err, "failed to unmarshal 'authpb.User'") {
+			return
 		} else {
 			panic(err)
 		}
