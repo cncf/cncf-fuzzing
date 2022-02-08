@@ -20,6 +20,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	apiextensionsValidation "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -42,9 +43,10 @@ import (
 	policyValidation "k8s.io/kubernetes/pkg/apis/policy/validation"
 	"k8s.io/kubernetes/pkg/apis/rbac"
 	rbacValidation "k8s.io/kubernetes/pkg/apis/rbac/validation"
+	rbacregistryvalidation "k8s.io/kubernetes/pkg/registry/rbac/validation"
 )
 
-const maxFuzzers = 45
+const maxFuzzers = 50
 
 func FuzzAllValidation(data []byte) int {
 	if len(data) < 10 {
@@ -134,6 +136,16 @@ func FuzzAllValidation(data []byte) int {
 		return FuzzValidateRoleBindingUpdate(inputData)
 	} else if op == 44 {
 		return FuzzValidateClusterRoleBindingUpdate(inputData)
+	} else if op == 45 {
+		return FuzzCompactRules(inputData)
+	} else if op == 46 {
+		return FuzzValidateResourceQuotaSpec(inputData)
+	} else if op == 47 {
+		return FuzzValidateResourceQuotaUpdate(inputData)
+	} else if op == 48 {
+		FuzzValidateResourceQuotaStatusUpdate(inputData)
+	} else if op == 49 {
+		FuzzValidateServiceStatusUpdate(inputData)
 	}
 	return 0
 }
@@ -821,5 +833,80 @@ func FuzzValidateClusterRoleBindingUpdate(data []byte) int {
 		return 0
 	}
 	_ = rbacValidation.ValidateClusterRoleBindingUpdate(clusterRoleBinding1, clusterRoleBinding2)
+	return 1
+}
+
+func FuzzCompactRules(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	rules := make([]rbacv1.PolicyRule, 0)
+	err := f.CreateSlice(&rules)
+	if err != nil {
+		return 0
+	}
+	_, _ = rbacregistryvalidation.CompactRules(rules)
+	return 1
+}
+
+func FuzzValidateResourceQuotaSpec(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	resourceQuotaSpec := &core.ResourceQuotaSpec{}
+	err := f.GenerateStruct(resourceQuotaSpec)
+	if err != nil {
+		return 0
+	}
+	fld := &field.Path{}
+	err = f.GenerateStruct(fld)
+	if err != nil {
+		return 0
+	}
+	_ = validation.ValidateResourceQuotaSpec(resourceQuotaSpec, validation.ResourceQuotaValidationOptions{}, fld)
+	return 1
+}
+
+func FuzzValidateResourceQuotaUpdate(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	newResourceQuota := &core.ResourceQuota{}
+	err := f.GenerateStruct(newResourceQuota)
+	if err != nil {
+		return 0
+	}
+	oldResourceQuota := &core.ResourceQuota{}
+	err = f.GenerateStruct(oldResourceQuota)
+	if err != nil {
+		return 0
+	}
+	_ = validation.ValidateResourceQuotaUpdate(newResourceQuota, oldResourceQuota, validation.ResourceQuotaValidationOptions{})
+	return 1
+}
+
+func FuzzValidateResourceQuotaStatusUpdate(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	newResourceQuota := &core.ResourceQuota{}
+	err := f.GenerateStruct(newResourceQuota)
+	if err != nil {
+		return 0
+	}
+	oldResourceQuota := &core.ResourceQuota{}
+	err = f.GenerateStruct(oldResourceQuota)
+	if err != nil {
+		return 0
+	}
+	_ = validation.ValidateResourceQuotaStatusUpdate(newResourceQuota, oldResourceQuota)
+	return 1
+}
+
+func FuzzValidateServiceStatusUpdate(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	service := &core.Service{}
+	err := f.GenerateStruct(service)
+	if err != nil {
+		return 0
+	}
+	oldService := &core.Service{}
+	err = f.GenerateStruct(oldService)
+	if err != nil {
+		return 0
+	}
+	_ = validation.ValidateServiceStatusUpdate(service, oldService)
 	return 1
 }
