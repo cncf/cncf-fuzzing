@@ -9,6 +9,7 @@ fuzzing has become more integrated into the software development lifecycle
 and is increasingly being used by developers. 
 
 CNCF projects that use fuzzing include:
+- [Argo](https://github.com/cncf/cncf-fuzzing/tree/main/projects/argo)
 - [Envoy](https://github.com/envoyproxy/envoy/tree/main/test/fuzz)
 - [Fluent-bit](https://github.com/fluent/fluent-bit/tree/master/tests/internal/fuzzers)
 - [Linkerd2-proxy](https://github.com/linkerd/linkerd2-proxy/blob/main/docs/FUZZING.md)
