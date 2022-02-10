@@ -17,6 +17,7 @@ package etcdserver
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"strings"
 	"sync"
@@ -34,6 +35,7 @@ import (
 	membershippb "go.etcd.io/etcd/api/v3/membershippb"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/pkg/v3/wait"
+	"go.etcd.io/etcd/raft/v3"
 	"go.etcd.io/etcd/raft/v3/raftpb"
 	"go.etcd.io/etcd/server/v3/auth"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/membership"
@@ -41,6 +43,7 @@ import (
 	"go.etcd.io/etcd/server/v3/etcdserver/api/v3alarm"
 	"go.etcd.io/etcd/server/v3/etcdserver/cindex"
 	"go.etcd.io/etcd/server/v3/lease"
+	"go.etcd.io/etcd/server/v3/mock/mockstorage"
 	serverstorage "go.etcd.io/etcd/server/v3/storage"
 	betesting "go.etcd.io/etcd/server/v3/storage/backend/testing"
 	"go.etcd.io/etcd/server/v3/storage/mvcc"
@@ -82,6 +85,7 @@ var (
 		27: "ClusterMemberAttrSet",
 		28: "DowngradeInfoSet",
 	}
+	srv *EtcdServer
 )
 
 func dummyIndexWaiter(index uint64) <-chan struct{} {
@@ -627,20 +631,25 @@ func init() {
 		panic(err)
 	}
 
-	srv := &EtcdServer{
+	srv = &EtcdServer{
 		be:           be,
 		lgMu:         new(sync.RWMutex),
 		lg:           lg,
 		id:           1,
-		r:            *realisticRaftNode(lg),
+		r:            *newRaftNodeForFuzzing(lg),
 		cluster:      cl,
 		w:            wait.New(),
 		consistIndex: ci,
 		beHooks:      serverstorage.NewBackendHooks(lg, ci),
 		authStore:    auth.NewAuthStore(zap.NewExample(), schema.NewAuthBackend(lg, be), tp, 0),
+		SyncTicker:   &time.Ticker{},
 	}
 	srv.kv = mvcc.New(zap.NewExample(), be, &lease.FakeLessor{}, mvcc.StoreConfig{})
-	srv.lessor = &lease.FakeLessor{}
+
+	le := lease.NewLessor(lg, be, srv.cluster, lease.LessorConfig{MinLeaseTTL: int64(5)})
+
+	//srv.lessor = &lease.FakeLessor{}
+	srv.lessor = le
 	alarmStore, err := v3alarm.NewAlarmStore(srv.lg, schema.NewAlarmBackend(srv.lg, srv.be))
 	if err != nil {
 		panic(err)
@@ -650,6 +659,37 @@ func init() {
 	srv.applyV3Internal = srv.newApplierV3Internal()
 	srv.applyV3 = srv.newApplierV3()
 	ab = srv.newApplierV3Backend()
+
+	srv.r.start(&raftReadyHandler{
+		getLead:          func() uint64 { return 0 },
+		updateLead:       func(uint64) {},
+		updateLeadership: func(bool) {},
+	})
+
+	srv.start()
+}
+
+func newRaftNodeForFuzzing(lg *zap.Logger) *raftNode {
+	storage := raft.NewMemoryStorage()
+	rs := raft.NewMemoryStorage()
+	storage.SetHardState(raftpb.HardState{Commit: 0, Term: 0})
+	c := &raft.Config{
+		ID:              1,
+		ElectionTick:    10,
+		HeartbeatTick:   1,
+		Storage:         storage,
+		MaxSizePerMsg:   math.MaxUint64,
+		MaxInflightMsgs: 256,
+	}
+	n := raft.RestartNode(c)
+	r := newRaftNode(raftNodeConfig{
+		lg:          lg,
+		Node:        n,
+		transport:   newNopTransporter(),
+		raftStorage: rs,
+		storage:     mockstorage.NewStorageRecorder(""),
+	})
+	return r
 }
 
 // Fuzzapply runs into panics that should not happen in production
@@ -760,6 +800,10 @@ func catchPanics2() {
 		} else if strings.Contains(err, "unexpected sort target") {
 			return
 		} else if strings.Contains(err, "failed to unmarshal 'authpb.User'") {
+			return
+		} else if strings.Contains(err, "unimplemented alarm activation") {
+			return
+		} else if strings.Contains(err, "failed to update; member unknown") {
 			return
 		} else {
 			panic(err)
