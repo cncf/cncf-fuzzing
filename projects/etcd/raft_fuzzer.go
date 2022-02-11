@@ -77,6 +77,9 @@ func shouldReport(err string) bool {
 	if strings.Contains(err, "ENCOUNTERED A PANIC OR FATAL") {
 		return false
 	}
+	if strings.Contains(err, "index, ") && strings.Contains(err, ", is out of range [") {
+		return false
+	}
 	// This string is found in raft.go because we change all
 	// occurrences from panic(err) to panic("GOT A FUZZ ERROR").
 	// This is done in build.sh as a simple solution to catch
