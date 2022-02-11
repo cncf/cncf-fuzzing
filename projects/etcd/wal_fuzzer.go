@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"io/ioutil"
 	"os"
+	"runtime"
+	"strings"
 
 	"go.etcd.io/etcd/raft/v3/raftpb"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
@@ -59,6 +61,39 @@ func FuzzWalCreate(data []byte) int {
 	return 1
 }
 
+// All cases in shouldReport represent known errors in etcd
+// as these are reported via manually added panics.
+func shouldReport(err string) bool {
+
+	// "GOT A FUZZ ERROR" is placed in all panics in
+	// server/storage/wal/version.go.
+	if strings.Contains(err, "GOT A FUZZ ERROR") {
+		return false
+	}
+
+	return true
+}
+
+func catchPanics() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if shouldReport(err) {
+			// Getting to this point means that the fuzzer
+			// did not stop because of a manually added panic.
+			panic(err)
+		}
+	}
+}
+
+
 func FuzzMinimalEtcdVersion(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	noOfEnts, err := f.GetInt()
@@ -74,6 +109,7 @@ func FuzzMinimalEtcdVersion(data []byte) int {
 		}
 		ents = append(ents, newEnt)
 	}
+	defer catchPanics()
 	_ = MinimalEtcdVersion(ents)
 	return 1
 }

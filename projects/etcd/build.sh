@@ -27,6 +27,8 @@ compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marsh
 echo "building wal fuzzer"
 cp $SRC/cncf-fuzzing/projects/etcd/wal_fuzzer.go $SRC/etcd/server/storage/wal/
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzWalCreate fuzz_wal_create
+
+sed 's/panic(err)/panic("GOT A FUZZ ERROR")/g' -i $SRC/etcd/server/storage/wal/version.go
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzMinimalEtcdVersion fuzz_minimal_etcd_version
 
 # grpc proxy fuzzer
