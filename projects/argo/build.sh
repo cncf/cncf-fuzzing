@@ -16,6 +16,17 @@
 
 apt-get update && apt-get install -y zip
 
+cd $SRC
+
+git clone https://github.com/argoproj/argo-rollouts 
+cd $SRC/argo-rollouts
+go mod tidy
+rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.5/fuzz.go
+mv analysis/controller_test.go analysis/controller_test_fuzz.go
+cp $SRC/cncf-fuzzing/projects/argo/rollouts-analysis-fuzzer.go $SRC/argo-rollouts/analysis/
+compile_go_fuzzer github.com/argoproj/argo-rollouts/analysis FuzzreconcileAnalysisRun fuzz_reconcile_analysis_run
+
+
 # gitops-engine fuzzers
 cd $SRC 
 git clone https://github.com/argoproj/gitops-engine 
