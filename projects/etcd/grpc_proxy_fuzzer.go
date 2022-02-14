@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -82,7 +83,27 @@ func validateRangeRequest(r *pb.RangeRequest) error {
 	return nil
 }
 
+func catchPanics() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "failed to create WAL") {
+			return
+		} else {
+			panic(err)
+		}
+	}
+}
+
 func FuzzKVProxy(data []byte) int {
+	defer catchPanics()
 	initFuzzKVProxy.Do(initFuncFuzzKVProxy)
 	t1 := &testing.T{}
 	f := fuzz.NewConsumer(data)
