@@ -16,6 +16,7 @@
 package etcdserver
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"runtime"
@@ -48,6 +49,10 @@ import (
 	betesting "go.etcd.io/etcd/server/v3/storage/backend/testing"
 	"go.etcd.io/etcd/server/v3/storage/mvcc"
 	"go.etcd.io/etcd/server/v3/storage/schema"
+
+	"go.etcd.io/etcd/pkg/v3/idutil"
+	"go.etcd.io/etcd/pkg/v3/notify"
+	"go.etcd.io/etcd/server/v3/config"
 )
 
 var (
@@ -819,7 +824,497 @@ func FuzzapplierV3backendApply(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	//fmt.Printf("%+v\n", ab)
 	_ = ab.Apply(rr, true)
+	return 1
+}
+
+var (
+	pr     []*pb.PutRequest
+	drr    []*pb.DeleteRangeRequest
+	tr     []*pb.TxnRequest
+	cr     []*pb.CompactionRequest
+	lgr    []*pb.LeaseGrantRequest
+	lrr    []*pb.LeaseRevokeRequest
+	ar     []*pb.AlarmRequest
+	lcr    []*pb.LeaseCheckpointRequest
+	aer    []*pb.AuthEnableRequest
+	adr    []*pb.AuthDisableRequest
+	asr    []*pb.AuthStatusRequest
+	iar    []*pb.InternalAuthenticateRequest
+	auar   []*pb.AuthUserAddRequest
+	audr   []*pb.AuthUserDeleteRequest
+	augr   []*pb.AuthUserGetRequest
+	aucpr  []*pb.AuthUserChangePasswordRequest
+	augrr  []*pb.AuthUserGrantRoleRequest
+	aurrr  []*pb.AuthUserRevokeRoleRequest
+	aulr   []*pb.AuthUserListRequest
+	arlr   []*pb.AuthRoleListRequest
+	arar   []*pb.AuthRoleAddRequest
+	ardr   []*pb.AuthRoleDeleteRequest
+	argr   []*pb.AuthRoleGetRequest
+	argpr  []*pb.AuthRoleGrantPermissionRequest
+	arrpr  []*pb.AuthRoleRevokePermissionRequest
+	v3reqs = map[int]string{
+		0:  "PutRequest",
+		1:  "DeleteRangeRequest",
+		2:  "TxnRequest",
+		3:  "CompactionRequest",
+		4:  "LeaseGrantRequest",
+		5:  "LeaseRevokeRequest",
+		6:  "AlarmRequest",
+		7:  "LeaseCheckpointRequest",
+		8:  "AuthEnableRequest",
+		9:  "AuthDisableRequest",
+		10: "InternalAuthenticateRequest",
+		11: "AuthUserAddRequest",
+		12: "AuthUserDeleteRequest",
+		13: "AuthUserGetRequest",
+		14: "AuthUserChangePasswordRequest",
+		15: "AuthUserGrantRoleRequest",
+		16: "AuthUserRevokeRoleRequest",
+		17: "AuthUserListRequest",
+		18: "AuthRoleListRequest",
+		19: "AuthRoleAddRequest",
+		20: "AuthRoleDeleteRequest",
+		21: "AuthRoleGetRequest",
+		22: "AuthRoleGrantPermissionRequest",
+		23: "AuthRoleRevokePermissionRequest",
+	}
+	createdRequests []string
+)
+
+func initFuncV3ServerFuzer() {
+	pr = make([]*pb.PutRequest, 0)
+	drr = make([]*pb.DeleteRangeRequest, 0)
+	tr = make([]*pb.TxnRequest, 0)
+	cr = make([]*pb.CompactionRequest, 0)
+	lgr = make([]*pb.LeaseGrantRequest, 0)
+	lrr = make([]*pb.LeaseRevokeRequest, 0)
+	ar = make([]*pb.AlarmRequest, 0)
+	lcr = make([]*pb.LeaseCheckpointRequest, 0)
+	aer = make([]*pb.AuthEnableRequest, 0)
+	adr = make([]*pb.AuthDisableRequest, 0)
+	asr = make([]*pb.AuthStatusRequest, 0)
+	iar = make([]*pb.InternalAuthenticateRequest, 0)
+	auar = make([]*pb.AuthUserAddRequest, 0)
+	audr = make([]*pb.AuthUserDeleteRequest, 0)
+	augr = make([]*pb.AuthUserGetRequest, 0)
+	aucpr = make([]*pb.AuthUserChangePasswordRequest, 0)
+	augrr = make([]*pb.AuthUserGrantRoleRequest, 0)
+	aurrr = make([]*pb.AuthUserRevokeRoleRequest, 0)
+	aulr = make([]*pb.AuthUserListRequest, 0)
+	arlr = make([]*pb.AuthRoleListRequest, 0)
+	arar = make([]*pb.AuthRoleAddRequest, 0)
+	ardr = make([]*pb.AuthRoleDeleteRequest, 0)
+	argr = make([]*pb.AuthRoleGetRequest, 0)
+	argpr = make([]*pb.AuthRoleGrantPermissionRequest, 0)
+	arrpr = make([]*pb.AuthRoleRevokePermissionRequest, 0)
+	createdRequests = make([]string, 0)
+}
+
+func createRequestsV3ServerFuzzer(data []byte) error {
+	f := fuzz.NewConsumer(data)
+	noOfRequests, err := f.GetInt()
+	if err != nil {
+		return err
+	}
+	for i := 0; i < noOfRequests%20; i++ {
+		reqType, err := f.GetInt()
+		if err != nil {
+			return err
+		}
+		reqTypeStr := v3reqs[reqType%len(v3reqs)]
+		switch reqTypeStr {
+		case "PutRequest":
+			r := &pb.PutRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			pr = append(pr, r)
+		case "DeleteRangeRequest":
+			r := &pb.DeleteRangeRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			drr = append(drr)
+		case "TxnRequest":
+			r := &pb.TxnRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			tr = append(tr, r)
+		case "CompactionRequest":
+			r := &pb.CompactionRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			cr = append(cr, r)
+		case "LeaseGrantRequest":
+			r := &pb.LeaseGrantRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			lgr = append(lgr, r)
+		case "LeaseRevokeRequest":
+			r := &pb.LeaseRevokeRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			lrr = append(lrr, r)
+		case "AlarmRequest":
+			r := &pb.AlarmRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			ar = append(ar, r)
+		case "LeaseCheckpointRequest":
+			r := &pb.LeaseCheckpointRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			lcr = append(lcr, r)
+		case "AuthEnableRequest":
+			r := &pb.AuthEnableRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			aer = append(aer, r)
+		case "AuthDisableRequest":
+			r := &pb.AuthDisableRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			adr = append(adr, r)
+		case "InternalAuthenticateRequest":
+			r := &pb.InternalAuthenticateRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			iar = append(iar, r)
+		case "AuthUserAddRequest":
+			r := &pb.AuthUserAddRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			auar = append(auar, r)
+		case "AuthUserDeleteRequest":
+			r := &pb.AuthUserDeleteRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			audr = append(audr, r)
+		case "AuthUserGetRequest":
+			r := &pb.AuthUserGetRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			augr = append(augr)
+		case "AuthUserChangePasswordRequest":
+			r := &pb.AuthUserChangePasswordRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			aucpr = append(aucpr, r)
+		case "AuthUserGrantRoleRequest":
+			r := &pb.AuthUserGrantRoleRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			augrr = append(augrr, r)
+		case "AuthUserRevokeRoleRequest":
+			r := &pb.AuthUserRevokeRoleRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			aurrr = append(aurrr, r)
+		case "AuthUserListRequest":
+			r := &pb.AuthUserListRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			aulr = append(aulr, r)
+		case "AuthRoleListRequest":
+			r := &pb.AuthRoleListRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			arlr = append(arlr, r)
+		case "AuthRoleAddRequest":
+			r := &pb.AuthRoleAddRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			arar = append(arar, r)
+		case "AuthRoleDeleteRequest":
+			r := &pb.AuthRoleDeleteRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			ardr = append(ardr, r)
+		case "AuthRoleGetRequest":
+			r := &pb.AuthRoleGetRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			argr = append(argr, r)
+		case "AuthRoleGrantPermissionRequest":
+			r := &pb.AuthRoleGrantPermissionRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			argpr = append(argpr, r)
+		case "AuthRoleRevokePermissionRequest":
+			r := &pb.AuthRoleRevokePermissionRequest{}
+			err = f.GenerateStruct(r)
+			if err != nil {
+				return err
+			}
+			arrpr = append(arrpr, r)
+		}
+		createdRequests = append(createdRequests, reqTypeStr)
+	}
+	return nil
+}
+
+func makeV3Requests(s *EtcdServer) {
+	for _, reqType := range createdRequests {
+		switch reqType {
+		case "PutRequest":
+			if len(pr) == 0 {
+				return
+			}
+			r := pr[0]
+			_, _ = s.Put(context.Background(), r)
+			pr = pr[1:]
+		case "DeleteRangeRequest":
+			if len(drr) == 0 {
+				return
+			}
+			r := drr[0]
+			_, _ = s.DeleteRange(context.Background(), r)
+			drr = drr[1:]
+		case "TxnRequest":
+			if len(tr) == 0 {
+				return
+			}
+			r := tr[0]
+			_, _ = s.Txn(context.Background(), r)
+			tr = tr[1:]
+		case "CompactionRequest":
+			if len(cr) == 0 {
+				return
+			}
+			r := cr[0]
+			_, _ = s.Compact(context.Background(), r)
+			cr = cr[1:]
+		case "LeaseGrantRequest":
+			if len(lgr) == 0 {
+				return
+			}
+			r := lgr[0]
+			_, _ = s.LeaseGrant(context.Background(), r)
+			lgr = lgr[1:]
+		case "LeaseRevokeRequest":
+			if len(lrr) == 0 {
+				return
+			}
+			r := lrr[0]
+			_, _ = s.LeaseRevoke(context.Background(), r)
+			lrr = lrr[1:]
+		case "AlarmRequest":
+			if len(ar) == 0 {
+				return
+			}
+			r := ar[0]
+			_, _ = s.Alarm(context.Background(), r)
+			ar = ar[1:]
+		case "LeaseCheckpointRequest":
+			return
+		case "AuthEnableRequest":
+			if len(aer) == 0 {
+				return
+			}
+			r := aer[0]
+			_, _ = s.AuthEnable(context.Background(), r)
+			aer = aer[1:]
+		case "AuthDisableRequest":
+			if len(adr) == 0 {
+				return
+			}
+			r := adr[0]
+			_, _ = s.AuthDisable(context.Background(), r)
+			adr = adr[1:]
+		case "InternalAuthenticateRequest":
+			return
+		case "AuthUserAddRequest":
+			if len(auar) == 0 {
+				return
+			}
+			r := auar[0]
+			_, _ = s.UserAdd(context.Background(), r)
+			auar = auar[1:]
+		case "AuthUserDeleteRequest":
+			if len(audr) == 0 {
+				return
+			}
+			r := audr[0]
+			_, _ = s.UserDelete(context.Background(), r)
+			audr = audr[1:]
+		case "AuthUserGetRequest":
+			if len(augr) == 0 {
+				return
+			}
+			r := augr[0]
+			_, _ = s.UserGet(context.Background(), r)
+			augr = augr[1:]
+		case "AuthUserChangePasswordRequest":
+			if len(aucpr) == 0 {
+				return
+			}
+			r := aucpr[0]
+			_, _ = s.UserChangePassword(context.Background(), r)
+			aucpr = aucpr[1:]
+		case "AuthUserGrantRoleRequest":
+			if len(augrr) == 0 {
+				return
+			}
+			r := augrr[0]
+			_, _ = s.UserGrantRole(context.Background(), r)
+			augrr = augrr[1:]
+		case "AuthUserRevokeRoleRequest":
+			if len(aurrr) == 0 {
+				return
+			}
+			r := aurrr[0]
+			_, _ = s.UserRevokeRole(context.Background(), r)
+			aurrr = aurrr[1:]
+		case "AuthUserListRequest":
+			if len(aulr) == 0 {
+				return
+			}
+			r := aulr[0]
+			_, _ = s.UserList(context.Background(), r)
+			aulr = aulr[1:]
+		case "AuthRoleListRequest":
+			if len(arlr) == 0 {
+				return
+			}
+			r := arlr[0]
+			_, _ = s.RoleList(context.Background(), r)
+			arlr = arlr[1:]
+		case "AuthRoleAddRequest":
+			if len(arar) == 0 {
+				return
+			}
+			r := arar[0]
+			_, _ = s.RoleAdd(context.Background(), r)
+			arar = arar[1:]
+		case "AuthRoleDeleteRequest":
+			if len(ardr) == 0 {
+				return
+			}
+			r := ardr[0]
+			_, _ = s.RoleDelete(context.Background(), r)
+			ardr = ardr[1:]
+		case "AuthRoleGetRequest":
+			if len(argr) == 0 {
+				return
+			}
+			r := argr[0]
+			_, _ = s.RoleGet(context.Background(), r)
+			argr = argr[1:]
+		case "AuthRoleGrantPermissionRequest":
+			if len(argpr) == 0 {
+				return
+			}
+			r := argpr[0]
+			_, _ = s.RoleGrantPermission(context.Background(), r)
+			argpr = argpr[1:]
+		case "AuthRoleRevokePermissionRequest":
+			if len(arrpr) == 0 {
+				return
+			}
+			r := arrpr[0]
+			_, _ = s.RoleRevokePermission(context.Background(), r)
+			arrpr = arrpr[1:]
+		}
+	}
+}
+
+func FuzzV3Server(data []byte) int {
+	initFuncV3ServerFuzer()
+	err := createRequestsV3ServerFuzzer(data)
+	if err != nil {
+		return 0
+	}
+	if len(createdRequests) < 2 {
+		return 0
+	}
+	defer catchPanics()
+
+	// Setup server
+	t := &testing.T{}
+	lg := zaptest.NewLogger(t, zaptest.Level(zapcore.FatalLevel))
+
+	cl := membership.NewCluster(zaptest.NewLogger(t))
+	cl.SetStore(v2store.New())
+	cl.AddMember(&membership.Member{ID: types.ID(1)}, true)
+
+	be, _ := betesting.NewDefaultTmpBackend(t)
+	defer betesting.Close(t, be)
+
+	schema.CreateMetaBucket(be.BatchTx())
+
+	st := make(chan time.Time, 1)
+	tk := &time.Ticker{C: st}
+	tk = time.NewTicker(500 * time.Millisecond)
+
+	ci := cindex.NewConsistentIndex(be)
+	tp, err := auth.NewTokenProvider(lg, tokenTypeSimple, dummyIndexWaiter, simpleTokenTTLDefault)
+	srv := &EtcdServer{
+		lgMu:                  new(sync.RWMutex),
+		lg:                    lg,
+		id:                    1,
+		r:                     *newRaftNodeForFuzzing(lg),
+		cluster:               cl,
+		w:                     wait.New(),
+		consistIndex:          ci,
+		beHooks:               serverstorage.NewBackendHooks(lg, ci),
+		reqIDGen:              idutil.NewGenerator(0, time.Time{}),
+		firstCommitInTerm:     notify.NewNotifier(),
+		clusterVersionChanged: notify.NewNotifier(),
+		SyncTicker:            tk,
+		authStore:             auth.NewAuthStore(lg, schema.NewAuthBackend(lg, be), tp, 0),
+		Cfg:                   config.ServerConfig{ElectionTicks: 10, Logger: lg, TickMs: 10000, SnapshotCatchUpEntries: DefaultSnapshotCatchUpEntries, MaxRequestBytes: 10000},
+	}
+	srv.applyV3Base = srv.newApplierV3Backend()
+	srv.kv = mvcc.New(lg, be, &lease.FakeLessor{}, mvcc.StoreConfig{})
+
+	srv.Start()
+	defer srv.Stop()
+	makeV3Requests(srv)
 	return 1
 }
