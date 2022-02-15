@@ -13,7 +13,7 @@ mv $SRC/cncf-fuzzing/projects/helm/ignore_fuzzer_test.go \
 
 sed 's/go 1.16/go 1.18/g' -i $SRC/helm/go.mod
 
-gotip mod download && gotip mod tidy
-gotip get github.com/AdamKorcz/go-118-fuzz-build/utils
+go mod download && go mod tidy
+go get github.com/AdamKorcz/go-118-fuzz-build/utils
 compile_native_go_fuzzer helm.sh/helm/v3/internal/ignore FuzzIgnoreParse fuzz_ignore_parse
 compile_native_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzStrvalsParse fuzz_strvals_parse
