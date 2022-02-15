@@ -39,9 +39,17 @@ mv $CNCFPATH/authchallenge_fuzzer.go $SRC/distribution/registry/client/auth/chal
 mv $CNCFPATH/token_fuzzer.go $SRC/distribution/registry/auth/token/
 mv $CNCFPATH/set_fuzzer.go $SRC/distribution/digestset/
 mv $CNCFPATH/reference_fuzzer2.go $SRC/distribution/reference/
+mv $CNCFPATH/native_reference_fuzzer.go $SRC/distribution/reference/
+
+rm -r ./vendor
 
 go mod edit -dropreplace google.golang.org/grpc
-go mod download && go mod tidy && go mod vendor
+go mod download && go mod tidy
+
+# Used to build native fuzzers
+go get github.com/AdamKorcz/go-118-fuzz-build/utils
+
+compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
 
 $SRC/distribution/script/oss_fuzz_build.sh
 
