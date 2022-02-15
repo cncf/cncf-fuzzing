@@ -21,6 +21,8 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func silentLogger(options ...zap.Option) *zap.Logger {
@@ -37,6 +39,7 @@ func silentLogger(options ...zap.Option) *zap.Logger {
 }
 
 func FuzzSnapLoad(data []byte) int {
+	f := fuzz.NewConsumer(data)
 	dir := filepath.Join(os.TempDir(), "snapshot")
 	err := os.Mkdir(dir, 0700)
 	if err != nil {
@@ -44,7 +47,7 @@ func FuzzSnapLoad(data []byte) int {
 	}
 	defer os.RemoveAll(dir)
 
-	err = os.WriteFile(filepath.Join(dir, "1.snap"), data, 0x700)
+	err = f.CreateFiles(dir)
 	if err != nil {
 		return 0
 	}
