@@ -50,6 +50,7 @@ cd -
 if [ "$SANITIZER" != "coverage" ]
 then
 	cd $SRC/etcd/server/etcdserver/api/snap
+	go get github.com/AdaLogics/go-fuzz-headers
 	mv $SRC/cncf-fuzzing/projects/etcd/snapshot_fuzzer.go ./
 	compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/snap FuzzSnapLoad fuzz_snap_load
 fi
