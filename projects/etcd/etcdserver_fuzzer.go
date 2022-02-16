@@ -719,6 +719,8 @@ func catchPanics() {
 			return
 		} else if strings.Contains(err, "unknown ConfChange type") {
 			return
+		} else if strings.Contains(err, "applyEntryNormal, could not find a header") {
+			return
 		} else {
 			panic(err)
 		}
