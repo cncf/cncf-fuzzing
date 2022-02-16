@@ -16,6 +16,7 @@
 
 apt-get update && apt-get install -y zip
 
+ls $SRC/cncf-fuzzing/projects/argo
 cd $SRC
 
 git clone https://github.com/argoproj/argo-rollouts 
@@ -25,6 +26,29 @@ rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.5/fuzz.go
 mv analysis/controller_test.go analysis/controller_test_fuzz.go
 cp $SRC/cncf-fuzzing/projects/argo/rollouts-analysis-fuzzer.go $SRC/argo-rollouts/analysis/
 compile_go_fuzzer github.com/argoproj/argo-rollouts/analysis FuzzreconcileAnalysisRun fuzz_reconcile_analysis_run
+
+mv $SRC/cncf-fuzzing/projects/argo/rollouts-metrics_fuzzer.go \
+   $SRC/argo-rollouts/metricproviders/webmetric//
+compile_go_fuzzer github.com/argoproj/argo-rollouts/metricproviders/webmetric FuzzNewWebMetricJsonParser fuzz_new_web_metric_json_parser
+
+mv $SRC/cncf-fuzzing/projects/argo/rollouts-record_fuzzer.go \
+   $SRC/argo-rollouts/utils/record/
+compile_go_fuzzer github.com/argoproj/argo-rollouts/utils/record FuzzSendNotifications fuzz_send_notifications
+
+mv $SRC/argo-rollouts/metricproviders/prometheus/prometheus_test.go \
+   $SRC/argo-rollouts/metricproviders/prometheus/prometheus_test_fuzz.go
+mv $SRC/argo-rollouts/metricproviders/prometheus/mock_test.go \
+   $SRC/argo-rollouts/metricproviders/prometheus/mock_test_fuzz.go
+mv $SRC/cncf-fuzzing/projects/argo/rollouts-prometheus_fuzzer.go \
+   $SRC/argo-rollouts/metricproviders/prometheus/
+compile_go_fuzzer github.com/argoproj/argo-rollouts/metricproviders/prometheus FuzzPrometheusProvider fuzz_prometheus_provider
+
+mv $SRC/argo-rollouts/metricproviders/kayenta/kayenta_test.go \
+   $SRC/argo-rollouts/metricproviders/kayenta/kayenta_test_fuzz.go
+mv $SRC/cncf-fuzzing/projects/argo/rollouts-kayenta_fuzzer.go \
+   $SRC/argo-rollouts/metricproviders/kayenta/
+compile_go_fuzzer github.com/argoproj/argo-rollouts/metricproviders/kayenta FuzzKayenta fuzz_kayenta_provider
+
 
 
 # gitops-engine fuzzers
