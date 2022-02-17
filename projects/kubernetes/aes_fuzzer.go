@@ -17,6 +17,7 @@ package fuzzing
 
 import (
 	stdlibAes "crypto/aes"
+	"context"
 	"crypto/cipher"
 	"encoding/hex"
 	"fmt"
@@ -69,12 +70,12 @@ func FuzzAesRoundtrip(data []byte) int {
 
 func testGCMTTransformer(randBytes []byte, aesBlock cipher.Block) error {
 	transformer := aestransformer.NewGCMTransformer(aesBlock)
-	context := value.DefaultContext("")
-	ciphertext, err := transformer.TransformToStorage(randBytes, context)
+	defaultContext := value.DefaultContext("")
+	ciphertext, err := transformer.TransformToStorage(context.Background(), randBytes, defaultContext)
 	if err != nil {
 		return fmt.Errorf("TransformToStorage error = %v\n", err)
 	}
-	result, stale, err := transformer.TransformFromStorage(ciphertext, context)
+	result, stale, err := transformer.TransformFromStorage(context.Background(), ciphertext, defaultContext)
 	if err != nil {
 		return fmt.Errorf("TransformFromStorage error = %v\n", err)
 	}
@@ -89,12 +90,12 @@ func testGCMTTransformer(randBytes []byte, aesBlock cipher.Block) error {
 
 func testCBCTransformer(randBytes []byte, aesBlock cipher.Block) error {
 	transformer := aestransformer.NewCBCTransformer(aesBlock)
-	context := value.DefaultContext("")
-	ciphertext, err := transformer.TransformToStorage(randBytes, context)
+	defaultContext := value.DefaultContext("")
+	ciphertext, err := transformer.TransformToStorage(context.Background(), randBytes, defaultContext)
 	if err != nil {
 		return fmt.Errorf("TransformToStorage error = %v\n", err)
 	}
-	result, stale, err := transformer.TransformFromStorage(ciphertext, context)
+	result, stale, err := transformer.TransformFromStorage(context.Background(), ciphertext, defaultContext)
 	if err != nil {
 		return fmt.Errorf("TransformFromStorage error = %v\n", err)
 	}
