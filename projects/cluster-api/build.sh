@@ -13,3 +13,7 @@ compile_go_fuzzer sigs.k8s.io/cluster-api/bootstrap/kubeadm/types FuzzUnmarshalC
 cp $SRC/cncf-fuzzing/projects/cluster-api/conversion_fuzzer.go \
 	$SRC/cluster-api/api/v1alpha3/
 compile_go_fuzzer sigs.k8s.io/cluster-api/api/v1alpha3 FuzzV1alpha3Conversion fuzz_v1alpha3_conversion
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/v1beta1_machine_webhook_fuzzer.go \
+	$SRC/cluster-api/api/v1beta1/
+compile_go_fuzzer sigs.k8s.io/cluster-api/api/v1beta1 FuzzWebhookValidation fuzz_webhook_validation
