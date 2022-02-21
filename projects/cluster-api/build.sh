@@ -1,3 +1,9 @@
+mkdir $SRC/cluster-api/fuzz
+cp $SRC/cncf-fuzzing/projects/cluster-api/conversion_fuzzer2.go \
+	$SRC/cluster-api/fuzz/
+compile_go_fuzzer sigs.k8s.io/cluster-api/fuzz FuzzConversionOfAllTypes fuzz_conversion_of_all_types
+
+
 cp $SRC/cncf-fuzzing/projects/cluster-api/yaml_fuzzer.go \
 	$SRC/cluster-api/util/yaml/
 
