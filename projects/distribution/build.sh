@@ -43,13 +43,14 @@ mv $CNCFPATH/native_reference_fuzzer.go $SRC/distribution/reference/
 
 rm -r ./vendor
 
+# Used to build native fuzzers
+gotip get github.com/AdamKorcz/go-118-fuzz-build/utils
+gotip get github.com/AdaLogics/go-fuzz-headers
+compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
+rm $SRC/distribution/reference/native_reference_fuzzer.go
+
 go mod edit -dropreplace google.golang.org/grpc
 go mod download && go mod tidy
-
-# Used to build native fuzzers
-go get github.com/AdamKorcz/go-118-fuzz-build/utils
-
-compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
 
 $SRC/distribution/script/oss_fuzz_build.sh
 
