@@ -16,7 +16,9 @@
 package fuzzing
 
 import (
+	"fmt"
 	"io"
+	"reflect"
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -35,13 +37,46 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/cm"
 	"k8s.io/kubernetes/pkg/kubelet/cm/cpuset"
 	"k8s.io/kubernetes/pkg/util/parsers"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // FuzzParseQuantity implements a fuzzer
 // that targets resource.ParseQuantity
 func FuzzParseQuantity(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data string) {
-		_, _ = resource.ParseQuantity(data)
+	f.Fuzz(func(t *testing.T, data, data2 string) {
+		q, err := resource.ParseQuantity(data)
+		if err != nil {
+			return
+		}
+		qcopy := q.DeepCopy()
+		if !reflect.DeepEqual(q, qcopy) {
+			panic("q and qcopy are not equal")
+		}
+		_ = q.String()
+		qBytes, err := q.MarshalJSON()
+		if err != nil {
+			return
+		}
+		newQ := &resource.Quantity{}
+		err = newQ.UnmarshalJSON(qBytes)
+		if err != nil {
+			panic("This should not happen")
+		}
+		q2 := q.DeepCopy()
+		if !reflect.DeepEqual(q, q2) {
+			panic(fmt.Sprintf("%+v\n", cmp.Diff(q, q2)))
+		}
+		_ = q.ToDec()
+		_ = q.AsDec()
+		_ = q.AsApproximateFloat64()
+		_ = q.IsZero()
+		_ = q.Sign()
+		q3, err := resource.ParseQuantity(data2)
+		if err != nil {
+			return
+		}
+		q.Add(q3)
 	})
 }
 
@@ -81,7 +116,7 @@ func FuzzParseGroupVersion(f *testing.F) {
 // that targets schema.ParseResourceArg
 func FuzzParseResourceArg(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data string) {
-		_, _ = schema.ParseResourceArg(string(data))
+		_, _ = schema.ParseResourceArg(data)
 	})
 }
 

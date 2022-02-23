@@ -128,7 +128,6 @@ compile_go_fuzzer k8s.io/kubernetes/pkg/controller/deployment/util FuzzEntireDep
 
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzDeepCopy fuzz_deep_copy
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzAesRoundtrip fuzz_aes_roundtrip
-compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzValidateCustomResourceDefinition fuzz_validate_custom_resource_definition
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzLoadPolicyFromBytes fuzz_load_policy_from_bytes
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing RegistryFuzzer registry_fuzzer
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzUnrecognized fuzz_unrecognized

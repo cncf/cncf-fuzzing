@@ -859,7 +859,7 @@ func FuzzValidateResourceQuotaSpec(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = validation.ValidateResourceQuotaSpec(resourceQuotaSpec, validation.ResourceQuotaValidationOptions{}, fld)
+	_ = validation.ValidateResourceQuotaSpec(resourceQuotaSpec, fld)
 	return 1
 }
 
@@ -875,7 +875,7 @@ func FuzzValidateResourceQuotaUpdate(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = validation.ValidateResourceQuotaUpdate(newResourceQuota, oldResourceQuota, validation.ResourceQuotaValidationOptions{})
+	_ = validation.ValidateResourceQuotaUpdate(newResourceQuota, oldResourceQuota)
 	return 1
 }
 
