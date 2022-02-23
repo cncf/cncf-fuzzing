@@ -22,13 +22,18 @@ mv /src/helm/pkg/action/action_test.go $SRC/helm/pkg/action/action_test_fuzz.go
 mv $SRC/cncf-fuzzing/projects/helm/loaddir_fuzzer.go \
    $SRC/helm/pkg/chart/loader/
 
+mv $SRC/cncf-fuzzing/projects/helm/chartutil_fuzzer.go \
+   $SRC/helm/pkg/chartutil/
+
 go mod download && go mod tidy
 compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs FuzzfixLongPath fuzz_fix_long_path
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzMetadataValidate fuzz_metadata_validate
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzDependencyValidate fuzz_dependency_validate
 compile_go_fuzzer helm.sh/helm/v3/pkg/engine FuzzEngineRender fuzz_engine_render
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionRun fuzz_action_run
+compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzShowRun fuzz_show_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart/loader FuzzLoadDir fuzz_load_dir
+compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzProcessDependencies fuzz_process_dependencies
 
 
 sed 's/go 1.16/go 1.18/g' -i $SRC/helm/go.mod

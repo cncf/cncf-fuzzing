@@ -20,11 +20,11 @@ package action
 
 import (
 	"fmt"
-	"testing"
-	"helm.sh/helm/v3/pkg/release"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"helm.sh/helm/v3/pkg/chart"
 	kubefake "helm.sh/helm/v3/pkg/kube/fake"
+	"helm.sh/helm/v3/pkg/release"
+	"testing"
 )
 
 func FuzzActionRun(data []byte) int {
@@ -54,5 +54,20 @@ func FuzzActionRun(data []byte) int {
 	vals := map[string]interface{}{}
 
 	_, _ = upAction.Run(rel.Name, newChart, vals)
+	return 1
+}
+
+func FuzzShowRun(data []byte) int {
+	client := NewShow(ShowAll)
+	newChart := &chart.Chart{}
+
+	f := fuzz.NewConsumer(data)
+	err := f.GenerateStruct(newChart)
+	if err != nil {
+		return 0
+	}
+
+	client.chart = newChart
+	_, _ = client.Run("")
 	return 1
 }
