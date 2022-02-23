@@ -23,6 +23,7 @@ import (
 
 	argoappv1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/argoproj/argo-cd/v2/reposerver/apiclient"
+	"github.com/argoproj/argo-cd/v2/util/git"
 )
 
 func FuzzGenerateManifests(data []byte) int {
@@ -38,6 +39,6 @@ func FuzzGenerateManifests(data []byte) int {
 	}
 	src := argoappv1.ApplicationSource{Path: "manifests/base"}
 	q := apiclient.ManifestRequest{Repo: &argoappv1.Repository{}, ApplicationSource: &src}
-	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false)
+	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false, &git.NoopCredsStore{})
 	return 1
 }
