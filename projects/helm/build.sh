@@ -25,8 +25,14 @@ mv $SRC/cncf-fuzzing/projects/helm/loaddir_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/helm/chartutil_fuzzer.go \
    $SRC/helm/pkg/chartutil/
 
+mv $SRC/cncf-fuzzing/projects/helm/sql_fuzzer.go \
+   $SRC/helm/pkg/storage/driver/
+mv $SRC/helm/pkg/storage/driver/mock_test.go \
+   $SRC/helm/pkg/storage/driver/mock_test_fuzz.go
+
 go mod download && go mod tidy
 compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs FuzzfixLongPath fuzz_fix_long_path
+compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzSqlDriver fuzz_sql_driver
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzMetadataValidate fuzz_metadata_validate
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzDependencyValidate fuzz_dependency_validate
 compile_go_fuzzer helm.sh/helm/v3/pkg/engine FuzzEngineRender fuzz_engine_render
