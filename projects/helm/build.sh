@@ -30,6 +30,9 @@ mv $SRC/cncf-fuzzing/projects/helm/sql_fuzzer.go \
 mv $SRC/helm/pkg/storage/driver/mock_test.go \
    $SRC/helm/pkg/storage/driver/mock_test_fuzz.go
 
+mv $SRC/cncf-fuzzing/projects/helm/repo_fuzzer.go \
+   $SRC/helm/pkg/repo/
+
 go mod download && go mod tidy
 compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs FuzzfixLongPath fuzz_fix_long_path
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzSqlDriver fuzz_sql_driver
@@ -40,6 +43,8 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionRun fuzz_action_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzShowRun fuzz_show_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart/loader FuzzLoadDir fuzz_load_dir
 compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzProcessDependencies fuzz_process_dependencies
+compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzIndex fuzz_index
+compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzIndexDirectory fuzz_index_directory
 
 
 sed 's/go 1.16/go 1.18/g' -i $SRC/helm/go.mod
