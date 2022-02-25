@@ -1,3 +1,9 @@
+cp $SRC/cncf-fuzzing/projects/cluster-api/topology_cluster_reconciler_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/topology/cluster/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileMachineHealthCheck fuzz_reconcile_machine_health_check
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileControlPlane fuzz_reconcile_control_plane
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileReferencedObject fuzz_reconcile_referenced_object
+
 mkdir $SRC/cluster-api/fuzz
 cp $SRC/cncf-fuzzing/projects/cluster-api/conversion_fuzzer2.go \
 	$SRC/cluster-api/fuzz/
