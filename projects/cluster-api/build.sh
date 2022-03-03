@@ -1,5 +1,9 @@
 go get github.com/AdaLogics/go-fuzz-headers@fe11a1f79e80cc365788a8d8c10e5a0315571dc5
 
+cp $SRC/cncf-fuzzing/projects/cluster-api/conditions_fuzzer.go \
+   $SRC/cluster-api/util/conditions/
+compile_go_fuzzer sigs.k8s.io/cluster-api/util/conditions FuzzPatchApply fuzz_patch_apply
+
 cp $SRC/cncf-fuzzing/projects/cluster-api/topology_cluster_reconciler_fuzzer.go \
    $SRC/cluster-api/internal/controllers/topology/cluster/
 compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileMachineHealthCheck fuzz_reconcile_machine_health_check
