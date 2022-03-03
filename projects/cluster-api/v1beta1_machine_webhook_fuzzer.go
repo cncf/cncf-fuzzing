@@ -25,18 +25,14 @@ func FuzzWebhookValidation(data []byte) int {
 	}
 	targetType := int(data[0])
 	restOfData := data[1:]
-	switch targetType % 6 {
+	switch targetType % 4 {
 	case 0:
 		return fuzzMachineValidate(restOfData)
 	case 1:
 		return fuzzMachineDeploymentSpecValidate(restOfData)
 	case 2:
-		return fuzzClusterClass(restOfData)
-	case 3:
-		return fuzzCluster(restOfData)
-	case 4:
 		return fuzzMachineHealthCheck(restOfData)
-	case 5:
+	case 3:
 		return fuzzMachineSet(restOfData)
 	}
 	return 1
@@ -79,46 +75,6 @@ func fuzzMachineDeploymentSpecValidate(data []byte) int {
 		return 0
 	}
 	md1.ValidateUpdate(md2)
-	return 1
-}
-
-func fuzzClusterClass(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	cc1 := &ClusterClass{}
-	err := f.GenerateStruct(cc1)
-	if err != nil {
-		return 0
-	}
-	err = cc1.ValidateCreate()
-	if err != nil {
-		return 0
-	}
-	cc2 := &ClusterClass{}
-	err = f.GenerateStruct(cc2)
-	if err != nil {
-		return 0
-	}
-	cc1.ValidateUpdate(cc2)
-	return 1
-}
-
-func fuzzCluster(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	c1 := &Cluster{}
-	err := f.GenerateStruct(c1)
-	if err != nil {
-		return 0
-	}
-	err = c1.ValidateCreate()
-	if err != nil {
-		return 0
-	}
-	c2 := &Cluster{}
-	err = f.GenerateStruct(c2)
-	if err != nil {
-		return 0
-	}
-	c1.ValidateUpdate(c2)
 	return 1
 }
 
