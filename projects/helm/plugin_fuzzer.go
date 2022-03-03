@@ -16,34 +16,15 @@
 // limitations under the License.
 //
 
-package chartutil
+package plugin
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"helm.sh/helm/v3/pkg/chart"
 	"os"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzProcessDependencies(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	valuesBytes, err := f.GetBytes()
-	if err != nil {
-		return 0
-	}
-	vals, err := ReadValues(valuesBytes)
-	if err != nil {
-		return 0
-	}
-	c := &chart.Chart{}
-	err = f.GenerateStruct(c)
-	if err != nil {
-		return 0
-	}
-	ProcessDependencies(c, vals)
-	return 1
-}
-
-func FuzzIsChartDir(data []byte) int {
+func FuzzFindPlugins(data []byte) int {
 	err := os.Mkdir("fuzzdir", 0755)
 	if err != nil {
 		return 0
@@ -54,6 +35,6 @@ func FuzzIsChartDir(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_, _ = IsChartDir("fuzzdir")
+	_, _ = FindPlugins("fuzzdir")
 	return 1
 }

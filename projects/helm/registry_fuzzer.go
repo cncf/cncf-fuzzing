@@ -16,44 +16,29 @@
 // limitations under the License.
 //
 
-package chartutil
+package registry
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"helm.sh/helm/v3/pkg/chart"
-	"os"
 )
 
-func FuzzProcessDependencies(data []byte) int {
+func FuzzGetTagMatchingVersionOrConstraint(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	valuesBytes, err := f.GetBytes()
+	var tags []string
+	err := f.CreateSlice(&tags)
 	if err != nil {
 		return 0
 	}
-	vals, err := ReadValues(valuesBytes)
+	versionString, err := f.GetString()
 	if err != nil {
 		return 0
 	}
-	c := &chart.Chart{}
-	err = f.GenerateStruct(c)
-	if err != nil {
-		return 0
-	}
-	ProcessDependencies(c, vals)
+	_, _ = GetTagMatchingVersionOrConstraint(tags, versionString)
 	return 1
+
 }
 
-func FuzzIsChartDir(data []byte) int {
-	err := os.Mkdir("fuzzdir", 0755)
-	if err != nil {
-		return 0
-	}
-	defer os.RemoveAll("fuzzdir")
-	f := fuzz.NewConsumer(data)
-	err = f.CreateFiles("fuzzdir")
-	if err != nil {
-		return 0
-	}
-	_, _ = IsChartDir("fuzzdir")
+func FuzzparseReference(data []byte) int {
+	_, _ = parseReference(string(data))
 	return 1
 }

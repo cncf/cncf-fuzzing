@@ -19,7 +19,19 @@
 package repo
 
 import (
+	"bufio"
+	"bytes"
+	"fmt"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/getter"
+	"helm.sh/helm/v3/pkg/helmpath"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
@@ -94,4 +106,68 @@ func FuzzIndexDirectory(data []byte) int {
 	}
 	_, _ = IndexDirectory("indexdir", baseURL)
 	return 1
+}
+
+func FuzzDownloadIndexFile(data []byte) int {
+	srv, err := startLocalServerForFuzzing(nil)
+	if err != nil {
+		return 0
+	}
+	defer srv.Close()
+	r, err := NewChartRepository(&Entry{
+		Name: "test-repo",
+		URL:  srv.URL,
+	}, getter.All(&cli.EnvSettings{}))
+	if err != nil {
+		return 0
+	}
+
+	idx, err := r.DownloadIndexFile()
+	if err != nil {
+		return 0
+	}
+	if _, err := os.Stat(idx); err != nil {
+		return 0
+	}
+	i, err := LoadIndexFile(idx)
+	if err != nil {
+		return 0
+	}
+	// Check that charts file is also created
+	idx = filepath.Join(r.CachePath, helmpath.CacheChartsFile(r.Config.Name))
+	if _, err := os.Stat(idx); err != nil {
+		panic(fmt.Sprintf("error finding created charts file: %#v", err))
+	}
+
+	b, err := ioutil.ReadFile(idx)
+	if err != nil {
+		panic(fmt.Sprintf("error reading charts file: %#v", err))
+	}
+	verifyLocalChartsFileFuzz(b, i)
+	return 1
+}
+
+func startLocalServerForFuzzing(fileBytes []byte) (*httptest.Server, error) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write(fileBytes)
+	})
+	return httptest.NewServer(handler), nil
+}
+
+func verifyLocalChartsFileFuzz(chartsContent []byte, indexContent *IndexFile) {
+	var expected, real []string
+	for chart := range indexContent.Entries {
+		expected = append(expected, chart)
+	}
+	sort.Strings(expected)
+
+	scanner := bufio.NewScanner(bytes.NewReader(chartsContent))
+	for scanner.Scan() {
+		real = append(real, scanner.Text())
+	}
+	sort.Strings(real)
+
+	if strings.Join(expected, " ") != strings.Join(real, " ") {
+		panic(fmt.Sprintf("Cached charts file content unexpected. Expected:\n%s\ngot:\n%s", expected, real))
+	}
 }

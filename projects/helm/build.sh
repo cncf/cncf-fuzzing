@@ -33,8 +33,19 @@ mv $SRC/helm/pkg/storage/driver/mock_test.go \
 mv $SRC/cncf-fuzzing/projects/helm/repo_fuzzer.go \
    $SRC/helm/pkg/repo/
 
+mv $SRC/cncf-fuzzing/projects/helm/registry_fuzzer.go \
+   $SRC/helm/pkg/registry/
+
+mv $SRC/cncf-fuzzing/projects/helm/plugin_fuzzer.go \
+   $SRC/helm/pkg/plugin/
+
+
 go mod download && go mod tidy
+compile_go_fuzzer helm.sh/helm/v3/pkg/registry FuzzGetTagMatchingVersionOrConstraint fuzz_get_tag_matching_version_or_constraint
+compile_go_fuzzer helm.sh/helm/v3/pkg/registry FuzzparseReference fuzz_parse_reference
+compile_go_fuzzer helm.sh/helm/v3/pkg/plugin FuzzFindPlugins fuzz_find_plugins
 compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs FuzzfixLongPath fuzz_fix_long_path
+compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs Fuzz_fixLongPath fuzz_fix_long_path_internal
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzSqlDriver fuzz_sql_driver
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzMetadataValidate fuzz_metadata_validate
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzDependencyValidate fuzz_dependency_validate
@@ -43,8 +54,10 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionRun fuzz_action_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzShowRun fuzz_show_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart/loader FuzzLoadDir fuzz_load_dir
 compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzProcessDependencies fuzz_process_dependencies
+compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzIsChartDir fuzz_is_chart_dir
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzIndex fuzz_index
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzIndexDirectory fuzz_index_directory
+compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzDownloadIndexFile fuzz_download_index_file
 
 
 sed 's/go 1.16/go 1.18/g' -i $SRC/helm/go.mod
