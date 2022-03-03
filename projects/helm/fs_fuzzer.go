@@ -96,3 +96,8 @@ func FuzzfixLongPath(data []byte) int {
 	}
 	return 1
 }
+
+func Fuzz_fixLongPath(data []byte) int {
+	_ = fixLongPath(string(data))
+	return 1
+}
