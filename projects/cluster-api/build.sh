@@ -1,5 +1,16 @@
 go get github.com/AdaLogics/go-fuzz-headers@fe11a1f79e80cc365788a8d8c10e5a0315571dc5
 
+cp $SRC/cncf-fuzzing/projects/cluster-api/util_container_fuzzer.go \
+   $SRC/cluster-api/util/container/
+compile_go_fuzzer sigs.k8s.io/cluster-api/util/container FuzzModifyImageRepository fuzz_modify_image_repository
+compile_go_fuzzer sigs.k8s.io/cluster-api/util/container FuzzModifyImageTag fuzz_modify_image_tag
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/kubeadm_internal_fuzzer.go \
+   $SRC/cluster-api/controlplane/kubeadm/internal/
+cd $SRC/cluster-api/controlplane/kubeadm/internal
+compile_go_fuzzer . FuzzMatchesMachineSpec fuzz_matches_machine_spec
+cd $SRC/cluster-api
+
 cp $SRC/cncf-fuzzing/projects/cluster-api/internal_kubeadm_controller_fuzzer.go \
    $SRC/cluster-api/controlplane/kubeadm/internal/controllers/
 mv $SRC/cluster-api/controlplane/kubeadm/internal/controllers/fakes_test.go \
