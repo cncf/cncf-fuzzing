@@ -1,5 +1,23 @@
 go get github.com/AdaLogics/go-fuzz-headers@fe11a1f79e80cc365788a8d8c10e5a0315571dc5
 
+cp $SRC/cncf-fuzzing/projects/cluster-api/internal_kubeadm_controller_fuzzer.go \
+   $SRC/cluster-api/controlplane/kubeadm/internal/controllers/
+mv $SRC/cluster-api/controlplane/kubeadm/internal/controllers/fakes_test.go \
+   $SRC/cluster-api/controlplane/kubeadm/internal/controllers/fakes_test_fuzz.go
+mv $SRC/cluster-api/controlplane/kubeadm/internal/controllers/controller_test.go \
+   $SRC/cluster-api/controlplane/kubeadm/internal/controllers/controller_test_fuzz.go
+cd $SRC/cluster-api/controlplane/kubeadm/internal/controllers
+compile_go_fuzzer . FuzzKubeadmControlPlaneReconciler fuzz_kubeadm_controlplane_reconciler
+cd $SRC/cluster-api
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/patch_fuzzer.go \
+   $SRC/cluster-api/util/patch/
+compile_go_fuzzer sigs.k8s.io/cluster-api/util/patch FuzzPatch fuzz_patch
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/internal_machine_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/machine/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/machine FuzzMachineController_reconcile fuzz_machine_controller_reconcile
+
 cp $SRC/cncf-fuzzing/projects/cluster-api/conditions_fuzzer.go \
    $SRC/cluster-api/util/conditions/
 compile_go_fuzzer sigs.k8s.io/cluster-api/util/conditions FuzzPatchApply fuzz_patch_apply
