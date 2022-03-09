@@ -16,6 +16,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ghodss/yaml"
@@ -23,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/record"
-	ctrl "sigs.k8s.io/controller-runtime"
+	//ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -33,6 +34,8 @@ import (
 	"sigs.k8s.io/cluster-api/internal/controllers/topology/cluster/scope"
 	"sigs.k8s.io/cluster-api/internal/test/builder"
 	"sigs.k8s.io/cluster-api/internal/test/envtest"
+	"sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,8 +49,9 @@ import (
 var (
 	fakeSchemeForFuzzing = runtime.NewScheme()
 	env                  *envtest.Environment
-	ctx                  = ctrl.SetupSignalHandler()
-	initter              sync.Once
+	//ctx                  = ctrl.SetupSignalHandler()
+	ctx     = context.Background()
+	initter sync.Once
 )
 
 func initFunc() {
@@ -139,6 +143,16 @@ func GetUnstructured(f *fuzz.ConsumeFuzzer) (*unstructured.Unstructured, error) 
 	return &unstructured.Unstructured{Object: obj}, nil
 }
 
+func validateBlueprint(b *scope.ClusterBlueprint) error {
+	if b.ClusterClass == nil {
+		return fmt.Errorf("ClusterClass is nil")
+	}
+	if b.ClusterClass.Spec.ControlPlane.MachineInfrastructure == nil {
+		return fmt.Errorf("ClusterClass.Spec.ControlPlane.MachineInfrastructure is nil")
+	}
+	return nil
+}
+
 // tests cluster-api/internal/controllers/topology/cluster.(r *Reconciler).reconcileInfrastructureCluster()
 func FuzzreconcileControlPlane(data []byte) int {
 	f := fuzz.NewConsumer(data)
@@ -153,6 +167,15 @@ func FuzzreconcileControlPlane(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	bp := &scope.ClusterBlueprint{}
+	err = f.GenerateStruct(bp)
+	if err != nil {
+		return 0
+	}
+	err = validateBlueprint(bp)
+	if err != nil {
+		return 0
+	}
 	desired := &scope.ClusterState{
 		Cluster: desiredCluster,
 		ControlPlane: &scope.ControlPlaneState{
@@ -164,6 +187,7 @@ func FuzzreconcileControlPlane(data []byte) int {
 	}
 	s := scope.New(cluster)
 	s.Desired = desired
+	s.Blueprint = bp
 
 	fakeClient := fake.NewClientBuilder().WithScheme(fakeSchemeForFuzzing).Build()
 	r := Reconciler{
@@ -171,9 +195,61 @@ func FuzzreconcileControlPlane(data []byte) int {
 		// NOTE: Intentionally using a fake recorder, so the test can also be run without testenv.
 		recorder: record.NewFakeRecorder(32),
 	}
+	fmt.Printf("%+v\n", s)
 	err = r.reconcileControlPlane(ctx, s)
 	if err != nil {
 		fmt.Println(err)
 	}
+	return 1
+}
+
+func validateUnstructured(unstr *unstructured.Unstructured) error {
+	if _, ok := unstr.Object["kind"]; !ok {
+		return fmt.Errorf("invalid unstr")
+	}
+	if _, ok := unstr.Object["apiVersion"]; !ok {
+		return fmt.Errorf("invalid unstr")
+	}
+	if _, ok := unstr.Object["spec"]; !ok {
+		return fmt.Errorf("invalid unstr")
+	}
+	if _, ok := unstr.Object["status"]; !ok {
+		return fmt.Errorf("invalid unstr")
+	}
+	return nil
+}
+
+func FuzzClusterReconcile(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	unstr, err := GetUnstructured(f)
+	if err != nil {
+		return 0
+	}
+	err = validateUnstructured(unstr)
+	if err != nil {
+		return 0
+	}
+	cluster := &clusterv1.Cluster{}
+	err = f.GenerateStruct(cluster)
+	if err != nil {
+		return 0
+	}
+	node := &corev1.Node{}
+	err = f.GenerateStruct(node)
+	if err != nil {
+		return 0
+	}
+	clientFake := fake.NewClientBuilder().WithObjects(
+		node,
+		cluster,
+		builder.GenericInfrastructureMachineCRD.DeepCopy(),
+		unstr,
+	).Build()
+	r := &Reconciler{
+		Client:    clientFake,
+		APIReader: clientFake,
+	}
+
+	_, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
 	return 1
 }
