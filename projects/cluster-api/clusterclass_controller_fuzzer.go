@@ -1,4 +1,4 @@
-package cluster
+package clusterclass
 
 import (
         "context"
@@ -61,7 +61,7 @@ func validateUnstructured(unstr *unstructured.Unstructured) error {
         return nil
 }
 
-func FuzzClusterReconcile(data []byte) int {
+func FuzzClusterClassReconcile(data []byte) int {
         f := fuzz.NewConsumer(data)
         unstr, err := GetUnstructured(f)
         if err != nil {
@@ -71,7 +71,7 @@ func FuzzClusterReconcile(data []byte) int {
         if err != nil {
                 return 0
         }
-        cluster := &clusterv1.Cluster{}
+        cluster := &clusterv1.ClusterClass{}
         err = f.GenerateStruct(cluster)
         if err != nil {
                 return 0

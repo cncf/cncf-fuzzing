@@ -1,4 +1,4 @@
-package cluster
+package machinehealthcheck
 
 import (
         "context"
@@ -61,7 +61,7 @@ func validateUnstructured(unstr *unstructured.Unstructured) error {
         return nil
 }
 
-func FuzzClusterReconcile(data []byte) int {
+func FuzzMachineHealthCheckReconcile(data []byte) int {
         f := fuzz.NewConsumer(data)
         unstr, err := GetUnstructured(f)
         if err != nil {
@@ -71,8 +71,8 @@ func FuzzClusterReconcile(data []byte) int {
         if err != nil {
                 return 0
         }
-        cluster := &clusterv1.Cluster{}
-        err = f.GenerateStruct(cluster)
+        mhc := &clusterv1.MachineHealthCheck{}
+        err = f.GenerateStruct(mhc)
         if err != nil {
                 return 0
         }
@@ -82,16 +82,15 @@ func FuzzClusterReconcile(data []byte) int {
                 return 0
         }
         clientFake := fake.NewClientBuilder().WithScheme(fakeSchemeForFuzzing).WithObjects(
-                cluster,
+                mhc,
                 node,
                 unstr,
                 builder.GenericInfrastructureMachineCRD.DeepCopy(),
         ).Build()
         r := &Reconciler{
                 Client:    clientFake,
-                APIReader:    clientFake,
         }
 
-        _, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
+        _, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(mhc)})
         return 1
 }

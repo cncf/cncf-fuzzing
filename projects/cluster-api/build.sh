@@ -1,4 +1,37 @@
+set -o nounset
+set -o pipefail
+set -o errexit
+set -x
+
 go get github.com/AdaLogics/go-fuzz-headers@fe11a1f79e80cc365788a8d8c10e5a0315571dc5
+
+# Controllers
+##########################################################
+cp $SRC/cncf-fuzzing/projects/cluster-api/cluster_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/cluster/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/cluster FuzzClusterReconcile fuzz_cluster_controller
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/clusterclass_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/clusterclass/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/clusterclass FuzzClusterClassReconcile fuzz_clusterclass_controller
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/machine_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/machine/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/machine FuzzMachineReconcile fuzz_machine_controller
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/machinedeployment_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/machinedeployment/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/machinedeployment FuzzMachineDeploymentReconcile fuzz_machinedepoyment_controller
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/machinehealthcheck_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/machinehealthcheck/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/machinehealthcheck FuzzMachineHealthCheckReconcile fuzz_machinehealthcheck_controller
+
+cp $SRC/cncf-fuzzing/projects/cluster-api/machineset_controller_fuzzer.go \
+   $SRC/cluster-api/internal/controllers/machineset/
+compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/machineset FuzzMachinesetReconcile fuzz_machineset_controller
+########################################################
+
 
 cp $SRC/cncf-fuzzing/projects/cluster-api/util_container_fuzzer.go \
    $SRC/cluster-api/util/container/
@@ -25,19 +58,12 @@ cp $SRC/cncf-fuzzing/projects/cluster-api/patch_fuzzer.go \
    $SRC/cluster-api/util/patch/
 compile_go_fuzzer sigs.k8s.io/cluster-api/util/patch FuzzPatch fuzz_patch
 
-cp $SRC/cncf-fuzzing/projects/cluster-api/internal_machine_controller_fuzzer.go \
-   $SRC/cluster-api/internal/controllers/machine/
-compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/machine FuzzMachineController_reconcile fuzz_machine_controller_reconcile
-
 cp $SRC/cncf-fuzzing/projects/cluster-api/conditions_fuzzer.go \
    $SRC/cluster-api/util/conditions/
 compile_go_fuzzer sigs.k8s.io/cluster-api/util/conditions FuzzPatchApply fuzz_patch_apply
 
 cp $SRC/cncf-fuzzing/projects/cluster-api/topology_cluster_reconciler_fuzzer.go \
    $SRC/cluster-api/internal/controllers/topology/cluster/
-#compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileMachineHealthCheck fuzz_reconcile_machine_health_check
-#compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileControlPlane fuzz_reconcile_control_plane
-#compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzreconcileReferencedObject fuzz_reconcile_referenced_object
 compile_go_fuzzer sigs.k8s.io/cluster-api/internal/controllers/topology/cluster FuzzClusterReconcile fuzz_cluster_reconcile
 
 mkdir $SRC/cluster-api/fuzz

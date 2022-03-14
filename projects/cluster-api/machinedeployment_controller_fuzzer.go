@@ -1,4 +1,4 @@
-package cluster
+package machinedeployment
 
 import (
         "context"
@@ -61,7 +61,7 @@ func validateUnstructured(unstr *unstructured.Unstructured) error {
         return nil
 }
 
-func FuzzClusterReconcile(data []byte) int {
+func FuzzMachineDeploymentReconcile(data []byte) int {
         f := fuzz.NewConsumer(data)
         unstr, err := GetUnstructured(f)
         if err != nil {
@@ -71,7 +71,7 @@ func FuzzClusterReconcile(data []byte) int {
         if err != nil {
                 return 0
         }
-        cluster := &clusterv1.Cluster{}
+        cluster := &clusterv1.MachineDeployment{}
         err = f.GenerateStruct(cluster)
         if err != nil {
                 return 0
@@ -84,12 +84,12 @@ func FuzzClusterReconcile(data []byte) int {
         clientFake := fake.NewClientBuilder().WithScheme(fakeSchemeForFuzzing).WithObjects(
                 cluster,
                 node,
-                unstr,
+                node,
                 builder.GenericInfrastructureMachineCRD.DeepCopy(),
         ).Build()
         r := &Reconciler{
                 Client:    clientFake,
-                APIReader:    clientFake,
+                APIReader: clientFake,
         }
 
         _, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
