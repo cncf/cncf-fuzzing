@@ -57,19 +57,19 @@ func FuzzIndex(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	digest, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	indf, err := os.Create("indexfile")
-	if err != nil {
-		return 0
-	}
 	name, err := f.GetString()
 	if err != nil {
 		return 0
 	}
 	version, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	digest, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	indf, err := os.Create("indexfile")
 	if err != nil {
 		return 0
 	}
@@ -85,6 +85,50 @@ func FuzzIndex(data []byte) int {
 	}
 	ind.MustAdd(md, filename, baseURL, digest)
 	ind.Get(name, version)
+	return 1
+}
+
+func FuzzWriteFile(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	fileContents, err := f.GetBytes()
+	if err != nil {
+		return 0
+	}
+	md := &chart.Metadata{}
+	err = f.GenerateStruct(md)
+	if err != nil {
+		return 0
+	}
+	baseURL, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	digest, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	repeatBytesTimes, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	fileContents = bytes.Repeat(fileContents, repeatBytesTimes%20000)
+	fuzzFile, err := os.Create("fuzz-file")
+	if err != nil {
+		return 0
+	}
+	defer fuzzFile.Close()
+	defer os.Remove("fuzz-file")
+	_, err = fuzzFile.Write(fileContents)
+	if err != nil {
+		return 0
+	}
+	i := NewIndexFile()
+	err = i.MustAdd(md, "fuzz-file", baseURL, digest)
+	if err != nil {
+		return 0
+	}
+	i.WriteFile("write-to-file", 0600)
+	defer os.Remove("write-to-file")
 	return 1
 }
 
