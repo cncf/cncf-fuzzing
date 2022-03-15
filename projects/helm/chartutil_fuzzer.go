@@ -57,3 +57,48 @@ func FuzzIsChartDir(data []byte) int {
 	_, _ = IsChartDir("fuzzdir")
 	return 1
 }
+
+func FuzzExpandFile(data []byte) int {
+	fuzzFile, err := os.Create("fuzzFile")
+	if err != nil {
+		return 0
+	}
+	defer fuzzFile.Close()
+	defer os.Remove(fuzzFile.Name())
+	_, err = fuzzFile.Write(data)
+	if err != nil {
+		return 0
+	}
+	err = os.Mkdir("fuzzDir", 0755)
+	if err != nil {
+		return 0
+	}
+	defer os.RemoveAll("fuzzdir")
+	_ = ExpandFile("fuzzDir", fuzzFile.Name())
+	return 1
+}
+
+func FuzzCreateFrom(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	md := &chart.Metadata{}
+	err := f.GenerateStruct(md)
+	if err != nil {
+		return 0
+	}
+	err = os.Mkdir("fuzzDir1", 0755)
+	if err != nil {
+		return 0
+	}
+	defer os.RemoveAll("fuzzdir1")
+	err = f.CreateFiles("fuzzDir1")
+	if err != nil {
+		return 0
+	}
+	err = os.Mkdir("fuzzDir2", 0755)
+	if err != nil {
+		return 0
+	}
+	defer os.RemoveAll("fuzzDir2")
+	_ = CreateFrom(md, "fuzzDir1", "fuzzDir2")
+	return 1
+}
