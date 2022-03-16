@@ -1,0 +1,24 @@
+version: 0.1
+log:
+  level: info
+storage: inmemory
+auth:
+  silly:
+    realm: silly
+    service: silly
+notifications:
+  endpoints:
+    - name: endpoint-1
+      url:  http://example.com
+      headers:
+        Authorization: [Bearer <example>]
+      ignoredmediatypes:
+        - application/octet-stream
+      ignore:
+        mediatypes:
+           - application/octet-stream
+        actions:
+           - pull
+http:
+  headers:
+    X-Content-Type-Options: [nosniff]

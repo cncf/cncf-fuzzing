@@ -41,6 +41,11 @@ mv $CNCFPATH/set_fuzzer.go $SRC/distribution/digestset/
 mv $CNCFPATH/reference_fuzzer2.go $SRC/distribution/reference/
 mv $CNCFPATH/native_reference_fuzzer.go $SRC/distribution/reference/
 
+# Replace upstream fuzzer with this updated version:
+mv $CNCFPATH/parser_fuzzer.go $SRC/distribution/configuration/fuzz.go
+# create seed files for this fuzzer:
+zip $OUT/parser_fuzzer_seed_corpus.zip $CNCFPATH/corpus/parserFuzzer/*
+
 rm -r ./vendor
 
 # Used to build native fuzzers

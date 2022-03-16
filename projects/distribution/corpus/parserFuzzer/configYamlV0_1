@@ -1,0 +1,41 @@
+version: 0.1
+log:
+  level: info
+  fields:
+    environment: test
+storage:
+  s3:
+    region: us-east-1
+    bucket: my-bucket
+    rootdirectory: /registry
+    encrypt: true
+    secure: false
+    accesskey: SAMPLEACCESSKEY
+    secretkey: SUPERSECRET
+    host: ~
+    port: 42
+auth:
+  silly:
+    realm: silly
+    service: silly
+notifications:
+  endpoints:
+    - name: endpoint-1
+      url:  http://example.com
+      headers:
+        Authorization: [Bearer <example>]
+      ignoredmediatypes:
+        - application/octet-stream
+      ignore:
+        mediatypes:
+           - application/octet-stream
+        actions:
+           - pull
+reporting:
+  bugsnag:
+    apikey: BugsnagApiKey
+http:
+  clientcas:
+    - /path/to/ca.pem
+  headers:
+    X-Content-Type-Options: [nosniff]
