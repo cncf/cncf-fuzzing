@@ -38,3 +38,18 @@ func FuzzFindPlugins(data []byte) int {
 	_, _ = FindPlugins("fuzzdir")
 	return 1
 }
+
+func FuzzLoadAll(data []byte) int {
+	err := os.Mkdir("fuzzdir", 0755)
+	if err != nil {
+		return 0
+	}
+	defer os.RemoveAll("fuzzdir")
+	f := fuzz.NewConsumer(data)
+	err = f.CreateFiles("fuzzdir")
+	if err != nil {
+		return 0
+	}
+	_, _ = LoadAll("fuzzdir")
+	return 1
+}

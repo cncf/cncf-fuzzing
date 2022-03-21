@@ -19,7 +19,9 @@
 package action
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"helm.sh/helm/v3/pkg/chart"
 	kubefake "helm.sh/helm/v3/pkg/kube/fake"
@@ -69,5 +71,47 @@ func FuzzShowRun(data []byte) int {
 
 	client.chart = newChart
 	_, _ = client.Run("")
+	return 1
+}
+
+func FuzzDependencyList(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	err := os.Mkdir("fuzz-test-data", 0755)
+	if err != nil {
+		return 0
+	}
+	defer os.RemoveAll("fuzz-test-data")
+	err = f.CreateFiles("fuzz-test-data")
+	if err != nil {
+		return 0
+	}
+	buf := bytes.Buffer{}
+	NewDependency().List("fuzz-test-data", &buf)
+	return 1
+}
+
+func FuzzActionList(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	rls1 := &release.Release{}
+	err := f.GenerateStruct(rls1)
+	if err != nil {
+		return 0
+	}
+	rls2 := &release.Release{}
+	err = f.GenerateStruct(rls2)
+	if err != nil {
+		return 0
+	}
+
+	t := &testing.T{}
+	lister := newListFixture(t)
+
+	if err = lister.cfg.Releases.Create(rls1); err != nil {
+		return 0
+	}
+	if err = lister.cfg.Releases.Create(rls2); err != nil {
+		return 0
+	}
+	_, _ = lister.Run()
 	return 1
 }
