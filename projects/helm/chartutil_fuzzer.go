@@ -90,15 +90,15 @@ func FuzzCreateFrom(data []byte) int {
 		return 0
 	}
 	defer os.RemoveAll("fuzzdir1")
-	err = f.CreateFiles("fuzzDir1")
-	if err != nil {
-		return 0
-	}
 	err = os.Mkdir("fuzzDir2", 0755)
 	if err != nil {
 		return 0
 	}
 	defer os.RemoveAll("fuzzDir2")
+	err = f.CreateFiles("fuzzDir2")
+	if err != nil {
+		return 0
+	}
 	_ = CreateFrom(md, "fuzzDir1", "fuzzDir2")
 	return 1
 }

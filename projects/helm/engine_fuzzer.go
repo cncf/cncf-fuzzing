@@ -43,3 +43,42 @@ func FuzzEngineRender(data []byte) int {
 	_, _ = Render(chrt, values)
 	return 1
 }
+
+func FuzzEngineFiles(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	noOfEntries, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	files := make(files, 0)
+	for i:=0;i<noOfEntries%15;i++ {
+		name, err := f.GetString()
+		if err != nil {
+			return 0
+		}
+		byteData, err := f.GetBytes()
+		if err != nil {
+			return 0
+		}
+		files[name] = byteData
+	}
+	name, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	_ = files.Get(name)
+	pattern, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	_ = files.Glob(pattern)
+	_ = files.AsConfig()
+	_ = files.AsSecrets()
+
+	path, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	_ = files.Lines(path)
+	return 1
+}
