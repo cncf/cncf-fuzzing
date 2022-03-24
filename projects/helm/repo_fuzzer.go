@@ -85,6 +85,24 @@ func FuzzIndex(data []byte) int {
 	}
 	ind.MustAdd(md, filename, baseURL, digest)
 	ind.Get(name, version)
+
+
+	indexFileBytes, err = f.GetBytes()
+	if err != nil {
+		return 0
+	}
+	indf2, err := os.Create("indexfile2")
+	if err != nil {
+		return 0
+	}
+	defer indf2.Close()
+	defer os.Remove("indexfile2")
+	ind2, err := LoadIndexFile("indexfile2")
+	if err != nil {
+		return 0
+	}
+	ind.Merge(ind2)
+
 	return 1
 }
 
@@ -214,4 +232,96 @@ func verifyLocalChartsFileFuzz(chartsContent []byte, indexContent *IndexFile) {
 	if strings.Join(expected, " ") != strings.Join(real, " ") {
 		panic(fmt.Sprintf("Cached charts file content unexpected. Expected:\n%s\ngot:\n%s", expected, real))
 	}
+}
+
+func FuzzChartRepositoryLoad(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	testRepository := "fuzzDir"
+	err := os.Mkdir(testRepository, 0755)
+	if err != nil {
+		return 0
+	}
+	defer os.RemoveAll(testRepository)
+	err = f.CreateFiles(testRepository)
+	if err != nil {
+		return 0
+	}
+	testURL := "http://example-charts.com"
+
+	r, err := NewChartRepository(&Entry{
+		Name: testRepository,
+		URL:  testURL,
+	}, getter.All(&cli.EnvSettings{}))
+	if err != nil {
+		return 0
+	}
+	_ = r.Load()
+	return 1
+}
+
+func FuzzRepoFileUtils(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	fileContents, err := f.GetBytes()
+	if err != nil {
+		return 0
+	}
+	fuzzFile, err := os.Create("fuzzFile")
+	if err != nil {
+		return 0
+	}
+	defer fuzzFile.Close()
+	defer os.Remove("fuzzFile")
+	_, err = fuzzFile.Write(fileContents)
+	if err != nil {
+		return 0
+	}
+	repoFile, err := LoadFile("fuzzFile")
+	if err != nil {
+		return 0
+	}
+	noOfOperations, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	for i:=0;i<noOfOperations%5;i++ {
+		opType, err := f.GetInt()
+		if err != nil {
+			return 0
+		}
+		switch opType%5 {
+		case 0:
+			e := &Entry{}
+			err = f.GenerateStruct(e)
+			if err != nil {
+				return 0
+			}
+			repoFile.Add(e)
+		case 1:
+			e := &Entry{}
+			err = f.GenerateStruct(e)
+			if err != nil {
+				return 0
+			}
+			repoFile.Update(e)
+		case 2:
+			name, err := f.GetString()
+			if err != nil {
+				return 0
+			}
+			repoFile.Has(name)
+		case 3:
+			name, err := f.GetString()
+			if err != nil {
+				return 0
+			}
+			_ = repoFile.Get(name)
+		case 4:
+			name, err := f.GetString()
+			if err != nil {
+				return 0
+			}
+			_ = repoFile.Remove(name)
+		}
+	}
+	return 1
 }
