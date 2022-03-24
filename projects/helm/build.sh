@@ -52,7 +52,16 @@ mv $SRC/cncf-fuzzing/projects/helm/provenance_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/helm/storage_fuzzer.go \
    $SRC/helm/pkg/storage/
 
+mv $SRC/cncf-fuzzing/projects/helm/releaseutil_fuzzer.go \
+   $SRC/helm/pkg/releaseutil/
+
+mv $SRC/cncf-fuzzing/projects/helm/lint_fuzzer.go \
+   $SRC/helm/pkg/lint/
+
 go mod download && go mod tidy
+compile_go_fuzzer helm.sh/helm/v3/pkg/lint FuzzLintAll fuzz_lint_all
+compile_go_fuzzer helm.sh/helm/v3/pkg/releaseutil FuzzSplitManifests fuzz_split_manifests
+compile_go_fuzzer helm.sh/helm/v3/pkg/releaseutil FuzzSortManifests fuzz_sort_manifests
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage FuzzStorage fuzz_storage
 compile_go_fuzzer helm.sh/helm/v3/pkg/provenance FuzzNewFromFiles fuzz_new_from_files
 compile_go_fuzzer helm.sh/helm/v3/pkg/provenance FuzzParseMessageBlock fuzz_parse_message_block
@@ -84,7 +93,11 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzCreateFrom fuzz_create_from
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzIndex fuzz_index
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzIndexDirectory fuzz_index_directory
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzDownloadIndexFile fuzz_download_index_file
+compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzChartRepositoryLoad fuzz_chart_repository_load
+compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzRepoFileUtils fuzz_repo_file_utils
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzWriteFile fuzz_write_file
+
+
 
 sed 's/go 1.16/go 1.18/g' -i $SRC/helm/go.mod
 
