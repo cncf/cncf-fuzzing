@@ -16,9 +16,9 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/http/httptest"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -96,73 +96,6 @@ func FuzzBlobServeBlob(data []byte) int {
 	return 1
 }
 
-func FuzzClientPut(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	repo, _ := reference.WithName("test.example.com/repo/delete")
-	m1, dgst, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
-	if err != nil || m1 == nil {
-		return 0
-	}
-	_, payload, err := m1.Payload()
-	if err != nil {
-		return 0
-	}
-
-	var m testutil.RequestResponseMap
-	m = append(m, testutil.RequestResponseMapping{
-		Request: testutil.Request{
-			Method: "PUT",
-			Route:  "/v2/" + repo.Name() + "/manifests/other",
-			Body:   payload,
-		},
-		Response: testutil.Response{
-			StatusCode: http.StatusAccepted,
-			Headers: http.Header(map[string][]string{
-				"Content-Length":        {"0"},
-				"Docker-Content-Digest": {dgst.String()},
-			}),
-		},
-	})
-
-	putDgst := digest.FromBytes(m1.Canonical)
-	m = append(m, testutil.RequestResponseMapping{
-		Request: testutil.Request{
-			Method: "PUT",
-			Route:  "/v2/" + repo.Name() + "/manifests/" + putDgst.String(),
-			Body:   payload,
-		},
-		Response: testutil.Response{
-			StatusCode: http.StatusAccepted,
-			Headers: http.Header(map[string][]string{
-				"Content-Length":        {"0"},
-				"Docker-Content-Digest": {putDgst.String()},
-			}),
-		},
-	})
-
-	e, tearDown := testServerForFuzz(m)
-	defer tearDown()
-
-	r, err := NewRepository(repo, e, nil)
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.Background()
-	ms, err := r.Manifests(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	if _, err := ms.Put(ctx, m1, distribution.WithTag(m1.Tag)); err != nil {
-		panic(err)
-	}
-
-	if _, err := ms.Put(ctx, m1); err != nil {
-		panic(err)
-	}
-	return 1
-}
-
 func newRandomBlobForFuzz(f *fuzz.ConsumeFuzzer) (digest.Digest, []byte, error) {
 	b, err := f.GetBytes()
 	if err != nil {
@@ -172,6 +105,9 @@ func newRandomBlobForFuzz(f *fuzz.ConsumeFuzzer) (digest.Digest, []byte, error) 
 }
 
 func newRandomSchemaV1ManifestForFuzz(f *fuzz.ConsumeFuzzer, name reference.Named, tag string) (*schema1.SignedManifest, digest.Digest, []byte, error) {
+	if name == nil {
+		return nil, digest.FromBytes([]byte("0")), nil, fmt.Errorf("invalid name")
+	}
 	blobCount, err := f.GetInt()
 	if err != nil {
 		return nil, digest.FromBytes([]byte("0")), nil, err
@@ -226,27 +162,212 @@ func testServerForFuzz(rrm testutil.RequestResponseMap) (string, func()) {
 	return s.URL, s.Close
 }
 
-func FuzzBlobGet(data []byte) int {
+
+func FuzzRegistryClient(data []byte) int {
+	var m testutil.RequestResponseMap
+
 	f := fuzz.NewConsumer(data)
-	dgst, blob, err := newRandomBlobForFuzz(f)
+	noOfRRMappings, err := f.GetInt()
 	if err != nil {
 		return 0
 	}
-	var m testutil.RequestResponseMap
-	addTestFetch("test.example.com/repo1", dgst, blob, &m)
-	e, c := testServerForFuzz(m)
+
+	for i:=0;i<noOfRRMappings%10;i++ {
+		newRRMapping := testutil.RequestResponseMapping{}
+		err := f.GenerateStruct(&newRRMapping)
+		if err != nil {
+			return 0
+		}
+		m = append(m, newRRMapping)
+	}
+
+	e, c := testServer(m)
 	defer c()
-	ctx := context.Background()
-	repo, _ := reference.WithName("test.example.com/repo1")
+
+	repo, _ := reference.WithName("test.example.com/uploadrepo")
+
 	r, err := NewRepository(repo, e, nil)
 	if err != nil {
 		return 0
 	}
-	l := r.Blobs(ctx)
 
-	_, err = l.Get(ctx, dgst)
+	noOfOps, err := f.GetInt()
 	if err != nil {
 		return 0
 	}
+	for i:=0;i<noOfOps%10;i++ {
+		opType, err := f.GetInt()
+		if err != nil {
+			return 0
+		}
+		switch opType%9 {
+		case 0:
+			tagServiceAll(r)
+		case 1:
+			tagServiceUntag(r, f)
+		case 2:
+			tagServiceGet(r, f)
+		case 3:
+			uploadBlob(r, f)
+		case 4:
+			getBlob(r, f)
+		case 5:
+			statBlob(r, f)
+		case 6:
+			manifestGet(r, f)
+		case 7:
+			manifestDelete(r, f)
+		case 8:
+			manifestPut(r, f)
+		}
+	}
 	return 1
+}
+
+func tagServiceAll(r distribution.Repository) {
+	tagService := r.Tags(context.Background())
+	_, _ = tagService.All(context.Background())
+}
+
+func tagServiceUntag(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	tagService := r.Tags(context.Background())
+	tag, err := f.GetString()
+	if err != nil {
+		return err
+	}
+	_ = tagService.Untag(context.Background(), tag)
+	return nil
+}
+
+func tagServiceGet(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	tagService := r.Tags(context.Background())
+	tag, err := f.GetString()
+	if err != nil {
+		return err
+	}
+	_, _ = tagService.Get(context.Background(), tag)
+	return nil
+}
+
+func uploadBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	dgst, blob, err := newRandomBlobForFuzz(f)
+	if err != nil {
+		return err
+	}
+
+	l := r.Blobs(context.Background())
+
+	upload, err := l.Create(context.Background())
+	if err != nil {
+		return nil
+	}
+
+	n, err := upload.ReadFrom(bytes.NewReader(blob))
+	if err != nil {
+		return nil
+	}
+
+	if n != int64(len(blob)) {
+		panic(fmt.Sprintf("Unexpected ReadFrom length: %d; expected: %d\n", n, len(blob)))
+	}
+
+	_, _ = upload.Commit(context.Background(), distribution.Descriptor{
+		Digest: dgst,
+		Size: int64(len(blob)),
+	})
+
+	return nil
+}
+
+func getBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	dgst, _, err := newRandomBlobForFuzz(f)
+	if err != nil {
+		return err
+	}
+
+	l := r.Blobs(context.Background())
+	_, _ = l.Get(context.Background(), dgst)
+	return nil
+}
+
+func statBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	dgst, _, err := newRandomBlobForFuzz(f)
+	if err != nil {
+		return err
+	}
+
+	l := r.Blobs(context.Background())
+	_, _ = l.Stat(context.Background(), dgst)
+	return nil
+}
+
+func manifestGet(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	referenceName, err := f.GetString()
+	if err != nil {
+		return err
+	}
+	repo, _ := reference.WithName(referenceName)
+	_, dgst, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	ms, err := r.Manifests(ctx)
+	if err != nil {
+		return err
+	}
+	_, _ = ms.Get(ctx, dgst)
+	return nil
+}
+
+func manifestDelete(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	referenceName, err := f.GetString()
+	if err != nil {
+		return err
+	}
+	repo, _ := reference.WithName(referenceName)
+	_, dgst, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	ms, err := r.Manifests(ctx)
+	if err != nil {
+		return err
+	}
+	_ = ms.Delete(ctx, dgst)
+	return nil
+}
+
+func manifestPut(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+	ms, err := r.Manifests(context.Background())
+	if err != nil {
+		return nil
+	}
+	referenceName, err := f.GetString()
+	if err != nil {
+		return err
+	}
+	repo, _ := reference.WithName(referenceName)
+	m1, _, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
+	if err != nil || m1 == nil {
+		return nil
+	}
+
+	withTag, err := f.GetBool()
+	if err != nil {
+		return err
+	}
+
+	if withTag {
+		if _, err := ms.Put(context.Background(), m1, distribution.WithTag(m1.Tag)); err != nil {
+			return nil
+		}
+	} else {
+
+		if _, err := ms.Put(context.Background(), m1); err != nil {
+			return nil
+		}
+	}
+	return nil
 }
