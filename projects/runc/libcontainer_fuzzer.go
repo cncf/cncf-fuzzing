@@ -23,6 +23,7 @@ import (
 
 	gofuzzheaders "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/opencontainers/runc/libcontainer/configs"
+	"github.com/opencontainers/runc/libcontainer/system"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,7 +47,10 @@ func FuzzStateApi(data []byte) int {
 
 	// Create a config
 	config := new(configs.Config)
-	c.GenerateStruct(config)
+	err = c.GenerateStruct(config)
+	if err != nil {
+		return 0
+	}
 	config.Rootfs = root
 
 	// Add Namespaces:
@@ -70,37 +74,73 @@ func FuzzStateApi(data []byte) int {
 		config.Namespaces = []configs.Namespace{}
 	}
 
-	// Create container:
-	containerName, err := c.GetString()
-	if err != nil {
-		return 0
-	}
-	container, err := newContainerWithName(containerName, root, config)
-	if err != nil {
+	container := newContainerWithName()
+	if container == nil {
 		return 0
 	}
 	defer container.Destroy()
+
+	err = container.Set(*config)
+	if err != nil {
+		return 0
+	}
 
 	// Fuzz container APIs:
 	_, _ = container.State()
 	_, _ = container.Stats()
 	_, _ = container.OCIState()
 	_, _ = container.Processes()
+
+	process := &Process{}
+	err = c.GenerateStruct(process)
+	if err != nil {
+		return 0
+	}
+	_ = container.Run(process)
+	err = container.Pause()
+	if err == nil {
+		container.Resume()
+	}
+
+	process = &Process{}
+	err = c.GenerateStruct(process)
+	if err != nil {
+		return 0
+	}
+
+	criuOpts := &CriuOpts{}
+	err = c.GenerateStruct(criuOpts)
+	if err != nil {
+		return 0
+	}
+	_ = container.Restore(process, criuOpts)
+
 	return 1
 }
 
-func newContainerWithName(name, root string, config *configs.Config) (Container, error) {
-	f, err := New(root)
+func newContainerWithName() *Container {
+	pid := 1
+	stat, err := system.Stat(pid)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	if config.Cgroups != nil && config.Cgroups.Parent == "system.slice" {
-		f, err = New(root)
-		if err != nil {
-			return nil, err
-		}
+	container := &Container{
+		id:     "myid",
+		config: &configs.Config{},
+		cgroupManager: &mockCgroupManager{
+			allPids: []int{1, 2, 3},
+			paths: map[string]string{
+				"device": "/proc/self/cgroups",
+			},
+		},
+		initProcess: &mockProcess{
+			_pid:    1,
+			started: 10,
+		},
+		initProcessStartTime: stat.StartTime,
 	}
-	return f.Create(name, config)
+	container.state = &runningState{c: container}
+	return container
 }
 
 func newTestRoot() (string, error) {
