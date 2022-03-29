@@ -263,7 +263,7 @@ func getSandboxFuzz(f *fuzz.ConsumeFuzzer) (sandboxstore.Sandbox, error) {
 		return sandboxstore.Sandbox{}, err
 	}
 
-	reqString := fmt.Sprintf("metadata: %+v\nstatus: %s", metadata, status)
+	reqString := fmt.Sprintf("metadata: %+v\nstatus: %+v\n", metadata, status)
 	logExecution("sandboxstore.NewSandbox", reqString)
 
 	return sandboxstore.NewSandbox(metadata, status), nil

@@ -17,12 +17,22 @@
 rm -r $SRC/containerd/vendor
 go get github.com/AdaLogics/go-fuzz-headers@9f22f86e471065b8d56861991dc885e27b1ae7de
 
+mv $SRC/containerd/content/local/store_test.go \
+	$SRC/containerd/content/local/store_test_fuzz.go
+mv $SRC/cncf-fuzzing/projects/containerd/content_local_fuzzer.go \
+	$SRC/containerd/content/local/
+
+
 mv $SRC/cncf-fuzzing/projects/containerd/docker_fuzzer_internal.go $SRC/containerd/remotes/docker/config/
 compile_go_fuzzer github.com/containerd/containerd/remotes/docker/config FuzzParseHostsFile fuzz_parser_hosts_file
 
 mv $SRC/cncf-fuzzing/projects/containerd/cri_fuzzer2.go $SRC/containerd/pkg/cri/server/
 mv pkg/cri/server/service_test.go pkg/cri/server/service_fuzz.go
 compile_go_fuzzer github.com/containerd/containerd/pkg/cri/server FuzzCRI fuzz_cri
+
+mv $SRC/cncf-fuzzing/projects/containerd/containerd_import_structured_fuzzer.go \
+	$SRC/containerd/contrib/fuzz/
+compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzContainerdImportStructured fuzz_containerd_import_structured
 
 mv $SRC/cncf-fuzzing/projects/containerd/apparmor_fuzzer.go $SRC/containerd/contrib/apparmor/
 compile_go_fuzzer github.com/containerd/containerd/contrib/apparmor FuzzLoadDefaultProfile fuzz_load_default_profile
