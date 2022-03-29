@@ -12,6 +12,7 @@ sed 's/panic(err)/panic("GOT A FUZZ ERROR")/g' -i $SRC/etcd/raft/raft.go
 
 
 mkdir $SRC/etcd/tests/fuzzing
+go get github.com/AdaLogics/go-fuzz-headers
 
 # api marshal fuzzer
 cd $SRC/etcd
@@ -25,8 +26,11 @@ compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marsh
 
 # wal fuzzer
 echo "building wal fuzzer"
+cd $SRC/etcd/server/storage/wal
 cp $SRC/cncf-fuzzing/projects/etcd/wal_fuzzer.go $SRC/etcd/server/storage/wal/
+go get github.com/AdaLogics/go-fuzz-headers
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzWalCreate fuzz_wal_create
+cd -
 
 sed 's/panic(err)/panic("GOT A FUZZ ERROR")/g' -i $SRC/etcd/server/storage/wal/version.go
 compile_go_fuzzer go.etcd.io/etcd/server/v3/storage/wal FuzzMinimalEtcdVersion fuzz_minimal_etcd_version
