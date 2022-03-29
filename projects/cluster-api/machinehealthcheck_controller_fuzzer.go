@@ -19,7 +19,7 @@ import (
 )
 
 var (
-        ctx = context.Background()
+        fuzzCtx = context.Background()
         fakeSchemeForFuzzing = runtime.NewScheme()
 )
 
@@ -91,6 +91,6 @@ func FuzzMachineHealthCheckReconcile(data []byte) int {
                 Client:    clientFake,
         }
 
-        _, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(mhc)})
+        _, _ = r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(mhc)})
         return 1
 }
