@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	ctx        = ctrl.SetupSignalHandler()
+	fuzzCtx        = ctrl.SetupSignalHandler()
 	fakeScheme = runtime.NewScheme()
 	objTypes   = map[int]string{
 		0: "Node",
@@ -77,6 +77,6 @@ func FuzzPatch(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = patcher.Patch(ctx, obj)
+	_ = patcher.Patch(fuzzCtx, obj)
 	return 1
 }

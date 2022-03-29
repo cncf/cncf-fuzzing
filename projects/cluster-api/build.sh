@@ -50,6 +50,7 @@ mv $SRC/cluster-api/controlplane/kubeadm/internal/controllers/fakes_test.go \
    $SRC/cluster-api/controlplane/kubeadm/internal/controllers/fakes_test_fuzz.go
 mv $SRC/cluster-api/controlplane/kubeadm/internal/controllers/controller_test.go \
    $SRC/cluster-api/controlplane/kubeadm/internal/controllers/controller_test_fuzz.go
+rm $SRC/cluster-api/controlplane/kubeadm/internal/controllers/suite_test.go
 cd $SRC/cluster-api/controlplane/kubeadm/internal/controllers
 compile_go_fuzzer . FuzzKubeadmControlPlaneReconciler fuzz_kubeadm_controlplane_reconciler
 cd $SRC/cluster-api

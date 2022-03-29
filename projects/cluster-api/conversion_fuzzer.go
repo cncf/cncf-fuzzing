@@ -273,7 +273,7 @@ func FuzzV1alpha3Conversion(data []byte) int {
 		input = utilconversion.FuzzTestFuncInput{
 			Hub:                &clusterv1.Cluster{},
 			Spoke:              &Cluster{},
-			SpokeAfterMutation: clusterSpokeAfterMutation,
+			SpokeAfterMutation: clusterSpokeAfterMutationFuzz,
 			FuzzerFuncs:        []fuzzer.FuzzerFuncs{},
 		}
 		hubName = "sigs.k8s.io/cluster-api/api/v1beta1.Cluster"
@@ -625,7 +625,7 @@ func setCustomFieldsHub(hubBefore conversion.Hub) {
 	}
 }
 
-func clusterSpokeAfterMutation(c conversion.Convertible) {
+func clusterSpokeAfterMutationFuzz(c conversion.Convertible) {
 	cluster := c.(*Cluster)
 
 	// Create a temporary 0-length slice using the same underlying array as cluster.Status.Conditions to avoid

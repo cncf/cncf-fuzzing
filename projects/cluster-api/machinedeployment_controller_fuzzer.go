@@ -19,7 +19,7 @@ import (
 )
 
 var (
-        ctx = context.Background()
+        fuzzCtx = context.Background()
         fakeSchemeForFuzzing = runtime.NewScheme()
 )
 
@@ -92,6 +92,6 @@ func FuzzMachineDeploymentReconcile(data []byte) int {
                 APIReader: clientFake,
         }
 
-        _, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
+        _, _ = r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
         return 1
 }

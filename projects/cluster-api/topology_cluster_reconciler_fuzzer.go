@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/cluster-api/internal/controllers/topology/cluster/mergepatch"
 	"sigs.k8s.io/cluster-api/internal/controllers/topology/cluster/scope"
 	"sigs.k8s.io/cluster-api/internal/test/builder"
-	"sigs.k8s.io/cluster-api/internal/test/envtest"
+	//"sigs.k8s.io/cluster-api/internal/test/envtest"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -48,9 +48,9 @@ import (
 
 var (
 	fakeSchemeForFuzzing = runtime.NewScheme()
-	env                  *envtest.Environment
+	//env                  *envtest.Environment
 	//ctx                  = ctrl.SetupSignalHandler()
-	ctx     = context.Background()
+	fuzzCtx     = context.Background()
 	initter sync.Once
 )
 
@@ -88,7 +88,7 @@ func FuzzreconcileMachineHealthCheck(data []byte) int {
 		recorder: record.NewFakeRecorder(32),
 	}
 	// Fuzz target:
-	r.reconcileMachineHealthCheck(ctx, current, desired)
+	r.reconcileMachineHealthCheck(fuzzCtx, current, desired)
 	return 1
 }
 
@@ -116,7 +116,7 @@ func FuzzreconcileReferencedObject(data []byte) int {
 		recorder: record.NewFakeRecorder(32),
 	}
 
-	r.reconcileReferencedObject(ctx, reconcileReferencedObjectInput{
+	r.reconcileReferencedObject(fuzzCtx, reconcileReferencedObjectInput{
 		cluster: cluster,
 		current: current,
 		desired: desired,
@@ -196,7 +196,7 @@ func FuzzreconcileControlPlane(data []byte) int {
 		recorder: record.NewFakeRecorder(32),
 	}
 	fmt.Printf("%+v\n", s)
-	err = r.reconcileControlPlane(ctx, s)
+	err = r.reconcileControlPlane(fuzzCtx, s)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -250,6 +250,6 @@ func FuzzClusterReconcile(data []byte) int {
 		APIReader: clientFake,
 	}
 
-	_, _ = r.Reconcile(ctx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
+	_, _ = r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
 	return 1
 }
