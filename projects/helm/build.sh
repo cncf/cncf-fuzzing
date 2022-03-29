@@ -20,6 +20,7 @@ mv $SRC/helm/pkg/action/list_test.go \
 
 mv $SRC/helm/pkg/action/upgrade_test.go $SRC/helm/pkg/action/upgrade_test_fuzz.go
 mv /src/helm/pkg/action/action_test.go $SRC/helm/pkg/action/action_test_fuzz.go
+mv /src/helm/pkg/action/uninstall_test.go $SRC/helm/pkg/action/uninstall_test_fuzz.go
 
 mv $SRC/cncf-fuzzing/projects/helm/loaddir_fuzzer.go \
    $SRC/helm/pkg/chart/loader/
@@ -85,6 +86,7 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionRun fuzz_action_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzShowRun fuzz_show_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzDependencyList fuzz_dependency_list
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionList fuzz_action_list
+compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionUninstall fuzz_action_uninstall
 compile_go_fuzzer helm.sh/helm/v3/pkg/chart/loader FuzzLoadDir fuzz_load_dir
 compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzProcessDependencies fuzz_process_dependencies
 compile_go_fuzzer helm.sh/helm/v3/pkg/chartutil FuzzIsChartDir fuzz_is_chart_dir
@@ -114,3 +116,7 @@ compile_native_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzStrvalsParse fuzz_strva
 
 zip $OUT/fuzz_create_from_seed_corpus.zip $SRC/helm/pkg/chartutil/testdata/frobnitz/*
 mv $SRC/cncf-fuzzing/projects/helm/dicts/fuzz_create_from.dict $OUT/
+
+zip $OUT/fuzz_action_run_seed_corpus.zip \
+    $SRC/helm/pkg/chartutil/testdata/test-values.schema.json \
+    $SRC/helm/pkg/chartutil/testdata/test-values.yaml

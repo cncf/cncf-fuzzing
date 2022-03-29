@@ -44,8 +44,18 @@ func FuzzActionRun(data []byte) int {
 		return 0
 	}
 
+	relName, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyz0123456789-.", 52)
+    if err != nil {
+            return 0
+    }
+    rel.Name = relName
+    rel.Info.Status = release.StatusDeployed
+
 	upAction := upgradeAction(t)
-	upAction.cfg.Releases.Create(rel)
+	err = upAction.cfg.Releases.Create(rel)
+	if err != nil {
+		return 0
+	}
 
 	failer := upAction.cfg.KubeClient.(*kubefake.FailingKubeClient)
 	failer.WaitError = fmt.Errorf("I timed out")
@@ -103,8 +113,16 @@ func FuzzActionList(data []byte) int {
 		return 0
 	}
 
+	lister := &List{}
+	err = f.GenerateStruct(lister)
+	if err != nil {
+		return 0
+	}
+
 	t := &testing.T{}
-	lister := newListFixture(t)
+	cfg := actionConfigFixture(t)
+	lister.cfg = cfg
+	//lister := newListFixture(t)
 
 	if err = lister.cfg.Releases.Create(rls1); err != nil {
 		return 0
@@ -113,5 +131,32 @@ func FuzzActionList(data []byte) int {
 		return 0
 	}
 	_, _ = lister.Run()
+	return 1
+}
+
+func FuzzActionUninstall(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	rls1 := &release.Release{}
+	err := f.GenerateStruct(rls1)
+	if err != nil {
+		return 0
+	}
+
+	t := &testing.T{}
+	unAction := uninstallAction(t)
+	unAction.DisableHooks = true
+	unAction.DryRun = false
+	unAction.Wait = false
+	unAction.KeepHistory = true
+
+	if err = unAction.cfg.Releases.Create(rls1); err != nil {
+		return 0
+	}
+
+	unAction.cfg.Releases.Create(rls1)
+	failer := unAction.cfg.KubeClient.(*kubefake.FailingKubeClient)
+	failer.WaitError = fmt.Errorf("U timed out")
+	unAction.cfg.KubeClient = failer
+	_, _ = unAction.Run(rls1.Name)
 	return 1
 }
