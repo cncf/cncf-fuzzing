@@ -40,6 +40,9 @@ mv $CNCFPATH/token_fuzzer.go $SRC/distribution/registry/auth/token/
 mv $CNCFPATH/set_fuzzer.go $SRC/distribution/digestset/
 mv $CNCFPATH/reference_fuzzer2.go $SRC/distribution/reference/
 mv $CNCFPATH/native_reference_fuzzer.go $SRC/distribution/reference/
+mv $CNCFPATH/file_driver_fuzzer.go $SRC/distribution/registry/storage/driver/filesystem/
+mv $CNCFPATH/app_fuzzer.go $SRC/distribution/registry/handlers/
+mv $SRC/distribution/registry/handlers/api_test.go $SRC/distribution/registry/handlers/api_test_fuzz.go
 
 # Replace upstream fuzzer with this updated version:
 mv $CNCFPATH/parser_fuzzer.go $SRC/distribution/configuration/fuzz.go
@@ -63,6 +66,7 @@ compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_no
 compile_go_fuzzer $DISTRIBUTION/reference FuzzWithNameAndWithTag fuzz_with_name_and_tag
 compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_manifest_builder
 
+compile_go_fuzzer $REGISTRYPATH/handlers FuzzApp fuzz_app
 compile_go_fuzzer $REGISTRYPATH/auth/htpasswd FuzzAccessController fuzz_access_controller
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Build fuzz_schema1_build
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Verify fuzz_schema1_verify
@@ -73,7 +77,7 @@ compile_go_fuzzer $REGISTRYPATH/client/auth/challenge FuzzParseValueAndParams fu
 compile_go_fuzzer $REGISTRYPATH FuzzRegistry1 fuzz_registry1
 compile_go_fuzzer $REGISTRYPATH FuzzRegistry2 fuzz_registry2
 compile_go_fuzzer $REGISTRYPATH/client FuzzBlobServeBlob fuzz_blob_serve_blob
-compile_go_fuzzer $REGISTRYPATH/client FuzzClientPut fuzz_client_put
+compile_go_fuzzer $REGISTRYPATH/client FuzzRegistryClient fuzz_registry_client
 compile_go_fuzzer $REGISTRYPATH/storage FuzzSchema2ManifestHandler fuzz_schema2_manifest_handler
 compile_go_fuzzer $REGISTRYPATH/storage FuzzBlob fuzz_blob
 compile_go_fuzzer $REGISTRYPATH/storage FuzzMarkAndSweep fuzz_mark_and_sweep
@@ -81,3 +85,4 @@ compile_go_fuzzer $REGISTRYPATH/storage FuzzFR fuzz_fr
 compile_go_fuzzer $REGISTRYPATH/storage/driver/inmemory FuzzInmemoryDriver fuzz_inmemory_driver
 compile_go_fuzzer $REGISTRYPATH/storage/driver/s3-aws FuzzS3Driver fuzz_s3_driver
 compile_go_fuzzer $REGISTRYPATH/storage/driver/swift FuzzSwift fuzz_swift
+compile_go_fuzzer $REGISTRYPATH/storage/driver/filesystem FuzzFilesystemDriver fuzz_filesystem_driver
