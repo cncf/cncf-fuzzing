@@ -41,4 +41,6 @@ compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzSetCacheScema set_cache_s
 compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzParseMonFeatures parse_mon_features_fuzzer
 
 mv $RUNC_FUZZERS/libcontainer_fuzzer.go $SRC/runc/libcontainer/
+mv $SRC/runc/libcontainer/container_linux_test.go \
+   $SRC/runc/libcontainer/container_linux_test_fuzz.go
 compile_go_fuzzer $RUNC_PATH/libcontainer FuzzStateApi state_api_fuzzer
