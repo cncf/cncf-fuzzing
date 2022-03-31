@@ -22,6 +22,9 @@ set -x
 
 # Autogenerate the marshaling fuzzer
 cd $SRC/kubernetes
+
+
+
 go get github.com/AdaLogics/go-fuzz-headers@latest
 
 mkdir $SRC/kubernetes/test/fuzz/fuzzing
@@ -73,6 +76,9 @@ gotip get github.com/AdamKorcz/go-118-fuzz-build/utils
 gotip mod tidy
 gotip mod vendor
 
+# Delete broken fuzzer
+find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
+
 echo "compiling..."
 compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQuantity fuzz_parse_quantity
 compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzMeta1ParseToLabelSelector fuzz_meta1_parse_to_label_selector
@@ -105,6 +111,8 @@ rm native_go_parser_fuzzers_test.go
 #compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/server FuzzRequest fuzz_request
 
 go mod tidy && go mod vendor
+# Delete broken fuzzer
+find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
 
 # Add the swagger.json content to the kubectl fuzzer
 apt-get update && apt-get install -y wget
