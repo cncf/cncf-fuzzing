@@ -59,7 +59,11 @@ mv $SRC/cncf-fuzzing/projects/helm/releaseutil_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/helm/lint_fuzzer.go \
    $SRC/helm/pkg/lint/
 
+mv $SRC/cncf-fuzzing/projects/helm/resolver_fuzzer.go \
+   $SRC/helm/internal/resolver/
+
 go mod download && go mod tidy
+compile_go_fuzzer helm.sh/helm/v3/internal/resolver FuzzResolve fuzz_resolve
 compile_go_fuzzer helm.sh/helm/v3/pkg/lint FuzzLintAll fuzz_lint_all
 compile_go_fuzzer helm.sh/helm/v3/pkg/releaseutil FuzzSplitManifests fuzz_split_manifests
 compile_go_fuzzer helm.sh/helm/v3/pkg/releaseutil FuzzSortManifests fuzz_sort_manifests
@@ -70,10 +74,12 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/provenance FuzzMessageBlock fuzz_message_b
 compile_go_fuzzer helm.sh/helm/v3/pkg/kube FuzzKubeClient fuzz_kube_client
 compile_go_fuzzer helm.sh/helm/v3/pkg/registry FuzzGetTagMatchingVersionOrConstraint fuzz_get_tag_matching_version_or_constraint
 compile_go_fuzzer helm.sh/helm/v3/pkg/registry FuzzparseReference fuzz_parse_reference
+compile_go_fuzzer helm.sh/helm/v3/pkg/registry FuzzRegistryClient fuzz_registry_client
 compile_go_fuzzer helm.sh/helm/v3/pkg/plugin FuzzFindPlugins fuzz_find_plugins
 compile_go_fuzzer helm.sh/helm/v3/pkg/plugin FuzzLoadAll fuzz_load_all
 compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs FuzzfixLongPath fuzz_fix_long_path
 compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs Fuzz_fixLongPath fuzz_fix_long_path_internal
+compile_go_fuzzer helm.sh/helm/v3/internal/third_party/dep/fs FuzzCopyDir fuzz_copy_dir
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzSqlDriver fuzz_sql_driver
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzRecords fuzz_records
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzSecrets fuzz_secrets
@@ -115,8 +121,17 @@ compile_native_go_fuzzer helm.sh/helm/v3/internal/ignore FuzzIgnoreParse fuzz_ig
 compile_native_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzStrvalsParse fuzz_strvals_parse
 
 zip $OUT/fuzz_create_from_seed_corpus.zip $SRC/helm/pkg/chartutil/testdata/frobnitz/*
-mv $SRC/cncf-fuzzing/projects/helm/dicts/fuzz_create_from.dict $OUT/
+mv $SRC/cncf-fuzzing/projects/helm/dicts/* $OUT/
 
 zip $OUT/fuzz_action_run_seed_corpus.zip \
     $SRC/helm/pkg/chartutil/testdata/test-values.schema.json \
     $SRC/helm/pkg/chartutil/testdata/test-values.yaml
+
+zip $OUT/fuzz_registry_client_seed_corpus.zip \
+    $SRC/helm/pkg/repo/repotest/testdata/examplechart-0.1.0.tgz
+
+zip $OUT/fuzz_resolve_seed_corpus.zip \
+    $SRC/helm/internal/resolver/testdata/repository/kubernetes-charts-index.yaml \
+    $SRC/helm/internal/resolver/testdata/chartpath/base/Chart.yaml \
+    $SRC/helm/internal/resolver/testdata/chartpath/charts/localdependency/Chart.yaml \
+    $SRC/cncf-fuzzing/projects/helm/seeds/fuzz_resolve/*

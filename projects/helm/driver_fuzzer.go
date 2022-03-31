@@ -40,13 +40,19 @@ func FuzzSqlDriver(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		switch callType%5 {
+		switch callType%6 {
 		case 0:
 			rel := &rspb.Release{}
 			err := f.GenerateStruct(rel)
 			if err != nil {
 				return 0
 			}
+			relName, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyz0123456789-.", 52)
+		    if err != nil {
+		            return 0
+		    }
+		    rel.Name = relName
+		    rel.Info.Status = rspb.StatusDeployed
 			key, err := f.GetString()
 			if err != nil {
 				return 0
@@ -82,6 +88,13 @@ func FuzzSqlDriver(data []byte) int {
 				return 0
 			}
 			sqlDriver.Delete(key)
+		case 5:
+			_, _ = sqlDriver.List(func(rel *rspb.Release) bool {
+				if rel.Info == nil {
+					return false
+				}
+				return rel.Info.Status == rspb.StatusUninstalled
+			})
 		}
 	}	
 	return 1
