@@ -101,3 +101,26 @@ func Fuzz_fixLongPath(data []byte) int {
 	_ = fixLongPath(string(data))
 	return 1
 }
+
+func FuzzCopyDir(data []byte) int {
+	srcDir := "srcDir"
+	if err := os.MkdirAll(srcDir, 0755); err != nil {
+		return 0
+	}
+	defer os.RemoveAll(srcDir)
+
+	f := fuzz.NewConsumer(data)
+	err := f.CreateFiles("src")
+	if err != nil {
+		return 0
+	}
+
+	destDir := "dest"
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return 0
+	}
+	defer os.RemoveAll(destDir)
+
+	CopyDir(srcDir, destDir)
+	return 1
+}
