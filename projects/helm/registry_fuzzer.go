@@ -25,6 +25,8 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/registry"
+	_ "github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
+	_ "github.com/distribution/distribution/v3/registry/auth/htpasswd"
 	"github.com/phayes/freeport"
 	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
