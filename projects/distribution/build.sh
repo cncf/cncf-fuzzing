@@ -44,6 +44,13 @@ mv $CNCFPATH/file_driver_fuzzer.go $SRC/distribution/registry/storage/driver/fil
 mv $CNCFPATH/app_fuzzer.go $SRC/distribution/registry/handlers/
 mv $SRC/distribution/registry/handlers/api_test.go $SRC/distribution/registry/handlers/api_test_fuzz.go
 
+mv $CNCFPATH/registry_proxy_fuzzer.go $SRC/distribution/registry/proxy/
+cd $SRC/distribution/registry/proxy
+mv proxymanifeststore_test.go proxymanifeststore_test_fuzz.go
+mv proxyblobstore_test.go proxyblobstore_test_fuzz.go
+mv proxytagservice_test.go proxytagservice_test_fuzz.go
+cd -
+
 # Replace upstream fuzzer with this updated version:
 mv $CNCFPATH/parser_fuzzer.go $SRC/distribution/configuration/fuzz.go
 # create seed files for this fuzzer:
@@ -67,6 +74,7 @@ compile_go_fuzzer $DISTRIBUTION/reference FuzzWithNameAndWithTag fuzz_with_name_
 compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_manifest_builder
 
 compile_go_fuzzer $REGISTRYPATH/handlers FuzzApp fuzz_app
+compile_go_fuzzer $REGISTRYPATH/proxy FuzzProxyBlobstore fuzz_proxy_blobstore
 compile_go_fuzzer $REGISTRYPATH/auth/htpasswd FuzzAccessController fuzz_access_controller
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Build fuzz_schema1_build
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Verify fuzz_schema1_verify
