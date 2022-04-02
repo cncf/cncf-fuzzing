@@ -16,6 +16,7 @@
 package fuzzing
 
 import (
+	"context"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	v1 "k8s.io/api/core/v1"
@@ -93,7 +94,7 @@ func FuzzAllValidation(data []byte) int {
 	} else if op == 18 {
 		return FuzzValidateJobUpdate(inputData)
 	} else if op == 19 {
-		return FuzzValidateCronJob(inputData)
+		return FuzzValidateCronJobCreate(inputData)
 	} else if op == 20 {
 		return FuzzValidateCronJobUpdate(inputData)
 	} else if op == 21 {
@@ -494,14 +495,14 @@ func FuzzValidateJobUpdate(data []byte) int {
 	return 1
 }
 
-func FuzzValidateCronJob(data []byte) int {
+func FuzzValidateCronJobCreate(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	cronjob := &batch.CronJob{}
 	err := f.GenerateStruct(cronjob)
 	if err != nil {
 		return 0
 	}
-	if errs := batchValidation.ValidateCronJob(cronjob, validation.PodValidationOptions{}); len(errs) > 0 {
+	if errs := batchValidation.ValidateCronJobCreate(cronjob, validation.PodValidationOptions{}); len(errs) > 0 {
 		for _, err := range errs {
 			_ = err
 			//fmt.Println(err)
@@ -716,7 +717,7 @@ func FuzzValidateCustomResourceDefinition(data []byte) int {
 		return 0
 	}
 	//fmt.Println(crd)
-	_ = apiextensionsValidation.ValidateCustomResourceDefinition(crd)
+	_ = apiextensionsValidation.ValidateCustomResourceDefinition(context.Background(), crd)
 	return 1
 }
 
