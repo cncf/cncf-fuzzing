@@ -16,15 +16,55 @@
 package schema1
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"encoding/json"
+	"time"
 	"github.com/distribution/distribution/v3"
 	dcontext "github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/docker/libtrust"
 	"github.com/opencontainers/go-digest"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func FuzzSchema1Build(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	imgJSON, err := f.GetBytes()
+	if err != nil {
+		return 0
+	}
+
+	type imageRootFS struct {
+		Type      string   `json:"type"`
+		DiffIDs   []diffID `json:"diff_ids,omitempty"`
+		BaseLayer string   `json:"base_layer,omitempty"`
+	}
+
+	type imageHistory struct {
+		Created    time.Time `json:"created"`
+		Author     string    `json:"author,omitempty"`
+		CreatedBy  string    `json:"created_by,omitempty"`
+		Comment    string    `json:"comment,omitempty"`
+		EmptyLayer bool      `json:"empty_layer,omitempty"`
+	}
+
+	type imageConfig struct {
+		RootFS       *imageRootFS   `json:"rootfs,omitempty"`
+		History      []imageHistory `json:"history,omitempty"`
+		Architecture string         `json:"architecture,omitempty"`
+	}
+
+	// Check the imgJSON before we proceed
+	var img imageConfig
+	if err := json.Unmarshal(imgJSON, &img); err != nil {
+		return 0
+	}
+
+	if len(img.History) == 0 {
+		return 0
+	}
+	if len(img.RootFS.DiffIDs) == 0 {
+		return 0
+	}
 
 	pk, err := libtrust.GenerateECP256PrivateKey()
 	if err != nil {
@@ -42,7 +82,23 @@ func FuzzSchema1Build(data []byte) int {
 
 	bs := &mockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
 
-	builder := NewConfigManifestBuilder(bs, pk, ref, data)
+	builder := NewConfigManifestBuilder(bs, pk, ref, imgJSON)
+
+	for i:=0;i<len(img.RootFS.DiffIDs)%5;i++ {
+		d := distribution.Descriptor{}
+		err = f.GenerateStruct(&d)
+		if err != nil {
+			return 0
+		}
+		digestBytes, err := f.GetBytes()
+		if err != nil {
+			return 0
+		}
+		d.Digest = digest.FromBytes(digestBytes)
+		if err := builder.AppendReference(d); err != nil {
+			return 0
+		}
+	}
 
 	_, _ = builder.Build(dcontext.Background())
 	return 1
