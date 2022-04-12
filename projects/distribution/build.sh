@@ -51,6 +51,10 @@ mv proxyblobstore_test.go proxyblobstore_test_fuzz.go
 mv proxytagservice_test.go proxytagservice_test_fuzz.go
 cd -
 
+mv $CNCFPATH/digestset_fuzzer.go $SRC/distribution/digestset/
+
+mv $CNCFPATH/errcode_fuzzer.go $SRC/distribution/registry/api/errcode
+
 # Replace upstream fuzzer with this updated version:
 mv $CNCFPATH/parser_fuzzer.go $SRC/distribution/configuration/fuzz.go
 # create seed files for this fuzzer:
@@ -61,7 +65,7 @@ rm -r ./vendor
 # Used to build native fuzzers
 gotip get github.com/AdamKorcz/go-118-fuzz-build/utils
 gotip get github.com/AdaLogics/go-fuzz-headers
-compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
+#compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
 rm $SRC/distribution/reference/native_reference_fuzzer.go
 
 go mod edit -dropreplace google.golang.org/grpc
@@ -71,11 +75,14 @@ $SRC/distribution/script/oss_fuzz_build.sh
 
 compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_normalized_named
 compile_go_fuzzer $DISTRIBUTION/reference FuzzWithNameAndWithTag fuzz_with_name_and_tag
+compile_go_fuzzer $DISTRIBUTION/reference FuzzAllNormalizeApis fuzz_all_normalize_apis
 compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_manifest_builder
 
 compile_go_fuzzer $REGISTRYPATH/handlers FuzzApp fuzz_app
+compile_go_fuzzer $REGISTRYPATH/api/errcode FuzzErrcode fuzz_errcode
 compile_go_fuzzer $REGISTRYPATH/proxy FuzzProxyBlobstore fuzz_proxy_blobstore
 compile_go_fuzzer $REGISTRYPATH/auth/htpasswd FuzzAccessController fuzz_access_controller
+compile_go_fuzzer $DISTRIBUTION/digestset FuzzDigestSet fuzz_digestset
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Build fuzz_schema1_build
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Verify fuzz_schema1_verify
 compile_go_fuzzer $DISTRIBUTION/digestset FuzzSet fuzz_set
