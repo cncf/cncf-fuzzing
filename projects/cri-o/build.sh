@@ -63,9 +63,14 @@ go-fuzz -func FuzzServer -o fuzz_server.a github.com/cri-o/cri-o/server
 
 # Link Go code ($fuzzer.a) with fuzzing engine to produce fuzz target binary.
 $CXX $CXXFLAGS $LIB_FUZZING_ENGINE fuzz_server.a \
-        /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.a \
+        /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so \
         /src/gpgme/src/.libs/libgpgme.a \
         /src/libgpg-error/src/.libs/libgpg-error.a \
         /src/LVM2.2.03.15/base/libbase.a \
         /src/libassuan/src/.libs/libassuan.a \
         -o $OUT/server_fuzzer
+
+mkdir -p $OUT/lib
+cp /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so.1.02 $OUT/lib/
+
+patchelf --set-rpath '$ORIGIN/lib' $OUT/server_fuzzer
