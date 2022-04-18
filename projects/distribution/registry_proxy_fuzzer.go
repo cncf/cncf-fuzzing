@@ -16,13 +16,25 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/distribution/distribution/v3"
-	"github.com/opencontainers/go-digest"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/docker/libtrust"
+	"github.com/opencontainers/go-digest"
+
+	"github.com/distribution/distribution/v3"
+	"github.com/distribution/distribution/v3/manifest"
+	"github.com/distribution/distribution/v3/manifest/schema1"
+	"github.com/distribution/distribution/v3/reference"
+	"github.com/distribution/distribution/v3/registry/proxy/scheduler"
+	"github.com/distribution/distribution/v3/registry/storage"
+	"github.com/distribution/distribution/v3/registry/storage/cache/memory"
+	"github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
 )
 
 func FuzzProxyBlobstore(data []byte) int {
@@ -109,4 +121,140 @@ func populateForFuzzing(te *testEnv, f *fuzz.ConsumeFuzzer) error {
 	te.inRemote = inRemote
 	te.numUnique = numUnique
 	return nil
+}
+
+func FuzzProxyManifestStore(data []byte) int {
+	name := "foo/bar"
+	f := fuzz.NewConsumer(data)
+	env, err := newManifestStoreTestEnvFuzz(f, name, "latest")
+	if err != nil {
+		return 0
+	}
+	dBytes, err := f.GetBytes()
+	if err != nil {
+		return 0
+	}
+	d1 := digest.FromBytes(dBytes)
+	_, _ = env.manifests.Exists(context.Background(), d1)
+	_, _ = env.manifests.Get(context.Background(), d1)
+	return 1
+}
+
+func newManifestStoreTestEnvFuzz(f *fuzz.ConsumeFuzzer, name, tag string) (*manifestStoreTestEnv, error) {
+	nameRef, err := reference.WithName(name)
+	if err != nil {
+		return nil, err
+	}
+	k, err := libtrust.GenerateECP256PrivateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	truthRegistry, err := storage.NewRegistry(ctx, inmemory.New(),
+		storage.BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider()),
+		storage.Schema1SigningKey(k),
+		storage.EnableSchema1)
+	if err != nil {
+		return nil, err
+	}
+	truthRepo, err := truthRegistry.Repository(ctx, nameRef)
+	if err != nil {
+		return nil, err
+	}
+	tr, err := truthRepo.Manifests(ctx)
+	if err != nil {
+		return nil, err
+	}
+	truthManifests := statsManifest{
+		manifests: tr,
+		stats:     make(map[string]int),
+	}
+
+	manifestDigest, err := populateRepoFuzz(ctx, f, truthRepo, name, tag)
+	if err != nil {
+		return nil, err
+	}
+
+	localRegistry, err := storage.NewRegistry(ctx, inmemory.New(), storage.BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider()), storage.EnableRedirect, storage.DisableDigestResumption, storage.Schema1SigningKey(k), storage.EnableSchema1)
+	if err != nil {
+		return nil, err
+	}
+	localRepo, err := localRegistry.Repository(ctx, nameRef)
+	if err != nil {
+		return nil, err
+	}
+	lr, err := localRepo.Manifests(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	localManifests := statsManifest{
+		manifests: lr,
+		stats:     make(map[string]int),
+	}
+
+	s := scheduler.New(ctx, inmemory.New(), "/scheduler-state.json")
+	return &manifestStoreTestEnv{
+		manifestDigest: manifestDigest,
+		manifests: proxyManifestStore{
+			ctx:             ctx,
+			localManifests:  localManifests,
+			remoteManifests: truthManifests,
+			scheduler:       s,
+			repositoryName:  nameRef,
+			authChallenger:  &mockChallenger{},
+		},
+	}, nil
+}
+
+func populateRepoFuzz(ctx context.Context, f *fuzz.ConsumeFuzzer, repository distribution.Repository, name, tag string) (digest.Digest, error) {
+	m := schema1.Manifest{
+		Versioned: manifest.Versioned{
+			SchemaVersion: 1,
+		},
+		Name: name,
+		Tag:  tag,
+	}
+
+	for i := 0; i < 2; i++ {
+		wr, err := repository.Blobs(ctx).Create(ctx)
+		if err != nil {
+			return digest.FromString("0"), err
+		}
+
+		rs, err := f.TarBytes()
+		if err != nil {
+			return digest.FromString("0"), err
+		}
+		if _, err := io.Copy(wr, bytes.NewReader(rs)); err != nil {
+			return digest.FromString("0"), err
+		}
+		dgst := digest.FromBytes(rs)
+
+		if _, err := wr.Commit(ctx, distribution.Descriptor{Digest: dgst}); err != nil {
+			return digest.FromString("0"), err
+		}
+	}
+
+	pk, err := libtrust.GenerateECP256PrivateKey()
+	if err != nil {
+		return digest.FromString("0"), err
+	}
+
+	sm, err := schema1.Sign(&m, pk)
+	if err != nil {
+		return digest.FromString("0"), err
+	}
+
+	ms, err := repository.Manifests(ctx)
+	if err != nil {
+		return digest.FromString("0"), err
+	}
+	dgst, err := ms.Put(ctx, sm)
+	if err != nil {
+		return digest.FromString("0"), err
+	}
+
+	return dgst, nil
 }

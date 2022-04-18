@@ -81,6 +81,7 @@ compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_mani
 compile_go_fuzzer $REGISTRYPATH/handlers FuzzApp fuzz_app
 compile_go_fuzzer $REGISTRYPATH/api/errcode FuzzErrcode fuzz_errcode
 compile_go_fuzzer $REGISTRYPATH/proxy FuzzProxyBlobstore fuzz_proxy_blobstore
+compile_go_fuzzer $REGISTRYPATH/proxy FuzzProxyManifestStore fuzz_proxy_manifest_store
 compile_go_fuzzer $REGISTRYPATH/auth/htpasswd FuzzAccessController fuzz_access_controller
 compile_go_fuzzer $DISTRIBUTION/digestset FuzzDigestSet fuzz_digestset
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Build fuzz_schema1_build
