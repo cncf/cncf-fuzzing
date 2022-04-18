@@ -63,6 +63,7 @@ mv $SRC/cncf-fuzzing/projects/helm/resolver_fuzzer.go \
    $SRC/helm/internal/resolver/
 
 go mod download && go mod tidy
+go get github.com/AdaLogics/go-fuzz-headers@latest
 compile_go_fuzzer helm.sh/helm/v3/internal/resolver FuzzResolve fuzz_resolve
 compile_go_fuzzer helm.sh/helm/v3/pkg/lint FuzzLintAll fuzz_lint_all
 compile_go_fuzzer helm.sh/helm/v3/pkg/releaseutil FuzzSplitManifests fuzz_split_manifests
