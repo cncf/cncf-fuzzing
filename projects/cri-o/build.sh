@@ -38,22 +38,6 @@ git clone https://github.com/gpg/gpgme \
     && make install
 cd $SRC/cri-o
 
-apt-get update -qq && apt-get install -y \
-  libbtrfs-dev \
-  git \
-  libassuan-dev \
-  libdevmapper-dev \
-  libglib2.0-dev \
-  libc6-dev \
-  libgpgme-dev \
-  libgpg-error-dev \
-  libseccomp-dev \
-  libsystemd-dev \
-  libselinux1-dev \
-  pkg-config \
-  go-md2man \
-  libudev-dev \
-  software-properties-common
 make BUILDTAGS=""
 
 mv $SRC/cncf-fuzzing/projects/cri-o/fuzz_server.go $SRC/cri-o/server/
