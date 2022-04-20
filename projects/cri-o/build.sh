@@ -84,7 +84,7 @@ function compile_crio_fuzzer() {
         
         mkdir -p $OUT/lib
         cp /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so.1.02 $OUT/lib/    
-        patchelf --set-rpath '$ORIGIN/lib' $OUT/fuzzer
+        patchelf --set-rpath '$ORIGIN/lib' $OUT/$fuzzer
     fi
 }
 
@@ -93,3 +93,4 @@ compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServer fuzz_server
 mv $SRC/cncf-fuzzing/projects/cri-o/storage_fuzzer.go \
     $SRC/cri-o/internal/storage/
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzParseImageName fuzz_parse_image_name
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzShortnamesResolve fuzz_shortnames_resolve
