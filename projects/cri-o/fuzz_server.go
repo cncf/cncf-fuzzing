@@ -107,52 +107,62 @@ func FuzzServer(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		switch callType % 9 {
-		case 0:
-			req := &types.ListPodSandboxStatsRequest{}
-			err := f.GenerateStruct(req)
-			if err != nil {
-				return 0
-			}
-			_, _ = sut.ListPodSandboxStats(context.Background(), req)
+		switch callType % 25 {
+
+    // Server calls listed alphabetically relative to their RPC calls
+    // https://github.com/cri-o/cri-o/tree/main/server/cri/v1alpha2
+    // rpc_attach
+    case 0:
+      req := &types.AttachRequest{}
+      err := f.GenerateStruct(req)
+      if err != nil {
+        return 0
+      }
+      _, _ = sut.Attach(context.Background(), req)
 		case 1:
-			req := &types.CreateContainerRequest{}
-			err = f.GenerateStruct(req)
-			if err != nil {
-				return 0
-			}
-			_, _ = sut.CreateContainer(context.Background(), req)
-		case 2:
-			req := &types.ListContainersRequest{}
-			err = f.GenerateStruct(req)
-			if err != nil {
-				return 0
-			}
-			_, _ = sut.ListContainers(context.Background(), req)
-		case 3:
 			req := &types.ContainerStatsRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
 			_, _ = sut.ContainerStats(context.Background(), req)
+    case 2:
+      req := &types.ContainerStatusRequest{}
+      err = f.GenerateStruct(req)
+      if err != nil {
+        return 0
+      }
+      _, _ = sut.ContainerStatus(context.Background(), req)
+		case 3:
+			req := &types.CreateContainerRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.CreateContainer(context.Background(), req)
 		case 4:
-                        // Currently not supported
+			req := &types.ExecRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.Exec(context.Background(), req)
+    case 5:
+      req := &types.ExecSyncRequest{}
+      err = f.GenerateStruct(req)
+      if err != nil {
+        return 0
+      }
+      _, _ = sut.ExecSync(context.Background(), req)
+    case 6:
 
-			/*req := &types.RunPodSandboxRequest{}
-			err = f.GenerateStruct(req)
-			if err != nil {
-				return 0
-			}
-			_, _ = sut.RunPodSandbox(context.Background(), req)*/
-		case 5:
-			req := &types.StopContainerRequest{}
-			err = f.GenerateStruct(req)
-			if err != nil {
-				return 0
-			}
-			_ = sut.StopContainer(context.Background(), req)
-		case 6:
+      //req := &types.ImageFsInfoResponse{}
+      //err = f.GenerateStruct(req)
+      //if err != nil {
+      //  return 0
+     // }
+     // _, _ = sut.ImageFsInfo(context.Background(), req)
+		case 7:
                         // Currently not supported
 
 			/*req := &types.ImageStatusRequest{}
@@ -161,21 +171,127 @@ func FuzzServer(data []byte) int {
 				return 0
 			}
 			_, _ = sut.ImageStatus(context.Background(), req)*/
-		case 7:
-			req := &types.ReopenContainerLogRequest{}
+    case 8:
+      req := &types.ListContainerStatsRequest{}
+      err = f.GenerateStruct(req)
+      if err != nil {
+        return 0
+      }
+      _, _ = sut.ListContainerStats(context.Background(), req)
+		case 9:
+			req := &types.ListContainersRequest{}
 			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.ListContainers(context.Background(), req)
+		case 10:
+			req := &types.ListPodSandboxRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.ListPodSandbox(context.Background(), req)
+		case 11:
+			req := &types.ListPodSandboxStatsRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.ListPodSandboxStats(context.Background(), req)
+		case 12:
+			req := &types.PodSandboxStatsRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.PodSandboxStats(context.Background(), req)
+		case 13:
+			req := &types.PodSandboxStatusRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.PodSandboxStatus(context.Background(), req)
+		case 14:
+			req := &types.PortForwardRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.PortForward(context.Background(), req)
+		case 15:
+			//req := &types.PullImageRequest{}
+			//err := f.GenerateStruct(req)
+			//if err != nil {
+			//	return 0
+			//}
+      //fmt.Print("15\n")
+			//_, _ = sut.PullImage(context.Background(), req)
+		case 16:
+			req := &types.RemoveContainerRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+	    _ = sut.RemoveContainer(context.Background(), req)
+		case 17:
+			req := &types.RemovePodSandboxRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_ = sut.RemovePodSandbox(context.Background(), req)
+		case 18:
+			req := &types.ReopenContainerLogRequest{}
+			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
 			_ = sut.ReopenContainerLog(context.Background(), req)
-		case 8:
-			req := &types.ExecRequest{}
+		case 19:
+			//req := &types.RunPodSandboxRequest{}
+			//err = f.GenerateStruct(req)
+			//if err != nil {
+			//	return 0
+			//}
+			//_, _ = sut.RunPodSandbox(context.Background(), req)
+		case 20:
+			req := &types.StartContainerRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
-			_, _ = sut.Exec(context.Background(), req)
-		}
+			_ = sut.StartContainer(context.Background(), req)
+		case 21:
+		//	req := &types.StatusRequest{}
+		//	err = f.GenerateStruct(req)
+	//		if err != nil {
+	//			return 0
+		//	}
+			//_, _ = sut.Status(context.Background(), req)
+		case 22:
+			req := &types.StopContainerRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_ = sut.StopContainer(context.Background(), req)
+		case 23:
+			req := &types.StopPodSandboxRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_ = sut.StopPodSandbox(context.Background(), req)
+		case 24:
+			req := &types.UpdateContainerResourcesRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_ = sut.UpdateContainerResources(context.Background(), req)
+    }
 	}
 	return 1
 }
