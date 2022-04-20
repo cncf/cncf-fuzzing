@@ -109,16 +109,16 @@ func FuzzServer(data []byte) int {
 		}
 		switch callType % 25 {
 
-    // Server calls listed alphabetically relative to their RPC calls
-    // https://github.com/cri-o/cri-o/tree/main/server/cri/v1alpha2
-    // rpc_attach
-    case 0:
-      req := &types.AttachRequest{}
-      err := f.GenerateStruct(req)
-      if err != nil {
-        return 0
-      }
-      _, _ = sut.Attach(context.Background(), req)
+		// Server calls listed alphabetically relative to their RPC calls
+		// https://github.com/cri-o/cri-o/tree/main/server/cri/v1alpha2
+		// rpc_attach
+		case 0:
+			req := &types.AttachRequest{}
+			err := f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.Attach(context.Background(), req)
 		case 1:
 			req := &types.ContainerStatsRequest{}
 			err = f.GenerateStruct(req)
@@ -126,13 +126,13 @@ func FuzzServer(data []byte) int {
 				return 0
 			}
 			_, _ = sut.ContainerStats(context.Background(), req)
-    case 2:
-      req := &types.ContainerStatusRequest{}
-      err = f.GenerateStruct(req)
-      if err != nil {
-        return 0
-      }
-      _, _ = sut.ContainerStatus(context.Background(), req)
+		case 2:
+			req := &types.ContainerStatusRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.ContainerStatus(context.Background(), req)
 		case 3:
 			req := &types.CreateContainerRequest{}
 			err = f.GenerateStruct(req)
@@ -147,23 +147,23 @@ func FuzzServer(data []byte) int {
 				return 0
 			}
 			_, _ = sut.Exec(context.Background(), req)
-    case 5:
-      req := &types.ExecSyncRequest{}
-      err = f.GenerateStruct(req)
-      if err != nil {
-        return 0
-      }
-      _, _ = sut.ExecSync(context.Background(), req)
-    case 6:
+		case 5:
+			req := &types.ExecSyncRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.ExecSync(context.Background(), req)
+		case 6:
 
-      //req := &types.ImageFsInfoResponse{}
-      //err = f.GenerateStruct(req)
-      //if err != nil {
-      //  return 0
-     // }
-     // _, _ = sut.ImageFsInfo(context.Background(), req)
+			//req := &types.ImageFsInfoResponse{}
+			//err = f.GenerateStruct(req)
+			//if err != nil {
+			//  return 0
+			// }
+			// _, _ = sut.ImageFsInfo(context.Background(), req)
 		case 7:
-                        // Currently not supported
+			// Currently not supported
 
 			/*req := &types.ImageStatusRequest{}
 			err = f.GenerateStruct(req)
@@ -171,13 +171,13 @@ func FuzzServer(data []byte) int {
 				return 0
 			}
 			_, _ = sut.ImageStatus(context.Background(), req)*/
-    case 8:
-      req := &types.ListContainerStatsRequest{}
-      err = f.GenerateStruct(req)
-      if err != nil {
-        return 0
-      }
-      _, _ = sut.ListContainerStats(context.Background(), req)
+		case 8:
+			req := &types.ListContainerStatsRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.ListContainerStats(context.Background(), req)
 		case 9:
 			req := &types.ListContainersRequest{}
 			err = f.GenerateStruct(req)
@@ -226,7 +226,7 @@ func FuzzServer(data []byte) int {
 			//if err != nil {
 			//	return 0
 			//}
-      //fmt.Print("15\n")
+			//fmt.Print("15\n")
 			//_, _ = sut.PullImage(context.Background(), req)
 		case 16:
 			req := &types.RemoveContainerRequest{}
@@ -234,7 +234,7 @@ func FuzzServer(data []byte) int {
 			if err != nil {
 				return 0
 			}
-	    _ = sut.RemoveContainer(context.Background(), req)
+			_ = sut.RemoveContainer(context.Background(), req)
 		case 17:
 			req := &types.RemovePodSandboxRequest{}
 			err := f.GenerateStruct(req)
@@ -266,10 +266,10 @@ func FuzzServer(data []byte) int {
 		case 21:
 		//	req := &types.StatusRequest{}
 		//	err = f.GenerateStruct(req)
-	//		if err != nil {
-	//			return 0
+		//		if err != nil {
+		//			return 0
 		//	}
-			//_, _ = sut.Status(context.Background(), req)
+		//_, _ = sut.Status(context.Background(), req)
 		case 22:
 			req := &types.StopContainerRequest{}
 			err = f.GenerateStruct(req)
@@ -291,7 +291,7 @@ func FuzzServer(data []byte) int {
 				return 0
 			}
 			_ = sut.UpdateContainerResources(context.Background(), req)
-    }
+		}
 	}
 	return 1
 }
