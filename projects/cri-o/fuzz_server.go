@@ -18,6 +18,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/AdaLogics/go-fuzz-headers/sanitizers/logsanitizer"
 	cstorage "github.com/containers/storage"
 	"github.com/golang/mock/gomock"
 	_ "github.com/onsi/gomega"
@@ -59,6 +61,7 @@ var (
 	imageServerMock   *criostoragemock.MockImageServer
 	runtimeServerMock *criostoragemock.MockRuntimeServer
 	cniPluginMock     *ocicnitypesmock.MockCNIPlugin
+	logFileAbs        = "/tmp/cri-o-logfile"
 )
 
 const (
@@ -76,7 +79,7 @@ func init() {
 	cniPluginMock = ocicnitypesmock.NewMockCNIPlugin(mockCtrl)
 
 	// Manage log level:
-	logrus.SetLevel(logrus.PanicLevel)
+	logrus.SetLevel(logrus.DebugLevel)
 
 	// Set up the CRI-O server
 	err := beforeEachFuzz()
@@ -89,10 +92,35 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
 
+func setupLogSanitizer() (*logsanitizer.Sanitizer, *os.File, error) {
+	logFile, err := os.Create(logFileAbs)
+	if err != nil {
+		return nil, nil, err
+	}
+	logrus.SetOutput(logFile)
+
+	logSanitizer := logsanitizer.NewSanitizer()
+	logSanitizer.SetLogFile(logFileAbs)
+	logSanitizer.AddInsecureStrings("INFOFUZZ[0027] Starting container:", "DEBUFUZZ[0027]")
+	return logSanitizer, logFile, nil
+}
+
+func runLogSanitizer(logSAN *logsanitizer.Sanitizer, logFp *os.File) {
+	logSAN.CheckLogfile()
+	logFp.Close()
+	os.Remove(logFileAbs)
 }
 
 func FuzzServer(data []byte) int {
+	logSAN, logFp, err := setupLogSanitizer()
+	if err != nil {
+		panic(err)
+	}
+
+	defer runLogSanitizer(logSAN, logFp)
+
 	if len(data) < 50 {
 		return 0
 	}
@@ -186,12 +214,36 @@ func FuzzServer(data []byte) int {
 			}
 			_, _ = sut.ListContainers(context.Background(), req)
 		case 10:
-			req := &types.ListPodSandboxRequest{}
-			err = f.GenerateStruct(req)
+			completelyRandom, err := f.GetBool()
 			if err != nil {
 				return 0
 			}
-			_, _ = sut.ListPodSandbox(context.Background(), req)
+			if completelyRandom {
+				req := &types.ListPodSandboxRequest{}
+				err = f.GenerateStruct(req)
+				if err != nil {
+					return 0
+				}
+				_, _ = sut.ListPodSandbox(context.Background(), req)
+			} else {
+				sb, sandboxID, c, err := createSandbox(f)
+				if err != nil {
+					return 0
+				}
+				defer c()
+				err = sut.AddSandbox(sb)
+				if err != nil {
+					return 0
+				}
+				sb.SetCreated()
+				_, err = sut.LoadSandbox(context.Background(), sandboxID)
+				if err == nil {
+					_, _ = sut.ListPodSandbox(context.Background(),
+						&types.ListPodSandboxRequest{Filter: &types.PodSandboxFilter{
+							Id: sandboxID,
+						}})
+				}
+			}
 		case 11:
 			req := &types.ListPodSandboxStatsRequest{}
 			err := f.GenerateStruct(req)
@@ -410,4 +462,101 @@ func beforeEachFuzz() error {
 
 func (s *StreamService) SetRuntimeServerFuzz(server *Server) {
 	s.runtimeServer = server
+}
+
+func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), error) {
+	nilFunc := func() {
+		return
+	}
+	sandboxIDFuzz, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	name, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	logDir := "/tmp/logPath"
+	err = os.MkdirAll(logDir, 0750)
+	if err != nil && !os.IsExist(err) {
+		return nil, "", nilFunc, err
+	}
+	shmPath := "/tmp/shmPath"
+	err = os.MkdirAll(shmPath, 0750)
+	if err != nil && !os.IsExist(err) {
+		return nil, "", nilFunc, err
+	}
+	kubeName, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	labels := make(map[string]string)
+	err = f.FuzzMap(&labels)
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	annotations := make(map[string]string)
+	err = f.FuzzMap(&annotations)
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	processLabel, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	mountLabel, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	metadata := &types.PodSandboxMetadata{}
+	err = f.GenerateStruct(metadata)
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	cgroupParent, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	runtimeHandler, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	resolvPath := "/tmp/dirPath"
+	err = os.MkdirAll(resolvPath, 0750)
+	if err != nil && !os.IsExist(err) {
+		return nil, "", nilFunc, err
+	}
+	hostName, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	created := time.Now()
+	portMappings := make([]*hostport.PortMapping, 0)
+
+	sb, err := sandbox.New(sandboxIDFuzz,
+		"default",
+		name,
+		kubeName,
+		logDir,
+		labels,
+		annotations,
+		processLabel,
+		mountLabel,
+		metadata,
+		shmPath,
+		cgroupParent,
+		false,
+		runtimeHandler,
+		resolvPath,
+		hostName,
+		portMappings,
+		false,
+		created,
+		"")
+	cancelFunc := func() {
+		os.RemoveAll(shmPath)
+		os.RemoveAll(logDir)
+		os.RemoveAll(resolvPath)
+	}
+	return sb, sandboxIDFuzz, cancelFunc, err
 }
