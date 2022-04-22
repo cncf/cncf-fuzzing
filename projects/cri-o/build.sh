@@ -82,10 +82,18 @@ function compile_crio_fuzzer() {
                     /src/libassuan/src/.libs/libassuan.a \
                     -o $OUT/$fuzzer
         
-        mkdir -p $OUT/lib
-        cp /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so.1.02 $OUT/lib/    
-        patchelf --set-rpath '$ORIGIN/lib' $OUT/$fuzzer
     fi
+
+    mkdir -p $OUT/lib
+    cp /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so.1.02 $OUT/lib/
+    cp /usr/lib/x86_64-linux-gnu/libdevmapper-event.so.1.02.1 $OUT/lib/
+    cp /usr/lib/x86_64-linux-gnu/libdevmapper.so.1.02.1 $OUT/lib/
+    cp /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so $OUT/lib/
+    cp /usr/lib/x86_64-linux-gnu/libgpgme.so.11 $OUT/lib/
+    cp /usr/lib/x86_64-linux-gnu/libgpgme.so $OUT/lib/
+    cp /usr/lib/x86_64-linux-gnu/libassuan.so.0 $OUT/lib/
+    cp /usr/lib/x86_64-linux-gnu/libassuan.so $OUT/lib/
+    patchelf --set-rpath '$ORIGIN/lib' $OUT/$fuzzer
 }
 
 find $SRC/cri-o/server -name "*_test.go" -exec rm -rf {} \;
