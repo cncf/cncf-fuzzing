@@ -64,6 +64,14 @@ cd $SRC/argo-events
 mv $SRC/cncf-fuzzing/projects/argo/eventbus_controller_fuzzer.go $SRC/argo-events/controllers/eventbus/
 mv $SRC/cncf-fuzzing/projects/argo/eventsource_controller_fuzzer.go $SRC/argo-events/controllers/eventsource/
 mv $SRC/cncf-fuzzing/projects/argo/sensor_controller_fuzzer.go $SRC/argo-events/controllers/sensor/
+mv $SRC/cncf-fuzzing/projects/argo/events_triggers_fuzzer.go $SRC/argo-events/sensors/triggers/
+mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_stripe_fuzzer.go $SRC/argo-events/eventsources/sources/stripe/
+
+# Commenting out this line. Otherwise the stripe fuzzer will hang:
+sed -i 's/route\.DataCh <- data/\/\/route\.DataCh <- data\n\t_ = data/g' $SRC/argo-events/eventsources/sources/stripe/start.go
+
+compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/stripe FuzzStripeEventsource fuzz_stripe_eventsource
+compile_go_fuzzer github.com/argoproj/argo-events/sensors/triggers FuzzConstructPayload fuzz_construct_payload
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEventbusReconciler fuzz_eventbus_reconciler
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorControllerReconcile fuzz_sensor_controller_reconcile
@@ -90,6 +98,9 @@ fi
 
 # argo-cd fuzzers
 cd $SRC/argo-cd
+sed 's/go 1.18/go 1.17/g' -i ./go.mod
+go mod tidy
+go get github.com/AdaLogics/go-fuzz-headers
 mv $SRC/cncf-fuzzing/projects/argo/project_fuzzer.go $SRC/argo-cd/server/project/
 mv $SRC/argo-cd/server/project/project_test.go $SRC/argo-cd/server/project/project_test_fuzz.go
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/server/project FuzzValidateProject fuzz_validate_project
@@ -135,6 +146,9 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNorma
 
 # argo-workflows fuzzers
 cd $SRC/argo-workflows
+sed 's/go 1.18/go 1.17/g' -i ./go.mod
+go mod tidy
+go get github.com/AdaLogics/go-fuzz-headers
 
 mv $SRC/cncf-fuzzing/projects/argo/workflow_server_fuzzer.go $SRC/argo-workflows/server/workflow/
 mv $SRC/argo-workflows/server/workflow/workflow_server_test.go $SRC/argo-workflows/server/workflow/workflow_server_test_fuzz.go 
@@ -153,6 +167,7 @@ mv $SRC/cncf-fuzzing/projects/argo/ancestry_fuzzer.go $SRC/argo-workflows/workfl
 mv $SRC/argo-workflows/workflow/common/ancestry_test.go $SRC/argo-workflows/workflow/common/ancestry_test_fuzz.go 
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/common FuzzGetTaskDependencies fuzz_get_task_dependencies
 
+rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.10/fuzz.go
 mv $SRC/cncf-fuzzing/projects/argo/operator_fuzzer.go $SRC/argo-workflows/workflow/controller/
 mv $SRC/argo-workflows/workflow/controller/controller_test.go $SRC/argo-workflows/workflow/controller/controller_test_fuzz.go 
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/controller FuzzOperator fuzz_operator
