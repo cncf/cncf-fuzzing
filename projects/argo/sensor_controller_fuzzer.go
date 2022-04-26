@@ -90,6 +90,6 @@ func FuzzSensorControllerReconcile(data []byte) int {
 		Sensor: sensorObj,
 		Labels: testLabels,
 	}
-	_ = Reconcile(cl, args, logging.NewArgoEventsLogger())
+	_ = Reconcile(cl, nil, args, logging.NewArgoEventsLogger())
 	return 1
 }

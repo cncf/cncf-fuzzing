@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"github.com/argoproj/argo-events/controllers"
 
 	"github.com/argoproj/argo-events/common/logging"
 	"github.com/argoproj/argo-events/pkg/apis/eventbus/v1alpha1"
@@ -46,11 +47,15 @@ func FuzzEventbusReconciler(data []byte) int {
 		return 0
 	}
 	cl := fake.NewClientBuilder().Build()
-	testStreamingImage := "test-steaming-image"
+	config := &controllers.GlobalConfig{}
+	err = f.GenerateStruct(config)
+	if err != nil {
+		return 0
+	}
 	r := &reconciler{
 		client:             cl,
 		scheme:             scheme.Scheme,
-		natsStreamingImage: testStreamingImage,
+		config: 			config,
 		logger:             logging.NewArgoEventsLogger(),
 	}
 	ctx := context.Background()
