@@ -65,12 +65,23 @@ mv $SRC/cncf-fuzzing/projects/argo/eventbus_controller_fuzzer.go $SRC/argo-event
 mv $SRC/cncf-fuzzing/projects/argo/eventsource_controller_fuzzer.go $SRC/argo-events/controllers/eventsource/
 mv $SRC/cncf-fuzzing/projects/argo/sensor_controller_fuzzer.go $SRC/argo-events/controllers/sensor/
 mv $SRC/cncf-fuzzing/projects/argo/events_triggers_fuzzer.go $SRC/argo-events/sensors/triggers/
-mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_stripe_fuzzer.go $SRC/argo-events/eventsources/sources/stripe/
 
-# Commenting out this line. Otherwise the stripe fuzzer will hang:
+# event sources:
+mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_stripe_fuzzer.go $SRC/argo-events/eventsources/sources/stripe/
+mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_github_fuzzer.go $SRC/argo-events/eventsources/sources/github/
+mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_slack_fuzzer.go $SRC/argo-events/eventsources/sources/slack/
+mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_awssns_fuzzer.go $SRC/argo-events/eventsources/sources/awssns/
+
+# Commenting out these line. Otherwise the fuzzers will hang:
 sed -i 's/route\.DataCh <- data/\/\/route\.DataCh <- data\n\t_ = data/g' $SRC/argo-events/eventsources/sources/stripe/start.go
+sed -i 's/route\.DataCh <- eventBody/\/\/route\.DataCh <- eventBody\n\t_ = eventBody/g' $SRC/argo-events/eventsources/sources/github/start.go
+sed -i 's/route\.DataCh <- eventBytes/\/\/route\.DataCh <- eventBytes\n\t_ = eventBytes/g' $SRC/argo-events/eventsources/sources/awssns/start.go
+sed -i 's/route\.DataCh <- data/\/\/route\.DataCh <- data\n\t_ = data/g' $SRC/argo-events/eventsources/sources/slack/start.go
 
 compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/stripe FuzzStripeEventsource fuzz_stripe_eventsource
+compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/github FuzzGithubEventsource fuzz_github_eventsource
+compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/awssns FuzzAWSSNSsource fuzz_awssns_eventsource
+compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/slack FuzzSlackEventsource fuzz_slack_eventsource
 compile_go_fuzzer github.com/argoproj/argo-events/sensors/triggers FuzzConstructPayload fuzz_construct_payload
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEventbusReconciler fuzz_eventbus_reconciler
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
