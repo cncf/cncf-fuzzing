@@ -98,10 +98,20 @@ function compile_crio_fuzzer() {
 find $SRC/cri-o/server -name "*_test.go" -exec rm -rf {} \;
 compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServer fuzz_server
 compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServerLogSAN fuzz_server_logsan
+
 mv $SRC/cncf-fuzzing/projects/cri-o/storage_fuzzer.go \
     $SRC/cri-o/internal/storage/
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzParseImageName fuzz_parse_image_name
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzShortnamesResolve fuzz_shortnames_resolve
+
+cp $SRC/cncf-fuzzing/projects/cri-o/config_apparmor_fuzzer.go $SRC/cri-o/internal/config/apparmor/config_apparmor_fuzzer.go
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/config/apparmor FuzzLoadConfig fuzz_apparmor
+
+cp $SRC/cncf-fuzzing/projects/cri-o/config_blockio_fuzzer.go $SRC/cri-o/internal/config/blockio/config_blockio_fuzzer.go
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/config/blockio FuzzLoadConfig fuzz_blockio
+
+cp $SRC/cncf-fuzzing/projects/cri-o/config_rdt_fuzzer.go $SRC/cri-o/internal/config/rdt/config_rdt_fuzzer.go
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/config/rdt FuzzLoadConfig fuzz_rdt
 
 # dictionaries
 mv $SRC/cncf-fuzzing/projects/cri-o/dicts/* $OUT/
