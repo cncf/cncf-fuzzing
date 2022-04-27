@@ -21,6 +21,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
+	"strings"
+	"sync"
 	"time"
 
 	libmock "github.com/cri-o/cri-o/test/mocks/lib"
@@ -40,6 +43,7 @@ import (
 	"github.com/cri-o/cri-o/internal/lib/sandbox"
 	"github.com/cri-o/cri-o/internal/oci"
 	"github.com/cri-o/cri-o/pkg/config"
+	//"github.com/cri-o/cri-o/internal/resourcestore"
 	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
 	criostoragemock "github.com/cri-o/cri-o/test/mocks/criostorage"
 	ocicnitypesmock "github.com/cri-o/cri-o/test/mocks/ocicni"
@@ -50,7 +54,7 @@ var (
 	mockCtrl          *gomock.Controller
 	storeMock         *containerstoragemock.MockStore
 	serverConfig      *config.Config
-	t                 *testing.T
+	t1                *testing.T
 	emptyDir          string
 	testManifest      []byte
 	testPath          string
@@ -62,6 +66,7 @@ var (
 	runtimeServerMock *criostoragemock.MockRuntimeServer
 	cniPluginMock     *ocicnitypesmock.MockCNIPlugin
 	logFileAbs        = "/tmp/cri-o-logfile"
+	initter           sync.Once
 )
 
 const (
@@ -70,7 +75,8 @@ const (
 )
 
 func init() {
-	t = &testing.T{}
+	//t1 = &testing.T{}
+	t := &FuzzTester{}
 	mockCtrl = gomock.NewController(t)
 	libMock = libmock.NewMockIface(mockCtrl)
 	storeMock = containerstoragemock.NewMockStore(mockCtrl)
@@ -94,36 +100,33 @@ func init() {
 	}
 }
 
-func setupLogSanitizer() (*logsanitizer.Sanitizer, *os.File, error) {
-	logFile, err := os.Create(logFileAbs)
-	if err != nil {
-		return nil, nil, err
-	}
-	logrus.SetOutput(logFile)
-
-	logSanitizer := logsanitizer.NewSanitizer()
-	logSanitizer.SetLogFile(logFileAbs)
-	logSanitizer.AddInsecureStrings("INFOFUZZ[0027] Starting container:", "DEBUFUZZ[0027]")
-	return logSanitizer, logFile, nil
-}
-
-func runLogSanitizer(logSAN *logsanitizer.Sanitizer, logFp *os.File) {
-	logSAN.CheckLogfile()
-	logFp.Close()
-	os.Remove(logFileAbs)
-}
-
-func FuzzServer(data []byte) int {
-	logSAN, logFp, err := setupLogSanitizer()
-	if err != nil {
-		panic(err)
-	}
-
-	defer runLogSanitizer(logSAN, logFp)
-
+// Same as FuzzServer but with logSAN
+func FuzzServerLogSAN(data []byte) int {
 	if len(data) < 50 {
 		return 0
 	}
+	logSAN, err := logsanitizer.SetupLogSANForLogrus(logFileAbs)
+	if err != nil {
+		panic(err)
+	}
+	defer logSAN.RunSanitizer()
+	return fuzzServer(data)
+}
+
+func setPanicLogLevel() {
+	logrus.SetLevel(logrus.PanicLevel)
+}
+
+func FuzzServer(data []byte) int {
+	initter.Do(setPanicLogLevel)
+	if len(data) < 50 {
+		return 0
+	}
+	return fuzzServer(data)
+}
+
+func fuzzServer(data []byte) int {
+	defer catchPanics()
 
 	f := fuzz.NewConsumer(data)
 	noOfCalls, err := f.GetInt()
@@ -214,6 +217,7 @@ func FuzzServer(data []byte) int {
 			}
 			_, _ = sut.ListContainers(context.Background(), req)
 		case 10:
+
 			completelyRandom, err := f.GetBool()
 			if err != nil {
 				return 0
@@ -233,6 +237,7 @@ func FuzzServer(data []byte) int {
 				defer c()
 				err = sut.AddSandbox(sb)
 				if err != nil {
+					fmt.Println(err)
 					return 0
 				}
 				sb.SetCreated()
@@ -559,4 +564,46 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 		os.RemoveAll(resolvPath)
 	}
 	return sb, sandboxIDFuzz, cancelFunc, err
+}
+
+type FuzzTester struct {
+}
+
+func (ft *FuzzTester) Cleanup(func())                            {}
+func (ft *FuzzTester) Setenv(kev, value string)                  {}
+func (ft *FuzzTester) Error(args ...interface{})                 {}
+func (ft *FuzzTester) Errorf(format string, args ...interface{}) {}
+func (ft *FuzzTester) Fail()                                     {}
+func (ft *FuzzTester) FailNow()                                  {}
+func (ft *FuzzTester) Failed() bool                              { return true }
+func (ft *FuzzTester) Fatal(args ...interface{})                 { panic("Fatal panic from fuzzer") }
+func (ft *FuzzTester) Fatalf(format string, args ...interface{}) { panic("Fatal panic from fuzzer") }
+func (ft *FuzzTester) Helper()                                   {}
+func (ft *FuzzTester) Log(args ...interface{})                   {}
+func (ft *FuzzTester) Logf(format string, args ...interface{})   {}
+func (ft *FuzzTester) Name() string                              { return "fuzz" }
+func (ft *FuzzTester) Parallel()                                 {}
+func (ft *FuzzTester) Skip(args ...interface{})                  {}
+func (ft *FuzzTester) SkipNow()                                  {}
+func (ft *FuzzTester) Skipf(format string, args ...interface{})  {}
+func (ft *FuzzTester) Skipped() bool                             { return true }
+func (ft *FuzzTester) TempDir() string                           { return "/tmp" }
+
+func catchPanics() {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "Fatal panic from fuzzer") {
+			return
+		} else {
+			panic(err)
+		}
+	}
 }

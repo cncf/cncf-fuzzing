@@ -41,7 +41,7 @@ cd $SRC/cri-o
 make BUILDTAGS=""
 
 mv $SRC/cncf-fuzzing/projects/cri-o/fuzz_server.go $SRC/cri-o/server/
-go get github.com/AdaLogics/go-fuzz-headers@5d23d91e3c4a720e9bab4566fc135352460d9fc2
+go get github.com/AdaLogics/go-fuzz-headers@53b129c8971380abe6fc1812bd8eb43105ed8867
 make vendor
 
 function compile_crio_fuzzer() {
@@ -97,10 +97,11 @@ function compile_crio_fuzzer() {
 #sed 's/const sleepTimeBeforeCleanup = 1 \* time\.Minute/const sleepTimeBeforeCleanup = 1 \* time\.Nanosecond/g' -i ./internal/resourcestore/resourcestore.go
 find $SRC/cri-o/server -name "*_test.go" -exec rm -rf {} \;
 compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServer fuzz_server
+compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServerLogSAN fuzz_server_logsan
 mv $SRC/cncf-fuzzing/projects/cri-o/storage_fuzzer.go \
     $SRC/cri-o/internal/storage/
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzParseImageName fuzz_parse_image_name
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzShortnamesResolve fuzz_shortnames_resolve
 
 # dictionaries
-mv $SRC/cncf-fuzzing/projects/cri-o/dicts/fuzz_server.dict $OUT/
+mv $SRC/cncf-fuzzing/projects/cri-o/dicts/* $OUT/
