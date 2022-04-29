@@ -113,5 +113,11 @@ compile_crio_fuzzer github.com/cri-o/cri-o/internal/config/blockio FuzzLoadConfi
 cp $SRC/cncf-fuzzing/projects/cri-o/config_rdt_fuzzer.go $SRC/cri-o/internal/config/rdt/config_rdt_fuzzer.go
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/config/rdt FuzzLoadConfig fuzz_rdt
 
+cp $SRC/cncf-fuzzing/projects/cri-o/config_fuzzer.go $SRC/cri-o/pkg/config/config_fuzzer.go
+compile_crio_fuzzer github.com/cri-o/cri-o/pkg/config FuzzLoadConfig fuzz_config
+
+cp $SRC/cncf-fuzzing/projects/cri-o/container_fuzzer.go $SRC/cri-o/internal/factory/container/container_fuzzer.go
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/factory/container FuzzContainer fuzz_container
+
 # dictionaries
 mv $SRC/cncf-fuzzing/projects/cri-o/dicts/* $OUT/
