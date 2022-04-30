@@ -66,11 +66,14 @@ mv $SRC/cncf-fuzzing/projects/argo/eventsource_controller_fuzzer.go $SRC/argo-ev
 mv $SRC/cncf-fuzzing/projects/argo/sensor_controller_fuzzer.go $SRC/argo-events/controllers/sensor/
 mv $SRC/cncf-fuzzing/projects/argo/events_triggers_fuzzer.go $SRC/argo-events/sensors/triggers/
 
+
+
 # event sources:
 mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_stripe_fuzzer.go $SRC/argo-events/eventsources/sources/stripe/
 mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_github_fuzzer.go $SRC/argo-events/eventsources/sources/github/
 mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_slack_fuzzer.go $SRC/argo-events/eventsources/sources/slack/
 mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_awssns_fuzzer.go $SRC/argo-events/eventsources/sources/awssns/
+mv $SRC/cncf-fuzzing/projects/argo/sensors_fuzzer.go $SRC/argo-events/sensors/
 
 # Commenting out these line. Otherwise the fuzzers will hang:
 sed -i 's/route\.DataCh <- data/\/\/route\.DataCh <- data\n\t_ = data/g' $SRC/argo-events/eventsources/sources/stripe/start.go
@@ -86,6 +89,7 @@ compile_go_fuzzer github.com/argoproj/argo-events/sensors/triggers FuzzConstruct
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEventbusReconciler fuzz_eventbus_reconciler
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorControllerReconcile fuzz_sensor_controller_reconcile
+compile_go_fuzzer github.com/argoproj/argo-events/sensors FuzzgetDependencyExpression fuzz_get_dependency_expression
 
 
 
@@ -204,4 +208,4 @@ compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/validate FuzzVa
 mv $SRC/cncf-fuzzing/projects/argo/workflow_parser_fuzzer.go $SRC/argo-workflows/workflow/common/
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/common FuzzParseObjects fuzz_parse_objects
 
-
+zip $OUT/fuzz_get_dependency_expression_seed_corpus.zip $SRC/argo-events/examples/sensors/trigger-with-template.yaml
