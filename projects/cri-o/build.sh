@@ -119,5 +119,8 @@ compile_crio_fuzzer github.com/cri-o/cri-o/pkg/config FuzzLoadConfig fuzz_config
 cp $SRC/cncf-fuzzing/projects/cri-o/container_fuzzer.go $SRC/cri-o/internal/factory/container/container_fuzzer.go
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/factory/container FuzzContainer fuzz_container
 
+cp $SRC/cncf-fuzzing/projects/cri-o/container_server_fuzzer.go $SRC/cri-o/internal/lib/container_server_fuzzer.go
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/lib FuzzContainerServer fuzz_container_server
+
 # dictionaries
 mv $SRC/cncf-fuzzing/projects/cri-o/dicts/* $OUT/
