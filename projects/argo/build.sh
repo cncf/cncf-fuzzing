@@ -74,6 +74,12 @@ mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_github_fuzzer.go $SRC/argo
 mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_slack_fuzzer.go $SRC/argo-events/eventsources/sources/slack/
 mv $SRC/cncf-fuzzing/projects/argo/events_eventsource_awssns_fuzzer.go $SRC/argo-events/eventsources/sources/awssns/
 mv $SRC/cncf-fuzzing/projects/argo/sensors_fuzzer.go $SRC/argo-events/sensors/
+mv $SRC/cncf-fuzzing/projects/argo/common_fuzzer.go $SRC/argo-events/common/
+mv $SRC/cncf-fuzzing/projects/argo/events_argo_workflow_fuzzer.go $SRC/argo-events/sensors/triggers/argo-workflow/
+mv $SRC/argo-events/sensors/triggers/argo-workflow/argo-workflow_test.go \
+	$SRC/argo-events/sensors/triggers/argo-workflow/argo-workflow_test_fuzz.go
+mv $SRC/cncf-fuzzing/projects/argo/events_expr_fuzzer.go $SRC/argo-events/common/expr/
+mv $SRC/cncf-fuzzing/projects/argo/events_controllers_sensor_fuzzer.go $SRC/argo-events/controllers/sensor/
 
 # Commenting out these line. Otherwise the fuzzers will hang:
 sed -i 's/route\.DataCh <- data/\/\/route\.DataCh <- data\n\t_ = data/g' $SRC/argo-events/eventsources/sources/stripe/start.go
@@ -90,7 +96,12 @@ compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEvent
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorControllerReconcile fuzz_sensor_controller_reconcile
 compile_go_fuzzer github.com/argoproj/argo-events/sensors FuzzgetDependencyExpression fuzz_get_dependency_expression
+compile_go_fuzzer github.com/argoproj/argo-events/common FuzzGetExpression fuzz_get_expression
+compile_go_fuzzer github.com/argoproj/argo-events/sensors/triggers/argo-workflow FuzzArgoWorkflowTriggerExecute fuzz_events_argo_workflow_trigger_execute
+compile_go_fuzzer github.com/argoproj/argo-events/common/expr/ FuzzExpr fuzz_expr
+compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzValidateSensor fuzz_validate_sensor
 
+zip $OUT/fuzz_expr_seed_corpus.zip $SRC/cncf-fuzzing/projects/argo/seeds/fuzz_expr/*
 
 
 if [ "$SANITIZER" = "address" ]
