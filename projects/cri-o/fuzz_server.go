@@ -191,22 +191,14 @@ func fuzzServer(data []byte) int {
 			}
 			_, _ = sut.ExecSync(context.Background(), req)
 		case 6:
-
-			//req := &types.ImageFsInfoResponse{}
-			//err = f.GenerateStruct(req)
-			//if err != nil {
-			//  return 0
-			// }
-			// _, _ = sut.ImageFsInfo(context.Background(), req)
+			 _, _ = sut.ImageFsInfo(context.Background())
 		case 7:
-			// Currently not supported
-
-			/*req := &types.ImageStatusRequest{}
+			req := &types.ImageStatusRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
-			_, _ = sut.ImageStatus(context.Background(), req)*/
+			_, _ = sut.ImageStatus(context.Background(), req)
 		case 8:
 			req := &types.ListContainerStatsRequest{}
 			err = f.GenerateStruct(req)
@@ -326,12 +318,12 @@ func fuzzServer(data []byte) int {
 			}
 			_ = sut.StartContainer(context.Background(), req)
 		case 21:
-		//	req := &types.StatusRequest{}
-		//	err = f.GenerateStruct(req)
-		//		if err != nil {
-		//			return 0
-		//	}
-		//_, _ = sut.Status(context.Background(), req)
+			req := &types.StatusRequest{}
+			err = f.GenerateStruct(req)
+				if err != nil {
+					return 0
+			}
+			_, _ = sut.Status(context.Background(), req)
 		case 22:
 			req := &types.StopContainerRequest{}
 			err = f.GenerateStruct(req)
