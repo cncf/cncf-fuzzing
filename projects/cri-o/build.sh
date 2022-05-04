@@ -14,6 +14,11 @@
 #
 ################################################################################
 
+
+sed -i '1,2d' $SRC/cri-o/internal/config/cnimgr/cnimgr_test_inject.go
+sed -i '1,2d' $SRC/cri-o/pkg/config/config_test_inject.go
+sed -i '1,2d' $SRC/cri-o/server/server_test_inject.go
+
 cd $SRC
 git clone --depth 1 git://git.gnupg.org/libgpg-error.git libgpg-error \
     && cd $SRC/libgpg-error \
