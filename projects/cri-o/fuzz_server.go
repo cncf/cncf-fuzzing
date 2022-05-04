@@ -98,6 +98,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	cniPluginMock.EXPECT().Status().Return(nil)
+	err = sut.SetCNIPlugin(cniPluginMock)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Same as FuzzServer but with logSAN
@@ -307,12 +312,12 @@ func fuzzServer(data []byte) int {
 			}
 			_ = sut.ReopenContainerLog(context.Background(), req)
 		case 19:
-			//req := &types.RunPodSandboxRequest{}
-			//err = f.GenerateStruct(req)
-			//if err != nil {
-			//	return 0
-			//}
-			//_, _ = sut.RunPodSandbox(context.Background(), req)
+			req := &types.RunPodSandboxRequest{}
+			err = f.GenerateStruct(req)
+			if err != nil {
+				return 0
+			}
+			_, _ = sut.RunPodSandbox(context.Background(), req)
 		case 20:
 			req := &types.StartContainerRequest{}
 			err = f.GenerateStruct(req)
