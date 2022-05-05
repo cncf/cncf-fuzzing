@@ -104,10 +104,29 @@ find $SRC/cri-o/server -name "*_test.go" -exec rm -rf {} \;
 compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServer fuzz_server
 compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzServerLogSAN fuzz_server_logsan
 
+cp $SRC/cncf-fuzzing/projects/cri-o/server_fuzzer2.go $SRC/cri-o/server/
+compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzgetDecryptionKeys fuzz_get_decryption_keys
+compile_crio_fuzzer github.com/cri-o/cri-o/server FuzzIdtoolsParseIDMap fuzz_idtools_parse_id_map
+
+
 mv $SRC/cncf-fuzzing/projects/cri-o/storage_fuzzer.go \
     $SRC/cri-o/internal/storage/
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzParseImageName fuzz_parse_image_name
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage FuzzShortnamesResolve fuzz_shortnames_resolve
+
+mv $SRC/cncf-fuzzing/projects/cri-o/storage_fuzzer2.go \
+    $SRC/cri-o/internal/storage/
+compile_crio_fuzzer github.com/cri-o/cri-o/internal/storage Fuzz fuzz_copy_image
+
+cp $SRC/cncf-fuzzing/projects/cri-o/utils_fuzzer.go $SRC/cri-o/utils/
+compile_crio_fuzzer github.com/cri-o/cri-o/utils FuzzGeneratePasswd fuzz_generate_passwd
+
+
+##
+mv $SRC/cncf-fuzzing/projects/cri-o/util/mock_helpers_test.go $SRC/cri-o/test/mocks/containerstorage/mock_helpers_fuzz.go
+cp $SRC/cncf-fuzzing/projects/cri-o/ParseStoreReference_fuzzer.go $SRC/cri-o/test/mocks/containerstorage/
+compile_crio_fuzzer github.com/cri-o/cri-o/test/mocks/containerstorage FuzzParseStoreReference fuzz_parse_store_reference
+##
 
 cp $SRC/cncf-fuzzing/projects/cri-o/config_apparmor_fuzzer.go $SRC/cri-o/internal/config/apparmor/config_apparmor_fuzzer.go
 compile_crio_fuzzer github.com/cri-o/cri-o/internal/config/apparmor FuzzLoadConfig fuzz_apparmor
