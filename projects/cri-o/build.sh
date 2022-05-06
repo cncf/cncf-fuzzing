@@ -14,10 +14,16 @@
 #
 ################################################################################
 
+# This line disturbs the fuzzer in the RunPodSandbox call. We are deliberately
+# creating a context with a low deadline to avoid a timeout. This line will then
+# not clean up all created resources because the return error is a context error.
+# We rewrite the line instead of deleting it to maintain correct line numbers.
+sed 's/if retErr == nil || isContextError(retErr) /if false /g' -i $SRC/cri-o/server/sandbox_run_linux.go
 
 sed -i '1,2d' $SRC/cri-o/internal/config/cnimgr/cnimgr_test_inject.go
 sed -i '1,2d' $SRC/cri-o/pkg/config/config_test_inject.go
 sed -i '1,2d' $SRC/cri-o/server/server_test_inject.go
+sed -i '1,2d' $SRC/cri-o/internal/lib/container_server_test_inject.go
 
 cd $SRC
 git clone --depth 1 git://git.gnupg.org/libgpg-error.git libgpg-error \
