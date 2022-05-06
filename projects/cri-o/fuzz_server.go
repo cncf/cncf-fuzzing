@@ -67,6 +67,35 @@ var (
 	cniPluginMock     *ocicnitypesmock.MockCNIPlugin
 	logFileAbs        = "/tmp/cri-o-logfile"
 	initter           sync.Once
+	debugging         = false
+
+	rpcCalls = map[int]string{
+		0:  "Attach",
+		1:  "ContainerStats",
+		2:  "ContainerStatus",
+		3:  "CreateContainer",
+		4:  "Exec",
+		5:  "ExecSync",
+		6:  "ImageFsInfo",
+		7:  "ImageStatus",
+		8:  "ListContainerStats",
+		9:  "ListContainers",
+		10: "ListPodSandbox",
+		11: "ListPodSandboxStats",
+		12: "PodSandboxStats",
+		13: "PodSandboxStatus",
+		14: "PortForward",
+		15: "PullImage",
+		16: "RemoveContainer",
+		17: "RemovePodSandbox",
+		18: "ReopenContainerLog",
+		19: "RunPodSandbox",
+		20: "StartContainer",
+		21: "Status",
+		22: "StopContainer",
+		23: "StopPodSandbox",
+		24: "UpdateContainerResources",
+	}
 )
 
 const (
@@ -74,7 +103,7 @@ const (
 	containerID = "containerID"
 )
 
-func init() {
+func initFunc() {
 	//t1 = &testing.T{}
 	t := &FuzzTester{}
 	mockCtrl = gomock.NewController(t)
@@ -105,8 +134,15 @@ func init() {
 	}
 }
 
+func nonLogSANInit() {
+	initFunc()
+	logrus.SetLevel(logrus.PanicLevel)
+
+}
+
 // Same as FuzzServer but with logSAN
 func FuzzServerLogSAN(data []byte) int {
+	initter.Do(nonLogSANInit)
 	if len(data) < 50 {
 		return 0
 	}
@@ -118,12 +154,8 @@ func FuzzServerLogSAN(data []byte) int {
 	return fuzzServer(data)
 }
 
-func setPanicLogLevel() {
-	logrus.SetLevel(logrus.PanicLevel)
-}
-
 func FuzzServer(data []byte) int {
-	initter.Do(setPanicLogLevel)
+	initter.Do(nonLogSANInit)
 	if len(data) < 50 {
 		return 0
 	}
@@ -131,6 +163,7 @@ func FuzzServer(data []byte) int {
 }
 
 func fuzzServer(data []byte) int {
+	printCall(fmt.Sprintf("---------- New iteration ----------"))
 	defer catchPanics()
 
 	f := fuzz.NewConsumer(data)
@@ -143,78 +176,88 @@ func fuzzServer(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		switch callType % 25 {
+		rpcCall := rpcCalls[callType%len(rpcCalls)]
+		switch rpcCall {
 
 		// Server calls listed alphabetically relative to their RPC calls
 		// https://github.com/cri-o/cri-o/tree/main/server/cri/v1alpha2
 		// rpc_attach
-		case 0:
+		case "Attach":
 			req := &types.AttachRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.Attach(context.Background(), req)
-		case 1:
+		case "ContainerStats":
 			req := &types.ContainerStatsRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ContainerStats(context.Background(), req)
-		case 2:
+		case "ContainerStatus":
 			req := &types.ContainerStatusRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ContainerStatus(context.Background(), req)
-		case 3:
+		case "CreateContainer":
 			req := &types.CreateContainerRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.CreateContainer(context.Background(), req)
-		case 4:
+		case "Exec":
 			req := &types.ExecRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.Exec(context.Background(), req)
-		case 5:
+		case "ExecSync":
 			req := &types.ExecSyncRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ExecSync(context.Background(), req)
-		case 6:
-			 _, _ = sut.ImageFsInfo(context.Background())
-		case 7:
+		case "ImageFsInfo":
+			printCall(rpcCall)
+			_, _ = sut.ImageFsInfo(context.Background())
+		case "ImageStatus":
 			req := &types.ImageStatusRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ImageStatus(context.Background(), req)
-		case 8:
+		case "ListContainerStats":
 			req := &types.ListContainerStatsRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ListContainerStats(context.Background(), req)
-		case 9:
+		case "ListContainers":
 			req := &types.ListContainersRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ListContainers(context.Background(), req)
-		case 10:
-
+		case "ListPodSandbox":
 			completelyRandom, err := f.GetBool()
 			if err != nil {
 				return 0
@@ -225,6 +268,7 @@ func fuzzServer(data []byte) int {
 				if err != nil {
 					return 0
 				}
+				printCall(fmt.Sprintf("%s (completelyRandom): \nRequest: %+v\n", rpcCall, req))
 				_, _ = sut.ListPodSandbox(context.Background(), req)
 			} else {
 				sb, sandboxID, c, err := createSandbox(f)
@@ -240,41 +284,46 @@ func fuzzServer(data []byte) int {
 				sb.SetCreated()
 				_, err = sut.LoadSandbox(context.Background(), sandboxID)
 				if err == nil {
+					printCall(fmt.Sprintf("%s (not completelyRandom)", rpcCall))
 					_, _ = sut.ListPodSandbox(context.Background(),
 						&types.ListPodSandboxRequest{Filter: &types.PodSandboxFilter{
 							Id: sandboxID,
 						}})
 				}
 			}
-		case 11:
+		case "ListPodSandboxStats":
 			req := &types.ListPodSandboxStatsRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.ListPodSandboxStats(context.Background(), req)
-		case 12:
+		case "PodSandboxStats":
 			req := &types.PodSandboxStatsRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.PodSandboxStats(context.Background(), req)
-		case 13:
+		case "PodSandboxStatus":
 			req := &types.PodSandboxStatusRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(rpcCall)
 			_, _ = sut.PodSandboxStatus(context.Background(), req)
-		case 14:
+		case "PortForward":
 			req := &types.PortForwardRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.PortForward(context.Background(), req)
-		case 15:
+		case "PullImage":
 			//req := &types.PullImageRequest{}
 			//err := f.GenerateStruct(req)
 			//if err != nil {
@@ -282,72 +331,91 @@ func fuzzServer(data []byte) int {
 			//}
 			//fmt.Print("15\n")
 			//_, _ = sut.PullImage(context.Background(), req)
-		case 16:
+		case "RemoveContainer":
 			req := &types.RemoveContainerRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.RemoveContainer(context.Background(), req)
-		case 17:
+		case "RemovePodSandbox":
 			req := &types.RemovePodSandboxRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.RemovePodSandbox(context.Background(), req)
-		case 18:
+		case "ReopenContainerLog":
 			req := &types.ReopenContainerLogRequest{}
 			err := f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.ReopenContainerLog(context.Background(), req)
-		case 19:
+		case "RunPodSandbox":
 			req := &types.RunPodSandboxRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
-			_, _ = sut.RunPodSandbox(context.Background(), req)
-		case 20:
+			shortDuration := 20 * time.Millisecond
+			d := time.Now().Add(shortDuration)
+			ctx, _ := context.WithDeadline(context.Background(), d)
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
+			_, _ = sut.RunPodSandbox(ctx, req)
+		case "StartContainer":
 			req := &types.StartContainerRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.StartContainer(context.Background(), req)
-		case 21:
+		case "Status":
 			req := &types.StatusRequest{}
 			err = f.GenerateStruct(req)
-				if err != nil {
-					return 0
+			if err != nil {
+				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_, _ = sut.Status(context.Background(), req)
-		case 22:
+		case "StopContainer":
 			req := &types.StopContainerRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.StopContainer(context.Background(), req)
-		case 23:
+		case "StopPodSandbox":
 			req := &types.StopPodSandboxRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.StopPodSandbox(context.Background(), req)
-		case 24:
+		case "UpdateContainerResources":
 			req := &types.UpdateContainerResourcesRequest{}
 			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.UpdateContainerResources(context.Background(), req)
 		}
 	}
 	return 1
+}
+
+func printCall(rpcCall string) {
+	if debugging {
+		fmt.Printf("Calling: ")
+		fmt.Println(rpcCall)
+	}
 }
 
 func mockNewServer() {
