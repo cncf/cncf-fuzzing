@@ -35,6 +35,7 @@ import (
 	cstorage "github.com/containers/storage"
 	"github.com/golang/mock/gomock"
 	_ "github.com/onsi/gomega"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/kubernetes/pkg/kubelet/cri/streaming"
@@ -44,6 +45,7 @@ import (
 	"github.com/cri-o/cri-o/internal/oci"
 	"github.com/cri-o/cri-o/pkg/config"
 	//"github.com/cri-o/cri-o/internal/resourcestore"
+	"github.com/cri-o/cri-o/internal/storage"
 	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
 	criostoragemock "github.com/cri-o/cri-o/test/mocks/criostorage"
 	ocicnitypesmock "github.com/cri-o/cri-o/test/mocks/ocicni"
@@ -68,6 +70,8 @@ var (
 	logFileAbs        = "/tmp/cri-o-logfile"
 	initter           sync.Once
 	debugging         = false
+	ci                storage.ContainerInfo
+	f                 *fuzz.ConsumeFuzzer
 
 	rpcCalls = map[int]string{
 		0:  "Attach",
@@ -132,11 +136,73 @@ func initFunc() {
 	if err != nil {
 		panic(err)
 	}
+	sut.SetStorageImageServer(imageServerMock)
+	sut.SetStorageRuntimeServer(runtimeServerMock)
+}
+
+func FuzzedContainerInfo() (func(), error) {
+	// Create Dir and RunDir
+	custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	if err != nil {
+		return func() {}, err
+	}
+	runDir := "/tmp/" + custom
+
+	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	if err != nil {
+		return func() {}, err
+	}
+	dir := "/tmp/" + custom
+
+	c := func() {
+		os.RemoveAll(runDir)
+		os.RemoveAll(dir)
+	}
+	err = os.MkdirAll(dir, 0777)
+	if err != nil {
+		return c, err
+	}
+	err = os.MkdirAll(runDir, 0777)
+	if err != nil {
+		return c, err
+	}
+
+	// Create labels
+	id, err := f.GetString()
+	if err != nil {
+		return c, err
+	}
+	processLabel, err := f.GetString()
+	if err != nil {
+		return c, err
+	}
+	mountLabel, err := f.GetString()
+	if err != nil {
+		return c, err
+	}
+	gomock.InOrder(
+		runtimeServerMock.EXPECT().CreatePodSandbox(gomock.Any(),
+			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+			gomock.Any()).
+			Return(storage.ContainerInfo{
+				RunDir:       runDir,
+				ID:           id,
+				ProcessLabel: processLabel,
+				Dir:          dir,
+				MountLabel:   mountLabel,
+				Config:       &v1.Image{Config: v1.ImageConfig{}},
+			}, nil),
+		runtimeServerMock.EXPECT().DeleteContainer(gomock.Any()).
+			Return(nil),
+	)
+	return c, nil
 }
 
 func nonLogSANInit() {
 	initFunc()
-	logrus.SetLevel(logrus.PanicLevel)
+	logrus.SetLevel(logrus.FatalLevel)
 
 }
 
@@ -166,7 +232,7 @@ func fuzzServer(data []byte) int {
 	printCall(fmt.Sprintf("---------- New iteration ----------"))
 	defer catchPanics()
 
-	f := fuzz.NewConsumer(data)
+	f = fuzz.NewConsumer(data)
 	noOfCalls, err := f.GetInt()
 	if err != nil {
 		return 0
@@ -361,7 +427,43 @@ func fuzzServer(data []byte) int {
 			if err != nil {
 				return 0
 			}
-			shortDuration := 20 * time.Millisecond
+
+			// Do some basic checks on the request
+			req.RuntimeHandler = ""
+
+			if req.Config == nil {
+				continue
+			}
+			if req.Config.Metadata == nil || req.Config.Metadata.Name == "" {
+				continue
+			}
+
+			// create the log dir
+			custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+			if err != nil {
+				return 0
+			}
+			logDirectory := "/tmp/" + custom
+
+			err = os.MkdirAll(logDirectory, 0777)
+			if err != nil {
+				return 0
+			}
+			defer func() {
+				os.RemoveAll(logDirectory)
+			}()
+			req.Config.LogDirectory = logDirectory
+
+			// set up the CreatePodSandbox call
+			cleanupFunc, err := FuzzedContainerInfo()
+			defer cleanupFunc()
+			if err != nil {
+				return 0
+			}
+
+			// Specify deadlie to not fall into timeouts because
+			// cri-o is retrying for minutes.
+			shortDuration := 550 * time.Millisecond
 			d := time.Now().Add(shortDuration)
 			ctx, _ := context.WithDeadline(context.Background(), d)
 			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
@@ -642,17 +744,19 @@ func (ft *FuzzTester) Fail()                                     {}
 func (ft *FuzzTester) FailNow()                                  {}
 func (ft *FuzzTester) Failed() bool                              { return true }
 func (ft *FuzzTester) Fatal(args ...interface{})                 { panic("Fatal panic from fuzzer") }
-func (ft *FuzzTester) Fatalf(format string, args ...interface{}) { panic("Fatal panic from fuzzer") }
-func (ft *FuzzTester) Helper()                                   {}
-func (ft *FuzzTester) Log(args ...interface{})                   {}
-func (ft *FuzzTester) Logf(format string, args ...interface{})   {}
-func (ft *FuzzTester) Name() string                              { return "fuzz" }
-func (ft *FuzzTester) Parallel()                                 {}
-func (ft *FuzzTester) Skip(args ...interface{})                  {}
-func (ft *FuzzTester) SkipNow()                                  {}
-func (ft *FuzzTester) Skipf(format string, args ...interface{})  {}
-func (ft *FuzzTester) Skipped() bool                             { return true }
-func (ft *FuzzTester) TempDir() string                           { return "/tmp" }
+func (ft *FuzzTester) Fatalf(format string, args ...interface{}) {
+	panic(fmt.Sprintf("Fatal panic from fuzzer: %s %+v\n", format, args))
+}
+func (ft *FuzzTester) Helper()                                  {}
+func (ft *FuzzTester) Log(args ...interface{})                  {}
+func (ft *FuzzTester) Logf(format string, args ...interface{})  {}
+func (ft *FuzzTester) Name() string                             { return "fuzz" }
+func (ft *FuzzTester) Parallel()                                {}
+func (ft *FuzzTester) Skip(args ...interface{})                 {}
+func (ft *FuzzTester) SkipNow()                                 {}
+func (ft *FuzzTester) Skipf(format string, args ...interface{}) {}
+func (ft *FuzzTester) Skipped() bool                            { return true }
+func (ft *FuzzTester) TempDir() string                          { return "/tmp" }
 
 func catchPanics() {
 	if r := recover(); r != nil {
