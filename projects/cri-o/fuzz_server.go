@@ -99,6 +99,7 @@ var (
 		22: "StopContainer",
 		23: "StopPodSandbox",
 		24: "UpdateContainerResources",
+		25: "AddContainer",
 	}
 )
 
@@ -231,6 +232,25 @@ func FuzzServer(data []byte) int {
 func fuzzServer(data []byte) int {
 	printCall(fmt.Sprintf("---------- New iteration ----------"))
 	defer catchPanics()
+	defer func() {
+		// Remove all containers up containers
+		resp, err := sut.ListContainers(context.Background(), &types.ListContainersRequest{})
+		if err == nil {
+			for _, c := range resp.Containers {
+				removeRequest := &types.RemoveContainerRequest{
+					ContainerId: c.Id,
+				}
+				_ = sut.RemoveContainer(context.Background(), removeRequest)
+			}
+		} else {
+			panic(err)
+		}
+		// Remove all sandboxes
+		sandboxes := sut.ListSandboxes()
+		for _, sb := range sandboxes {
+			sut.RemoveSandbox(sb.ID())
+		}
+	}()
 
 	f = fuzz.NewConsumer(data)
 	noOfCalls, err := f.GetInt()
@@ -508,9 +528,89 @@ func fuzzServer(data []byte) int {
 			}
 			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
 			_ = sut.UpdateContainerResources(context.Background(), req)
+		case "AddContainer":
+			// Not an RPC call, but it is helpful to have this included.
+			newContainer, err := createContainer(f)
+			if err != nil {
+				return 0
+			}
+			sut.AddContainer(newContainer)
 		}
 	}
 	return 1
+}
+
+func createContainer(f *fuzz.ConsumeFuzzer) (*oci.Container, error) {
+	id, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	name, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	bundlePath, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	logPath, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	labels := make(map[string]string)
+	err = f.FuzzMap(&labels)
+	if err != nil {
+		return nil, err
+	}
+	crioAnnotations := make(map[string]string)
+	err = f.FuzzMap(&crioAnnotations)
+	if err != nil {
+		return nil, err
+	}
+	annotations := make(map[string]string)
+	err = f.FuzzMap(&annotations)
+	if err != nil {
+		return nil, err
+	}
+	image, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	imageName, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	imageRef, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	metadata := &types.ContainerMetadata{}
+	err = f.GenerateStruct(metadata)
+	if err != nil {
+		return nil, err
+	}
+	sandbox, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	terminal := false
+	stdin := false
+	stdinOnce := false
+	runtimeHandler := ""
+	dir, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	created := time.Now()
+	stopSignal, err := f.GetString()
+	if err != nil {
+		return nil, err
+	}
+	return oci.NewContainer(id, name, bundlePath, logPath, labels,
+		crioAnnotations, annotations, image,
+		imageName, imageRef, metadata, sandbox,
+		terminal, stdin, stdinOnce, runtimeHandler,
+		dir, created, stopSignal)
 }
 
 func printCall(rpcCall string) {
@@ -648,12 +748,20 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
-	logDir := "/tmp/logPath"
+	custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	logDir := filepath.Join("tmp", custom, "logPath")
 	err = os.MkdirAll(logDir, 0750)
 	if err != nil && !os.IsExist(err) {
 		return nil, "", nilFunc, err
 	}
-	shmPath := "/tmp/shmPath"
+	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	shmPath := filepath.Join("tmp", custom, "shmPath")
 	err = os.MkdirAll(shmPath, 0750)
 	if err != nil && !os.IsExist(err) {
 		return nil, "", nilFunc, err
@@ -693,7 +801,11 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
-	resolvPath := "/tmp/dirPath"
+	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	resolvPath := filepath.Join("tmp", custom, "dirPath")
 	err = os.MkdirAll(resolvPath, 0750)
 	if err != nil && !os.IsExist(err) {
 		return nil, "", nilFunc, err
