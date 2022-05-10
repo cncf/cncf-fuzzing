@@ -99,7 +99,8 @@ var (
 		22: "StopContainer",
 		23: "StopPodSandbox",
 		24: "UpdateContainerResources",
-		25: "AddContainer",
+		25: "AddContainer", // Not an rpc call
+		26: "ListImages",
 	}
 )
 
@@ -143,13 +144,13 @@ func initFunc() {
 
 func FuzzedContainerInfo() (func(), error) {
 	// Create Dir and RunDir
-	custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 5)
 	if err != nil {
 		return func() {}, err
 	}
 	runDir := "/tmp/" + custom
 
-	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 5)
 	if err != nil {
 		return func() {}, err
 	}
@@ -173,8 +174,35 @@ func FuzzedContainerInfo() (func(), error) {
 	if err != nil {
 		return c, err
 	}
-	processLabel, err := f.GetString()
+	// Create structured string, because otherwise CRI-o cannot delete
+	// the sandbox because of this check: https://github.com/cri-o/cri-o/blob/main/vendor/github.com/opencontainers/selinux/go-selinux/selinux_linux.go#L743
+	var b strings.Builder
+	processLabel1, err := f.GetString()
 	if err != nil {
+		return c, err
+	}
+	processLabel2, err := f.GetString()
+	if err != nil {
+		return c, err
+	}
+	processLabel3, err := f.GetString()
+	if err != nil {
+		return c, err
+	}
+	processLabel4, err := f.GetString()
+	if err != nil {
+		return c, err
+	}
+	b.WriteString(processLabel1)
+	b.WriteString(":")
+	b.WriteString(processLabel2)
+	b.WriteString(":")
+	b.WriteString(processLabel3)
+	b.WriteString(":")
+	b.WriteString(processLabel4)
+	processLabel := b.String()
+	con := strings.SplitN(processLabel, ":", 4)
+	if len(con) < 3 {
 		return c, err
 	}
 	mountLabel, err := f.GetString()
@@ -188,12 +216,12 @@ func FuzzedContainerInfo() (func(), error) {
 			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 			gomock.Any()).
 			Return(storage.ContainerInfo{
-				RunDir:       runDir,
 				ID:           id,
-				ProcessLabel: processLabel,
 				Dir:          dir,
-				MountLabel:   mountLabel,
+				RunDir:       runDir,
 				Config:       &v1.Image{Config: v1.ImageConfig{}},
+				ProcessLabel: processLabel,
+				MountLabel:   mountLabel,
 			}, nil),
 		runtimeServerMock.EXPECT().DeleteContainer(gomock.Any()).
 			Return(nil),
@@ -245,10 +273,19 @@ func fuzzServer(data []byte) int {
 		} else {
 			panic(err)
 		}
+		resp, err = sut.ListContainers(context.Background(), &types.ListContainersRequest{})
+		if err != nil {
+			panic(err)
+		} else if len(resp.Containers) != 0 {
+			panic("Not all containers were deleted during cleanup")
+		}
 		// Remove all sandboxes
 		sandboxes := sut.ListSandboxes()
 		for _, sb := range sandboxes {
 			sut.RemoveSandbox(sb.ID())
+		}
+		if len(sut.ListSandboxes()) != 0 {
+			panic("Not all sandboxes were deleted during cleanup")
 		}
 	}()
 
@@ -530,17 +567,34 @@ func fuzzServer(data []byte) int {
 			_ = sut.UpdateContainerResources(context.Background(), req)
 		case "AddContainer":
 			// Not an RPC call, but it is helpful to have this included.
-			newContainer, err := createContainer(f)
+
+			// First check if any sandboxes exist. If not, then it is a
+			// waste to proceed, since we need one to succesfully create
+			// a container
+			sandboxes := sut.ListSandboxes()
+			if len(sandboxes) == 0 {
+				continue
+			}
+
+			newContainer, err := createContainer(f, sandboxes)
+			if err != nil {
+				continue
+			}
+			sut.AddContainer(newContainer)
+		case "ListImages":
+			req := &types.ListImagesRequest{}
+			err = f.GenerateStruct(req)
 			if err != nil {
 				return 0
 			}
-			sut.AddContainer(newContainer)
+			printCall(fmt.Sprintf("%s: \nRequest: %+v\n", rpcCall, req))
+			_, _ = sut.ListImages(context.Background(), req)
 		}
 	}
 	return 1
 }
 
-func createContainer(f *fuzz.ConsumeFuzzer) (*oci.Container, error) {
+func createContainer(f *fuzz.ConsumeFuzzer, sandboxes []*sandbox.Sandbox) (*oci.Container, error) {
 	id, err := f.GetString()
 	if err != nil {
 		return nil, err
@@ -589,10 +643,13 @@ func createContainer(f *fuzz.ConsumeFuzzer) (*oci.Container, error) {
 	if err != nil {
 		return nil, err
 	}
-	sandbox, err := f.GetString()
+
+	// Get a name of a sanbox that exists
+	sbIndex, err := f.GetInt()
 	if err != nil {
 		return nil, err
 	}
+	sandbox := sandboxes[sbIndex%len(sandboxes)].ID()
 	terminal := false
 	stdin := false
 	stdinOnce := false
@@ -748,7 +805,7 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
-	custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	custom, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 5)
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
@@ -757,7 +814,7 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 	if err != nil && !os.IsExist(err) {
 		return nil, "", nilFunc, err
 	}
-	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 5)
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
@@ -780,10 +837,38 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
-	processLabel, err := f.GetString()
+	// Create structured string, because otherwise CRI-o cannot delete
+	// the sandbox because of this check: https://github.com/cri-o/cri-o/blob/main/vendor/github.com/opencontainers/selinux/go-selinux/selinux_linux.go#L743
+	var b strings.Builder
+	processLabel1, err := f.GetString()
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
+	processLabel2, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	processLabel3, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	processLabel4, err := f.GetString()
+	if err != nil {
+		return nil, "", nilFunc, err
+	}
+	b.WriteString(processLabel1)
+	b.WriteString(":")
+	b.WriteString(processLabel2)
+	b.WriteString(":")
+	b.WriteString(processLabel3)
+	b.WriteString(":")
+	b.WriteString(processLabel4)
+	processLabel := b.String()
+	con := strings.SplitN(processLabel, ":", 4)
+	if len(con) < 3 {
+		return nil, "", nilFunc, err
+	}
+
 	mountLabel, err := f.GetString()
 	if err != nil {
 		return nil, "", nilFunc, err
@@ -801,7 +886,7 @@ func createSandbox(f *fuzz.ConsumeFuzzer) (*sandbox.Sandbox, string, func(), err
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
-	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 20)
+	custom, err = f.GetStringFrom("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-", 5)
 	if err != nil {
 		return nil, "", nilFunc, err
 	}
