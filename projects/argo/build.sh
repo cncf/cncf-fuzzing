@@ -220,3 +220,5 @@ mv $SRC/cncf-fuzzing/projects/argo/workflow_parser_fuzzer.go $SRC/argo-workflows
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/common FuzzParseObjects fuzz_parse_objects
 
 zip $OUT/fuzz_get_dependency_expression_seed_corpus.zip $SRC/argo-events/examples/sensors/trigger-with-template.yaml
+
+cp $SRC/cncf-fuzzing/projects/argo/dictionaries/* $OUT/

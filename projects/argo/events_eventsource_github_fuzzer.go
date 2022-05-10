@@ -18,14 +18,14 @@ import (
 var (
 	logger     = NewFuzzLogger()
 	fRoute     = webhook.GetFakeRoute()
-	router     *Router
+	fuzzRouter     *Router
 	logFileAbs = "/tmp/argo-logfile"
 )
 
 func init() {
 
 	fRoute.Logger = logger
-	router = &Router{
+	fuzzRouter = &Router{
 		route:             fRoute,
 		githubEventSource: &v1alpha1.GithubEventSource{},
 	}
@@ -62,14 +62,14 @@ func FuzzGithubEventsource(data []byte) int {
 
 	defer runLogSanitizer(logSAN, logFp)
 
-	router.route.Active = true
+	fuzzRouter.route.Active = true
 	writer := &webhook.FakeHttpWriter{}
 	r := &http.Request{
 		Body: io.NopCloser(bytes.NewReader(data)),
 	}
 	r.Header = make(map[string][]string)
 	r.Header.Set("Content-Type", "application/json")
-	router.HandleRoute(writer, r)
+	fuzzRouter.HandleRoute(writer, r)
 	return 1
 }
 
