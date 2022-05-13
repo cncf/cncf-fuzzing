@@ -3,7 +3,7 @@ set -o pipefail
 set -o errexit
 set -x
 
-go get github.com/AdaLogics/go-fuzz-headers@fe11a1f79e80cc365788a8d8c10e5a0315571dc5
+go get github.com/AdaLogics/go-fuzz-headers@latest
 
 # Controllers
 ##########################################################
