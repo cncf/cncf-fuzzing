@@ -14,8 +14,7 @@
 # limitations under the License.
 #
 
-rm -r $SRC/containerd/vendor
-go get github.com/AdaLogics/go-fuzz-headers@9f22f86e471065b8d56861991dc885e27b1ae7de
+go get github.com/AdaLogics/go-fuzz-headers
 
 mv $SRC/containerd/content/local/store_test.go \
 	$SRC/containerd/content/local/store_test_fuzz.go
