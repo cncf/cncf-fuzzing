@@ -87,7 +87,7 @@ mv $SRC/cncf-fuzzing/projects/etcd/etcdserver_fuzzer.go ./
 sed -i '316 a return time.Millisecond*50' $SRC/etcd/server/config/config.go
 
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver Fuzzapply fuzz_etcdserver_apply
-compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzapplierV3backendApply fuzz_applier_v3_backend_apply
+#compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzapplierV3backendApply fuzz_applier_v3_backend_apply
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzV3Server fuzz_v3_server
 
 # auth store fuzzer
