@@ -56,7 +56,7 @@ import (
 )
 
 var (
-	ab                    applierV3
+	//ab                    applierV3
 	tokenTypeSimple       = "simple"
 	simpleTokenTTLDefault = 300 * time.Second
 	ops                   = map[int]string{
@@ -635,14 +635,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
+	
+	st := v2store.New()
 	srv = &EtcdServer{
 		be:           be,
 		lgMu:         new(sync.RWMutex),
 		lg:           lg,
-		id:           1,
 		r:            *newRaftNodeForFuzzing(lg),
 		cluster:      cl,
+		v2store:	  st,
 		w:            wait.New(),
 		consistIndex: ci,
 		beHooks:      serverstorage.NewBackendHooks(lg, ci),
@@ -661,9 +662,12 @@ func init() {
 	}
 	srv.alarmStore = alarmStore
 	srv.be = be
-	srv.applyV3Internal = srv.newApplierV3Internal()
-	srv.applyV3 = srv.newApplierV3()
-	ab = srv.newApplierV3Backend()
+	//srv.applyV3Internal = srv.newApplierV3Internal()
+	//srv.applyV3 = srv.newApplierV3()
+	srv.applyV2 = &applierV2store{store: srv.v2store, cluster: srv.cluster}
+	
+	srv.uberApply = srv.NewUberApplier()
+	//ab = srv.newApplierV3Backend()
 
 	srv.r.start(&raftReadyHandler{
 		getLead:          func() uint64 { return 0 },
@@ -772,7 +776,6 @@ func Fuzzapply(data []byte) int {
 	srv := &EtcdServer{
 		lgMu:         new(sync.RWMutex),
 		lg:           lg,
-		id:           1,
 		r:            *realisticRaftNode(lg),
 		cluster:      cl,
 		w:            wait.New(),
@@ -818,7 +821,7 @@ func catchPanics2() {
 	}
 }
 
-func FuzzapplierV3backendApply(data []byte) int {
+/*func FuzzapplierV3backendApply(data []byte) int {
 	defer catchPanics2()
 	f := fuzz.NewConsumer(data)
 	rr := &pb.InternalRaftRequest{}
@@ -828,7 +831,7 @@ func FuzzapplierV3backendApply(data []byte) int {
 	}
 	_ = ab.Apply(rr, true)
 	return 1
-}
+}*/
 
 var (
 	pr     []*pb.PutRequest
@@ -1299,7 +1302,6 @@ func FuzzV3Server(data []byte) int {
 	srv := &EtcdServer{
 		lgMu:                  new(sync.RWMutex),
 		lg:                    lg,
-		id:                    1,
 		r:                     *newRaftNodeForFuzzing(lg),
 		cluster:               cl,
 		w:                     wait.New(),
@@ -1312,7 +1314,7 @@ func FuzzV3Server(data []byte) int {
 		authStore:             auth.NewAuthStore(lg, schema.NewAuthBackend(lg, be), tp, 0),
 		Cfg:                   config.ServerConfig{ElectionTicks: 10, Logger: lg, TickMs: 10000, SnapshotCatchUpEntries: DefaultSnapshotCatchUpEntries, MaxRequestBytes: 10000},
 	}
-	srv.applyV3Base = srv.newApplierV3Backend()
+	//srv.applyV3Base = srv.newApplierV3Backend()
 	srv.kv = mvcc.New(lg, be, &lease.FakeLessor{}, mvcc.StoreConfig{})
 
 	srv.Start()
