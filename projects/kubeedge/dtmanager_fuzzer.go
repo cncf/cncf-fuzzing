@@ -19,37 +19,27 @@ import (
 
 	"github.com/kubeedge/beehive/pkg/core/model"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/kubeedge/kubeedge/edge/pkg/devicetwin/dtcontext"
 )
 
-func FuzzdealTwinUpdate(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	deviceA, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	deviceB, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	content, err := f.GetBytes()
-	if err != nil {
-		return 0
-	}
-	msg := &model.Message{
-		Content: content,
-	}
-	context := contextFunc(deviceA)
-	dealTwinUpdate(&context, deviceB, msg)
-	return 1
+var fuzzActions = map[int]string {
+	0: "dealTwinUpdate",
+	1: "dealTwinGet",
+	2: "dealTwinSync",
+	3: "dealDeviceAttrUpdate",
+	4: "dealDeviceStateUpdate",
+	5: "dealSendToCloud",
+	6: "dealSendToEdge",
+	7: "dealLifeCycle",
+	8: "dealConfirm",
+	9: "dealMembershipGet",
+	10: "dealMembershipUpdate",
+	11: "dealMembershipDetail",
 }
 
-func FuzzdealTwinGet(data []byte) int {
+func FuzzdealTwinActions(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	deviceA, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	deviceB, err := f.GetString()
+	device, err := f.GetString()
 	if err != nil {
 		return 0
 	}
@@ -57,10 +47,39 @@ func FuzzdealTwinGet(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	actionType, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
 	msg := &model.Message{
 		Content: content,
 	}
-	context := contextFunc(deviceA)
-	dealTwinGet(&context, deviceB, msg)
+	context, _ := dtcontext.InitDTContext()
+	switch fuzzActions[actionType%len(fuzzActions)] {
+	case "dealTwinUpdate":
+		dealTwinUpdate(context, device, msg)
+	case "dealTwinGet":
+		dealTwinGet(context, device, msg)
+	case "dealTwinSync":
+		dealTwinSync(context, device, msg)
+	case "dealDeviceAttrUpdate":
+		dealDeviceAttrUpdate(context, device, msg)
+	case "dealDeviceStateUpdate":
+		dealDeviceStateUpdate(context, device, msg)
+	case "dealSendToCloud":
+		dealSendToCloud(context, device, msg)
+	case "dealSendToEdge":
+		dealSendToEdge(context, device, msg)
+	case "dealLifeCycle":
+		dealLifeCycle(context, device, msg)
+	case "dealConfirm":
+		dealConfirm(context, device, msg)
+	case "dealMembershipGet":
+		dealMembershipGet(context, device, msg)
+	case "dealMembershipUpdate":
+		dealMembershipUpdate(context, device, msg)
+	case "dealMembershipDetail":
+		dealMembershipDetail(context, device, msg)
+	}
 	return 1
 }
