@@ -362,7 +362,12 @@ func FuzzValidateStatefulSetUpdate(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	if errs := appsValidation.ValidateStatefulSetUpdate(statefulset1, statefulset2); len(errs) > 0 {
+	opts := validation.PodValidationOptions{}
+	err = f.GenerateStruct(&opts)
+	if err != nil {
+		return 0
+	}
+	if errs := appsValidation.ValidateStatefulSetUpdate(statefulset1, statefulset2, opts); len(errs) > 0 {
 		for _, err := range errs {
 			_ = err
 			//fmt.Println(err)
