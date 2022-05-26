@@ -86,7 +86,13 @@ go mod download && go mod tidy
 $SRC/distribution/script/oss_fuzz_build.sh
 
 compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_normalized_named
-compile_go_fuzzer $DISTRIBUTION/reference FuzzWithNameAndWithTag fuzz_with_name_and_tag
+
+# Target(s) that break coverage build
+if [ "$SANITIZER" != "coverage" ]
+then
+   compile_go_fuzzer $DISTRIBUTION/reference FuzzWithNameAndWithTag fuzz_with_name_and_tag
+fi
+
 compile_go_fuzzer $DISTRIBUTION/reference FuzzAllNormalizeApis fuzz_all_normalize_apis
 compile_go_fuzzer $DISTRIBUTION/manifest/ocischema FuzzManifestBuilder fuzz_manifest_builder
 
