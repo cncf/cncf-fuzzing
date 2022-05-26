@@ -15,12 +15,6 @@
 
 package strvals
 
-import (
-	"testing"
-)
-
-func FuzzStrvalsParse(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data string) {
-		_, _ = Parse(data)
-	})
+func FuzzStrvalsParse(data []byte) {
+        _, _ = Parse(string(data))
 }
