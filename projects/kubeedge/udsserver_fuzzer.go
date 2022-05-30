@@ -15,7 +15,12 @@
 
 package udsserver
 
+// Tests ExtractMessage found here:
+// https://github.com/kubeedge/kubeedge/blob/master/cloud/pkg/cloudhub/servers/udsserver/server.go#L52
 func FuzzExtractMessage(data []byte) int {
-	_, _ = ExtractMessage(string(data))
+	msg, err := ExtractMessage(string(data))
+	if err != nil {
+		_ = feedbackError(err, msg)
+	}
 	return 1
 }

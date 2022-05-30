@@ -15,7 +15,13 @@
 
 package csidriver
 
+// This fuzzer mimicks the usage of extractMessage() found here:
+// https://github.com/kubeedge/kubeedge/blob/master/cloud/pkg/csidriver/utils.go.
 func FuzzextractMessage(data []byte) int {
-	_, _ = extractMessage(string(data))
+	result, err := extractMessage(string(data))
+	if err == nil {
+		_ = result.GetContent().(string)
+		_ = result.GetOperation()
+	}
 	return 1
 }
