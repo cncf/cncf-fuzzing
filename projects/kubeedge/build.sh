@@ -41,3 +41,5 @@ compile_go_fuzzer github.com/kubeedge/kubeedge/pkg/metaserver FuzzParseKey fuzz_
 
 cp $SRC/cncf-fuzzing/projects/kubeedge/stream_fuzzer.go $SRC/kubeedge/pkg/stream/
 compile_go_fuzzer github.com/kubeedge/kubeedge/pkg/stream FuzzReadMessageFromTunnel fuz_read_message_from_tunnel
+
+mv $SRC/cncf-fuzzing/projects/kubeedge/dictionaries/* $OUT/
