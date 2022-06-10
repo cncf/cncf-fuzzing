@@ -10,15 +10,17 @@ and is increasingly being used by developers.
 
 CNCF projects that use fuzzing include:
 - [Argo](https://github.com/cncf/cncf-fuzzing/tree/main/projects/argo)
+- [Containerd](https://github.com/containerd/containerd/tree/main/contrib/fuzz)
+- [CRI-O](https://github.com/cri-o/cri-o/blob/main/security/2022_security_audit_adalogics.pdf)
 - [Envoy](https://github.com/envoyproxy/envoy/tree/main/test/fuzz)
 - [Fluent-bit](https://github.com/fluent/fluent-bit/tree/master/tests/internal/fuzzers)
-- [Linkerd2-proxy](https://github.com/linkerd/linkerd2-proxy/blob/main/docs/FUZZING.md)
-- [Vitess](https://github.com/vitessio/vitess/blob/main/doc/VIT-02-report-fuzzing-audit.pdf)
-- [Prometheus](https://github.com/prometheus/prometheus/blob/4c56a193c518ae6f56008b0a4c850a9c3f1477c6/promql/fuzz.go)
-- [Kubernetes](https://github.com/kubernetes/kubernetes/tree/master/test/fuzz)
-- [RunC](https://github.com/opencontainers/runc/tree/master/tests/fuzzing)
-- [Containerd](https://github.com/containerd/containerd/tree/main/contrib/fuzz)
 - [FluxCD](https://github.com/fluxcd/source-controller/pull/443) and [full report, section 5](https://fluxcd.io/FluxFinalReport-v1.1.pdf)
+- [Kubernetes](https://github.com/kubernetes/kubernetes/tree/master/test/fuzz)
+- [Linkerd2-proxy](https://github.com/linkerd/linkerd2-proxy/blob/main/docs/FUZZING.md)
+- [Prometheus](https://github.com/prometheus/prometheus/blob/4c56a193c518ae6f56008b0a4c850a9c3f1477c6/promql/fuzz.go)
+- [RunC](https://github.com/opencontainers/runc/tree/master/tests/fuzzing)
+- [Vitess](https://github.com/vitessio/vitess/blob/main/doc/VIT-02-report-fuzzing-audit.pdf)
+
 
 ## Integrate fuzzing into your project
 Integrating fuzzing into a project takes a lot effort and is often done 
