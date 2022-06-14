@@ -21,6 +21,9 @@ CNCF projects that use fuzzing include:
 - [RunC](https://github.com/opencontainers/runc/tree/master/tests/fuzzing)
 - [Vitess](https://github.com/vitessio/vitess/blob/main/doc/VIT-02-report-fuzzing-audit.pdf)
 
+Talks on CNCF fuzzing:
+- [Fuzzing the CNCF Landscape, Cloud Native SecurityCon, 2022](https://www.youtube.com/watch?v=zIyIZxAZLzo)
+- [Securing Fluent Bit by Way of Fuzzing, FluentCon, 2022](https://www.youtube.com/watch?v=Yp6IClswWQE)
 
 ## Integrate fuzzing into your project
 Integrating fuzzing into a project takes a lot effort and is often done 
