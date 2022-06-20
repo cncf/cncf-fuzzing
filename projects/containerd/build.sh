@@ -40,7 +40,6 @@ mv $SRC/cncf-fuzzing/projects/containerd/compression_fuzzer.go $SRC/containerd/a
 compile_go_fuzzer github.com/containerd/containerd/archive/compression FuzzDecompressStream fuzz_decompress_stream
 
 mv $SRC/cncf-fuzzing/projects/containerd/*.go $SRC/containerd/contrib/fuzz/
-compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzConvertManifest fuzz_convert_manifest
 compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzImagesCheck fuzz_images_check
 compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzExchange fuzz_diff_compare
 compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzDiffCompare fuzz_diff_compare
