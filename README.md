@@ -25,6 +25,14 @@ Talks on CNCF fuzzing:
 - [Fuzzing the CNCF Landscape, Cloud Native SecurityCon, 2022](https://www.youtube.com/watch?v=zIyIZxAZLzo)
 - [Securing Fluent Bit by Way of Fuzzing, FluentCon, 2022](https://www.youtube.com/watch?v=Yp6IClswWQE)
 
+Dedicated fuzzing audit reports:
+- [Fluent Bit](https://github.com/fluent/fluent-bit/blob/master/doc-reports/cncf-fuzzing-audit.pdf)
+- [Argo](https://github.com/argoproj/argoproj/blob/dd7cae43d81c5a11f21ff4ea0a4afadcae4799c7/docs/audit_fuzzer_adalogics_2022.pdf)
+- [etcd](https://github.com/etcd-io/etcd/blob/main/security/FUZZING_AUDIT_2022.PDF)
+- [linkerd2-proxy](https://github.com/linkerd/linkerd2-proxy)
+- [Envoy](https://github.com/envoyproxy/envoy)
+- [Vitess](https://github.com/vitessio/vitess/blob/master/doc/VIT-02-report-fuzzing-audit.pdf)
+
 ## Integrate fuzzing into your project
 Integrating fuzzing into a project takes a lot effort and is often done 
 over a long period of time. Fuzzing can be integrated into your project 
