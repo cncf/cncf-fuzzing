@@ -25,10 +25,6 @@ mv $SRC/cncf-fuzzing/projects/containerd/content_local_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/containerd/docker_fuzzer_internal.go $SRC/containerd/remotes/docker/config/
 compile_go_fuzzer github.com/containerd/containerd/remotes/docker/config FuzzParseHostsFile fuzz_parser_hosts_file
 
-mv $SRC/cncf-fuzzing/projects/containerd/cri_fuzzer2.go $SRC/containerd/pkg/cri/server/
-mv pkg/cri/server/service_test.go pkg/cri/server/service_fuzz.go
-compile_go_fuzzer github.com/containerd/containerd/pkg/cri/server FuzzCRI fuzz_cri
-
 mv $SRC/cncf-fuzzing/projects/containerd/containerd_import_structured_fuzzer.go \
 	$SRC/containerd/contrib/fuzz/
 compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzContainerdImportStructured fuzz_containerd_import_structured
