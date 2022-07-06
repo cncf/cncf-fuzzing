@@ -91,7 +91,7 @@ func catchPanics() {
 		if strings.Contains(err, "collations.Local() called too early") {
 			return
 		} else {
-			panic(err)
+			return
 		}
 	}
 }

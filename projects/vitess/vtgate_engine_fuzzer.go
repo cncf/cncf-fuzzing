@@ -45,9 +45,11 @@ import (
 
 // FuzzVtateEngine implements the fuzzer
 func FuzzVtateEngine(data []byte) int {
-	if r := recover(); r != nil {
-        fmt.Println("Recovered. Error:\n", r)
-    }
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered. Error:\n", r)
+		}
+	}()
 	c := fuzz.NewConsumer(data)
 
 	index, err := c.GetInt()
