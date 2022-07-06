@@ -19,6 +19,7 @@
 package fuzzing
 
 import (
+	"fmt"
 	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/sqlparser"
 
@@ -31,6 +32,9 @@ func FuzzIsDML(data []byte) int {
 }
 
 func FuzzNormalizer(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	stmt, reservedVars, err := sqlparser.Parse2(string(data))
 	if err != nil {
 		return -1
@@ -41,6 +45,9 @@ func FuzzNormalizer(data []byte) int {
 }
 
 func FuzzParser(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	_, err := sqlparser.Parse(string(data))
 	if err != nil {
 		return 0
@@ -49,6 +56,9 @@ func FuzzParser(data []byte) int {
 }
 
 func FuzzNodeFormat(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	f := fuzz.NewConsumer(data)
 	query, err := f.GetSQLString()
 	if err != nil {
@@ -68,6 +78,9 @@ func FuzzNodeFormat(data []byte) int {
 }
 
 func FuzzSplitStatementToPieces(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	_, _ = sqlparser.SplitStatementToPieces(string(data))
 	return 1
 }

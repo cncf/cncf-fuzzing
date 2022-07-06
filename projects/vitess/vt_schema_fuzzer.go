@@ -16,6 +16,7 @@
 package fuzzing
 
 import (
+	"fmt"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	"vitess.io/vitess/go/vt/schema"
@@ -25,6 +26,9 @@ import (
 // FuzzOnlineDDLFromCommentedStatement implements a fuzzer
 // that targets schema.OnlineDDLFromCommentedStatement
 func FuzzOnlineDDLFromCommentedStatement(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	stmt, err := sqlparser.Parse(string(data))
 	if err != nil {
 		return 0
@@ -42,6 +46,9 @@ func FuzzOnlineDDLFromCommentedStatement(data []byte) int {
 // FuzzNewOnlineDDLs implements a fuzzer that
 // targets schema.NewOnlineDDLs
 func FuzzNewOnlineDDLs(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	f := fuzz.NewConsumer(data)
 
 	keyspace, err := f.GetString()

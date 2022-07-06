@@ -47,6 +47,10 @@ func FuzzGetPlan(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	i, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
 	db := fakesqldb.New(t)
 	defer db.Close()
 
@@ -66,6 +70,6 @@ func FuzzGetPlan(data []byte) int {
 	qe.SetQueryPlanCacheCap(1024)
 
 	// Call target
-	_, _ = qe.GetPlan(context.Background(), logStats, query2, true, 0, nil)
+	_, _ = qe.GetPlan(context.Background(), logStats, query2, true, int64(i))
 	return 1
 }
