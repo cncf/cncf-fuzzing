@@ -16,6 +16,7 @@
 package vstreamer
 
 import (
+	"fmt"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	binlogdatapb "vitess.io/vitess/go/vt/proto/binlogdata"
@@ -25,6 +26,9 @@ import (
 
 // Fuzz implements the fuzzer
 func FuzzbuildPlan(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	var kspb vschemapb.Keyspace
 	c := fuzz.NewConsumer(data)
 	err := c.GenerateStruct(&kspb)

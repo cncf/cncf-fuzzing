@@ -36,6 +36,7 @@
 package engine
 
 import (
+	"fmt"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	querypb "vitess.io/vitess/go/vt/proto/query"
@@ -44,6 +45,9 @@ import (
 
 // FuzzVtateEngine implements the fuzzer
 func FuzzVtateEngine(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	c := fuzz.NewConsumer(data)
 
 	index, err := c.GetInt()

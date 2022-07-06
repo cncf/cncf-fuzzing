@@ -656,6 +656,9 @@ func (fs *fuzzStore) executeInRandomOrder() {
 
 // FuzzGRPCTMServer implements the fuzzer.
 func FuzzGRPCTMServer(data []byte) int {
+	if r := recover(); r != nil {
+        fmt.Println("Recovered. Error:\n", r)
+    }
 	initter.Do(onceInit)
 	f := fuzz.NewConsumer(data)
 	fs, err := newFuzzStore(f)
