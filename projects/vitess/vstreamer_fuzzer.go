@@ -26,9 +26,11 @@ import (
 
 // Fuzz implements the fuzzer
 func FuzzbuildPlan(data []byte) int {
-	if r := recover(); r != nil {
-        fmt.Println("Recovered. Error:\n", r)
-    }
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered. Error:\n", r)
+		}
+	}()
 	var kspb vschemapb.Keyspace
 	c := fuzz.NewConsumer(data)
 	err := c.GenerateStruct(&kspb)

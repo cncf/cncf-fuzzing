@@ -33,9 +33,11 @@ import (
 var initter sync.Once
 
 func FuzzLoadTable(data []byte) int {
-	if r := recover(); r != nil {
-        fmt.Println("Recovered. Error:\n", r)
-    }
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered. Error:\n", r)
+		}
+	}()
 	initter.Do(initTesting)
 	f := fuzz.NewConsumer(data)
 	tableName, err := f.GetString()
