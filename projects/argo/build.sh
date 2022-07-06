@@ -122,7 +122,6 @@ fi
 
 # argo-cd fuzzers
 cd $SRC/argo-cd
-sed 's/go 1.18/go 1.17/g' -i ./go.mod
 go mod tidy
 go get github.com/AdaLogics/go-fuzz-headers
 mv $SRC/cncf-fuzzing/projects/argo/project_fuzzer.go $SRC/argo-cd/server/project/

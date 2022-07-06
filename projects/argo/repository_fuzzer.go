@@ -24,6 +24,7 @@ import (
 	argoappv1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/argoproj/argo-cd/v2/reposerver/apiclient"
 	"github.com/argoproj/argo-cd/v2/util/git"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func FuzzGenerateManifests(data []byte) int {
@@ -37,8 +38,16 @@ func FuzzGenerateManifests(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	resString, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	res, err := resource.ParseQuantity(resString)
+	if err != nil {
+		return 0
+	}
 	src := argoappv1.ApplicationSource{Path: "manifests/base"}
 	q := apiclient.ManifestRequest{Repo: &argoappv1.Repository{}, ApplicationSource: &src}
-	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false, &git.NoopCredsStore{})
+	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false, &git.NoopCredsStore{}, res)
 	return 1
 }

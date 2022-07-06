@@ -37,10 +37,10 @@ func FuzzValidateWorkflow(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	if wf.Spec.WorkflowTemplateRef  == nil {
+	if wf.Spec.WorkflowTemplateRef == nil {
 		return 0
 	}
 	opts := ValidateOpts{}
-	_, _ = ValidateWorkflow(wftmplGetterFuzz, cwftmplGetterFuzz, wf, opts)
+	_ = ValidateWorkflow(wftmplGetterFuzz, cwftmplGetterFuzz, wf, opts)
 	return 1
 }
