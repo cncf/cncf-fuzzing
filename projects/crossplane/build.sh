@@ -15,10 +15,12 @@
 #
 ################################################################################
 
-mv $SRC/fuzz.go $SRC/crossplane/internal/xpkg/
-mv $SRC/composition_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/composition/
-mv $SRC/composite_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/composite/
-mv $SRC/manager_fuzzer.go $SRC/crossplane/internal/controller/pkg/manager/
+export CNCF="${SRC}/cncf-fuzzing/projects/crossplane"
+
+mv $CNCF/xpkg_fuzzer.go $SRC/crossplane/internal/xpkg/
+mv $CNCF/composition_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/composition/
+mv $CNCF/composite_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/composite/
+mv $CNCF/manager_fuzzer.go $SRC/crossplane/internal/controller/pkg/manager/
 go mod tidy
 rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.11/fuzz.go
 
