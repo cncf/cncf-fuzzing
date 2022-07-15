@@ -8,8 +8,12 @@ cp $CILIUM/labels_fuzzer.go $SRC/cilium/pkg/k8s/slim/k8s/apis/labels/
 mv $SRC/cilium/proxylib/cassandra/cassandraparser_test.go $SRC/cilium/proxylib/cassandra/cp_test_fuzz.go
 mv $CILIUM/OnData_fuzzer.go $SRC/cilium/proxylib/cassandra/
 mv $CILIUM/payload_fuzzer.go $SRC/cilium/pkg/monitor/payload
+mv $CILIUM/monitor_fuzzer.go $SRC/cilium/pkg/monitor/
+mv $CILIUM/format_fuzzer.go $SRC/cilium/pkg/monitor/format
 go mod tidy && go mod vendor
 
+compile_go_fuzzer github.com/cilium/cilium/pkg/monitor FuzzDecodeTraceNotify fuzz_DecodeTraceNotify
+compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/format FuzzFormatEvent fuzz_FormatEvent
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/payload FuzzPayloadEncodeDecode FuzzPayloadEncodeDecode
 compile_go_fuzzer github.com/cilium/cilium/pkg/elf FuzzElfOpen fuzz_elf_open
 compile_go_fuzzer github.com/cilium/cilium/pkg/bpf FuzzBpf fuzz_bpf
