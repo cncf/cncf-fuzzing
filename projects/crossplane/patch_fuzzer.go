@@ -16,6 +16,7 @@
 package v1
 
 import (
+	"errors"
 	"github.com/crossplane/crossplane-runtime/pkg/resource/fake"
 	pkgmetav1 "github.com/crossplane/crossplane/apis/pkg/meta/v1"
 	pkgmetav1alpha1 "github.com/crossplane/crossplane/apis/pkg/meta/v1alpha1"
@@ -82,5 +83,59 @@ func FuzzPatchApply(data []byte) int {
 
 	p.Apply(cd, cp)
 
+	return 1
+}
+
+// Adds a type to the transform
+func addTransformType(t *Transform, i int) error {
+	chooseType := i % 4
+	switch chooseType {
+	case 0:
+		t.Type = TransformTypeMap
+		if t.Map == nil {
+			return errors.New("Incorrect configuration")
+		}
+	case 1:
+		t.Type = TransformTypeMath
+		if t.Math == nil {
+			return errors.New("Incorrect configuration")
+		}
+	case 2:
+		t.Type = TransformTypeString
+		if t.String == nil {
+			return errors.New("Incorrect configuration")
+		}
+	case 3:
+		t.Type = TransformTypeConvert
+		if t.Convert == nil {
+			return errors.New("Incorrect configuration")
+		}
+	}
+	return nil
+}
+
+func FuzzTransform(data []byte) int {
+	f := fuzz.NewConsumer(data)
+
+	t := &Transform{}
+	err := f.GenerateStruct(t)
+	if err != nil {
+		return 0
+	}
+	typeIndex, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	err = addTransformType(t, typeIndex)
+	if err != nil {
+		return 0
+	}
+
+	i, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+
+	t.Transform(i)
 	return 1
 }

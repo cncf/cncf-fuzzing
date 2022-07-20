@@ -28,6 +28,7 @@ go mod tidy
 rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.11/fuzz.go
 
 compile_go_fuzzer github.com/crossplane/crossplane/apis/apiextensions/v1 FuzzPatchApply fuzz_patch_apply
+compile_go_fuzzer github.com/crossplane/crossplane/apis/apiextensions/v1 FuzzTransform fuzz_transform
 compile_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzParse fuzz_parse
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composition FuzzNewCompositionRevision fuzz_NewCompositionRevision
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composite FuzzAsComposition fuzz_AsComposition
