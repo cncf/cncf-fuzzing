@@ -10,8 +10,13 @@ mv $CILIUM/OnData_fuzzer.go $SRC/cilium/proxylib/cassandra/
 mv $CILIUM/payload_fuzzer.go $SRC/cilium/pkg/monitor/payload
 mv $CILIUM/monitor_fuzzer.go $SRC/cilium/pkg/monitor/
 mv $CILIUM/format_fuzzer.go $SRC/cilium/pkg/monitor/format
+mv $CILIUM/labelsfilter_fuzzer.go $SRC/cilium/pkg/labelsfilter/
 go mod tidy && go mod vendor
 
+# Disablo logging
+sed -i 's/logrus\.InfoLevel/logrus.PanicLevel/g' $SRC/cilium/pkg/logging/logging.go
+
+compile_go_fuzzer github.com/cilium/cilium/pkg/labelsfilter FuzzLabelsfilterPkg fuzz_labelsfilter_pkg
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor FuzzDecodeTraceNotify fuzz_DecodeTraceNotify
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/format FuzzFormatEvent fuzz_FormatEvent
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/payload FuzzPayloadEncodeDecode FuzzPayloadEncodeDecode
