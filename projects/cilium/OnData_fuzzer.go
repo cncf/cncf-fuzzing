@@ -147,8 +147,8 @@ func verifyParserData(parser string, d [][]byte, reply bool) error {
 	return nil
 }
 
-// FuzzParsers implements the fuzzer
-func FuzzParsers(data []byte) int {
+// FuzzMultipleParsers implements the fuzzer
+func FuzzMultipleParsers(data []byte) int {
 	f := fuzz.NewConsumer(data)
 
 	version, policies, d, reply, parser, err := createData(f)
