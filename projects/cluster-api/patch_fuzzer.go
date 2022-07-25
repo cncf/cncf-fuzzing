@@ -77,7 +77,7 @@ func FuzzPatch(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_, err = patcher.Patch(fuzzCtx, obj)
+	_ = patcher.Patch(fuzzCtx, obj)
 	if err != nil {
 		return 0
 	}

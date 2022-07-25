@@ -44,8 +44,10 @@ func FuzzPatchApply(data []byte) int {
 	if err != nil {
 		return 0
 	}
-
-	patch := NewPatch(getterBefore, getterAfter)
+	patch, err := NewPatch(getterBefore, getterAfter)
+	if err != nil {
+		return 0
+	}
 	_ = patch.Apply(setter, options...)
 	return 1
 }
