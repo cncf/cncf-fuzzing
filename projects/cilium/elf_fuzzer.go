@@ -16,7 +16,11 @@
 package elf
 
 import (
+	"bytes"
 	"os"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/sirupsen/logrus"
 )
 
 func FuzzElfOpen(data []byte) int {
@@ -32,5 +36,34 @@ func FuzzElfOpen(data []byte) int {
 	if err == nil {
 		e.Close()
 	}
+	return 1
+}
+
+func FuzzElfWrite(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	d1, err := f.GetBytes()
+	if err != nil {
+		return 0
+	}
+	ra := bytes.NewReader(d1)
+
+	logger := logrus.New()
+	logger.Out = &bytes.Buffer{}
+	entry := logrus.NewEntry(logger)
+
+	e, err := NewELF(ra, entry)
+	if err != nil {
+		return 0
+	}
+	defer e.Close()
+
+	intOptions := make(map[string]uint32)
+	strOptions := make(map[string]string)
+
+	p := "path_file"
+
+	e.Write(p, intOptions, strOptions)
+	defer os.Remove(p)
+
 	return 1
 }
