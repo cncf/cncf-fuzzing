@@ -40,3 +40,5 @@ go mod tidy && go mod vendor
 
 mv $SRC/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
 compile_go_fuzzer github.com/cilium/cilium/pkg/bgp/config FuzzConfigParse fuzz_config_parse
+
+mv $CILIUM/fuzz_config_parse.options $OUT/
