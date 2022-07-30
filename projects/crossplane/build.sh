@@ -24,6 +24,7 @@ mv $CNCF/manager_fuzzer.go $SRC/crossplane/internal/controller/pkg/manager/
 mv $CNCF/revision_fuzzer.go $SRC/crossplane/internal/controller/pkg/revision/
 mv $CNCF/xcrd_fuzzer.go $SRC/crossplane/internal/xcrd/
 mv $CNCF/patch_fuzzer.go $SRC/crossplane/apis/apiextensions/v1/
+mv $CNCF/dag_fuzzer.go $SRC/crossplane/internal/dag/
 go mod tidy
 rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.11/fuzz.go
 
@@ -37,4 +38,5 @@ compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/revis
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/revision FuzzParseReference fuzz_parse_reference
 compile_go_fuzzer github.com/crossplane/crossplane/internal/xcrd FuzzForCompositeResource fuzz_ForCompositeResource
 compile_go_fuzzer github.com/crossplane/crossplane/internal/xcrd FuzzForCompositeResourceClaim fuzz_FuzzForCompositeResourceClaim
-
+compile_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzFindXpkgInDir fuzz_find_xpkg_in_dir
+compile_go_fuzzer github.com/crossplane/crossplane/internal/dag FuzzDag fuzz_dag

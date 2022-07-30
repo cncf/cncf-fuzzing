@@ -22,6 +22,10 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/parser"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/spf13/afero"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func FuzzParse(data []byte) int {
@@ -30,5 +34,40 @@ func FuzzParse(data []byte) int {
 	p := parser.New(metaScheme, objScheme)
 	r := ioutil.NopCloser(bytes.NewReader(data))
 	_, _ = p.Parse(context.Background(), r)
+	return 1
+}
+
+func FuzzFindXpkgInDir(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	noOfFiles, err := f.GetInt()
+	if err != nil {
+		return 0
+	}
+	fs := afero.NewMemMapFs()
+	createdFiles := make([]string, 0)
+
+	defer func() {
+		for _, createdFile := range createdFiles {
+			fs.Remove(createdFile)
+		}
+	}()
+
+	for i := 0; i < noOfFiles%500; i++ {
+		fname, err := f.GetString()
+		if err != nil {
+			return 0
+		}
+		fcontents, err := f.GetBytes()
+		if err != nil {
+			return 0
+		}
+
+		if err = afero.WriteFile(fs, fname, fcontents, 0777); err != nil {
+			return 0
+		}
+	}
+
+	_, _ = FindXpkgInDir(fs, "/")
+	_, _ = ParseNameFromMeta(fs, "/")
 	return 1
 }
