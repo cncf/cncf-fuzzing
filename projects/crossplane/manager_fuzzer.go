@@ -20,6 +20,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	v1 "github.com/crossplane/crossplane/apis/pkg/v1"
 	"github.com/crossplane/crossplane/internal/xpkg/fake"
+	"github.com/crossplane/crossplane/internal/xpkg"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
@@ -33,5 +34,14 @@ func FuzzPackageRevision(data []byte) int {
 	}
 	r := NewPackageRevisioner(fetcher)
 	_, _ = r.Revision(context.Background(), pkg)
+	n, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	h, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	_ = xpkg.FriendlyID(n, h)
 	return 1
 }
