@@ -65,7 +65,7 @@ mv $SRC/cncf-fuzzing/projects/helm/resolver_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/helm/strvals_fuzzer.go \
    $SRC/helm/pkg/strvals/
 
-go mod download && go mod tidy -go=1.16 && go mod tidy -go=1.17
+go mod download && go mod tidy
 go get github.com/AdaLogics/go-fuzz-headers@latest
 compile_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzStrvalsParse fuzz_strvals_parse
 compile_go_fuzzer helm.sh/helm/v3/internal/resolver FuzzResolve fuzz_resolve
@@ -112,13 +112,11 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzWriteFile fuzz_write_file
 
 
 
-sed 's/go 1.16/go 1.18/g' -i $SRC/helm/go.mod
-
 mv $SRC/cncf-fuzzing/projects/helm/ignore_fuzzer_test.go \
    $SRC/helm/internal/ignore/
 
-gotip mod download && gotip mod tidy
-gotip get github.com/AdamKorcz/go-118-fuzz-build/utils
+go mod download && go mod tidy
+go get github.com/AdamKorcz/go-118-fuzz-build/utils
 compile_native_go_fuzzer helm.sh/helm/v3/internal/ignore FuzzIgnoreParse fuzz_ignore_parse
 
 zip $OUT/fuzz_create_from_seed_corpus.zip $SRC/helm/pkg/chartutil/testdata/frobnitz/*
