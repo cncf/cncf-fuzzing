@@ -34,14 +34,19 @@ var (
 	initDaemon2 sync.Once
 )
 
+func startDaemonForStructuredFuzzing(arguments []string) {
+	app := command.App()
+	_ = app.Run(arguments)
+}
+
 func startDaemonStructured() {
 	args := []string{"--log-level", "debug"}
 	go func() {
 		// This is similar to invoking the
 		// containerd binary.
 		// See contrib/fuzz/oss_fuzz_build.sh
-		// for more info.
-		command.StartDaemonForFuzzing(args)
+		// for more startDaemonForStructuredFuzzing.
+		startDaemonForStructuredFuzzing(args)
 	}()
 	time.Sleep(time.Second * 4)
 }
@@ -53,7 +58,7 @@ func fuzzContext2() (context.Context, context.CancelFunc) {
 }
 
 func FuzzContainerdImportStructured(data []byte) int {
-	initDaemon2.Do(startDaemon)
+	initDaemon2.Do(startDaemonStructured)
 
 	client, err := containerd.New(defaultAddress)
 	if err != nil {
@@ -71,7 +76,7 @@ func FuzzContainerdImportStructured(data []byte) int {
 	ctx, cancel := fuzzContext2()
 	defer cancel()
 	for i := 0; i < noOfImports%maxImports; i++ {
-		tarBytes, err := f.GetImageBytes()
+		tarBytes, err := f.GetBytes()
 		if err != nil {
 			return 0
 		}
