@@ -84,7 +84,7 @@ mv server_test.go server_test_fuzz.go
 mv $SRC/cncf-fuzzing/projects/etcd/etcdserver_fuzzer.go ./
 
 # reduce the timeout of requests. This is set to 12 seconds per default
-sed -i '316 a return time.Millisecond*50' $SRC/etcd/server/config/config.go
+sed -i '322 a return time.Millisecond*50' $SRC/etcd/server/config/config.go
 
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver Fuzzapply fuzz_etcdserver_apply
 #compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzapplierV3backendApply fuzz_applier_v3_backend_apply
