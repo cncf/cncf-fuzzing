@@ -112,7 +112,7 @@ func FuzzCreateToken(data []byte) int {
 
 	settingsMgr := settings.NewSettingsManager(context.Background(), kubeclientset, testNamespace)
 
-	sessionMgr := session.NewSessionManager(settingsMgr, test.NewFakeProjLister(), "", session.NewUserStateStorage(nil))
+	sessionMgr := session.NewSessionManager(settingsMgr, test.NewFakeProjLister(), "", nil, session.NewUserStateStorage(nil))
 	projectWithRole := existingProj.DeepCopy()
 
 	projectWithRole.Spec.Roles = []v1alpha1.ProjectRole{{Name: tokenName}}
