@@ -22,7 +22,6 @@ cd $SRC
 git clone https://github.com/argoproj/argo-rollouts 
 cd $SRC/argo-rollouts
 go mod tidy
-rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.5/fuzz.go
 mv analysis/controller_test.go analysis/controller_test_fuzz.go
 cp $SRC/cncf-fuzzing/projects/argo/rollouts-analysis-fuzzer.go $SRC/argo-rollouts/analysis/
 compile_go_fuzzer github.com/argoproj/argo-rollouts/analysis FuzzreconcileAnalysisRun fuzz_reconcile_analysis_run
@@ -120,6 +119,16 @@ then
 	$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzValidateEventSource.a /src/zstd-1.4.2/lib/libzstd.a -lpthread -o $OUT/fuzz_validate_event_source
 fi
 
+# install Go 1.19
+apt-get update && apt-get install -y wget
+cd $SRC
+wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
+
+mkdir temp-go
+rm -rf /root/.go/*
+tar -C temp-go/ -xzf go1.19.linux-amd64.tar.gz
+mv temp-go/go/* /root/.go/
+
 # argo-cd fuzzers
 cd $SRC/argo-cd
 go mod tidy
@@ -168,16 +177,6 @@ mv $SRC/cncf-fuzzing/projects/argo/normalizer_fuzzer.go $SRC/argo-cd/util/argo/n
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNormalize fuzz_normalize
 
 # argo-workflows fuzzers
-# install Go 1.18
-apt-get update && apt-get install -y wget
-cd $SRC
-wget https://go.dev/dl/go1.18.2.linux-amd64.tar.gz
-
-mkdir temp-go
-rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.18.2.linux-amd64.tar.gz
-mv temp-go/go/* /root/.go/
-
 cd $SRC/argo-workflows
 go mod tidy
 go get github.com/AdaLogics/go-fuzz-headers
@@ -199,7 +198,7 @@ mv $SRC/cncf-fuzzing/projects/argo/ancestry_fuzzer.go $SRC/argo-workflows/workfl
 mv $SRC/argo-workflows/workflow/common/ancestry_test.go $SRC/argo-workflows/workflow/common/ancestry_test_fuzz.go 
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/common FuzzGetTaskDependencies fuzz_get_task_dependencies
 
-rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.10/fuzz.go
+#rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.10/fuzz.go
 mv $SRC/cncf-fuzzing/projects/argo/operator_fuzzer.go $SRC/argo-workflows/workflow/controller/
 mv $SRC/argo-workflows/workflow/controller/controller_test.go $SRC/argo-workflows/workflow/controller/controller_test_fuzz.go 
 compile_go_fuzzer github.com/argoproj/argo-workflows/v3/workflow/controller FuzzOperator fuzz_operator
