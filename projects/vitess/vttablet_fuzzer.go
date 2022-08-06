@@ -429,7 +429,7 @@ func (fs *fuzzStore) callStopReplicationAndGetStatus() error {
 	if err != nil {
 		return err
 	}
-	_, _, _ = fs.client.StopReplicationAndGetStatus(context.Background(), tablet, 0)
+	_, _ = fs.client.StopReplicationAndGetStatus(context.Background(), tablet, 0)
 	return nil
 }
 

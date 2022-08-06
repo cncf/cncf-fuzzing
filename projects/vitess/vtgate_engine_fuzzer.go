@@ -36,6 +36,7 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
@@ -76,8 +77,8 @@ func execUpdate(f *fuzz.ConsumeFuzzer) {
 	if err != nil {
 		return
 	}
-	vc := &loggingVCursor{}
-	_, _ = upd.TryExecute(vc, map[string]*querypb.BindVariable{}, false)
+	//vc := &loggingVCursor{}
+	_, _ = upd.TryExecute(context.Background(), nil, map[string]*querypb.BindVariable{}, false)
 }
 
 // execUpdate implements a wrapper to fuzz Insert.Tryexecute()
@@ -87,8 +88,8 @@ func execInsert(f *fuzz.ConsumeFuzzer) {
 	if err != nil {
 		return
 	}
-	vc := &loggingVCursor{}
-	_, _ = ins.TryExecute(vc, map[string]*querypb.BindVariable{}, false)
+	//vc := &loggingVCursor{}
+	_, _ = ins.TryExecute(context.Background(), nil, map[string]*querypb.BindVariable{}, false)
 }
 
 // execUpdate implements a wrapper to fuzz Route.Tryexecute()
@@ -98,8 +99,8 @@ func execRoute(f *fuzz.ConsumeFuzzer) {
 	if err != nil {
 		return
 	}
-	vc := newFuzzDMLTestVCursor("0")
-	_, _ = sel.TryExecute(vc, map[string]*querypb.BindVariable{}, false)
+	//vc := newFuzzDMLTestVCursor("0")
+	_, _ = sel.TryExecute(context.Background(), nil, map[string]*querypb.BindVariable{}, false)
 }
 
 func newFuzzDMLTestVCursor(shards ...string) *loggingVCursor {

@@ -16,6 +16,7 @@
 package vindexes
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -130,14 +131,15 @@ func FuzzVindex(data []byte) int {
 		return 0
 	}
 
-	vc := &loggingVCursor{}
+	//vc := &loggingVCursor{}
 
-	// Time to call the actual targets. THere are two:
+
+	// Time to call the actual targets. There are two:
 	// 1) Map()
-	// 2) Create()
+	// 2) Create()	
 
 	// Target 1:
-	_, _ = Map(l, vc, allValues)
+	_, _ = Map(context.Background(), l, nil, allValues)
 
 	// Target 2:
 	s1 := reflect.TypeOf(l).String()
@@ -151,7 +153,7 @@ func FuzzVindex(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		_ = l.(Lookup).Create(vc, allValues, ksids, false)
+		_ = l.(Lookup).Create(context.Background(), nil, allValues, ksids, false)
 	}
 	return 1
 }
