@@ -19,17 +19,16 @@ set -o pipefail
 set -o errexit
 set -x
 
-# Install Go 1.18
+# install Go 1.19
 #############################################################################
 apt-get update && apt-get install -y wget
 cd $SRC
-wget https://go.dev/dl/go1.18.2.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
 
 mkdir temp-go
 rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.18.2.linux-amd64.tar.gz
+tar -C temp-go/ -xzf go1.19.linux-amd64.tar.gz
 mv temp-go/go/* /root/.go/
-# Done installing Go 1.18
 #############################################################################
 
 cd $SRC/kubernetes
@@ -97,7 +96,9 @@ mkdir native_fuzzing && cd native_fuzzing
 # Create empty file that imports "github.com/AdamKorcz/go-118-fuzz-build/utils"
 # This is a small hack to install this dependency, since it is not used anywhere,
 # and Go would therefore remove it from go.mod once we run "go mod tidy && go mod vendor".
-printf "package main\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/utils\"\n" > register.go
+go install github.com/AdamKorcz/go-118-fuzz-build@latest
+printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/utils\"\n _ \"github.com/AdamKorcz/go-118-fuzz-build/testingtypes\")\n" > register.go
+cat register.go
 
 go mod tidy
 go mod vendor
