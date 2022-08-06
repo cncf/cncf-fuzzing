@@ -25,9 +25,13 @@ mv $SRC/cncf-fuzzing/projects/containerd/content_local_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/containerd/docker_fuzzer_internal.go $SRC/containerd/remotes/docker/config/
 compile_go_fuzzer github.com/containerd/containerd/remotes/docker/config FuzzParseHostsFile fuzz_parser_hosts_file
 
-mv $SRC/cncf-fuzzing/projects/containerd/containerd_import_structured_fuzzer.go \
-	$SRC/containerd/contrib/fuzz/
-compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzContainerdImportStructured fuzz_containerd_import_structured
+#sed 's/package main/package main2/g' -i $SRC/containerd/cmd/containerd/main.go
+#sed 's/func main/func main2/g' -i $SRC/containerd/cmd/containerd/main.go
+
+#mv $SRC/cncf-fuzzing/projects/containerd/containerd_import_structured_fuzzer.go \
+#	$SRC/containerd/contrib/fuzz/
+#compile_go_fuzzer github.com/containerd/containerd/contrib/fuzz FuzzContainerdImportStructured fuzz_containerd_import_structured
+rm $SRC/cncf-fuzzing/projects/containerd/containerd_import_structured_fuzzer.go
 
 mv $SRC/cncf-fuzzing/projects/containerd/apparmor_fuzzer.go $SRC/containerd/contrib/apparmor/
 compile_go_fuzzer github.com/containerd/containerd/contrib/apparmor FuzzLoadDefaultProfile fuzz_load_default_profile
