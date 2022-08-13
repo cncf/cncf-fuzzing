@@ -180,6 +180,7 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNorma
 cd $SRC/argo-workflows
 go mod tidy
 go get github.com/AdaLogics/go-fuzz-headers
+go get github.com/aws/aws-sdk-go-v2/internal/ini@latest
 
 mv $SRC/cncf-fuzzing/projects/argo/workflow_server_fuzzer.go $SRC/argo-workflows/server/workflow/
 mv $SRC/argo-workflows/server/workflow/workflow_server_test.go $SRC/argo-workflows/server/workflow/workflow_server_test_fuzz.go 
