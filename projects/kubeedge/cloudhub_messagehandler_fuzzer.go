@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-package handler
+package common
 
 func FuzzVolumeRegExp(data []byte) int {
 	VolumeRegExp.MatchString(string(data))
