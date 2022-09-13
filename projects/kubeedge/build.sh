@@ -43,8 +43,8 @@ cp $SRC/cncf-fuzzing/projects/kubeedge/stream_fuzzer.go $SRC/kubeedge/pkg/stream
 compile_go_fuzzer github.com/kubeedge/kubeedge/pkg/stream FuzzReadMessageFromTunnel fuz_read_message_from_tunnel
 
 
-cp $SRC/cncf-fuzzing/projects/kubeedge/cloudhub_messagehandler_fuzzer.go $SRC/kubeedge/cloud/pkg/cloudhub/handler/
-compile_go_fuzzer github.com/kubeedge/kubeedge/cloud/pkg/cloudhub/handler FuzzVolumeRegExp fuzz_volume_regexp
+cp $SRC/cncf-fuzzing/projects/kubeedge/cloudhub_messagehandler_fuzzer.go $SRC/kubeedge/cloud/pkg/cloudhub/common/
+compile_go_fuzzer github.com/kubeedge/kubeedge/cloud/pkg/cloudhub/common FuzzVolumeRegExp fuzz_volume_regexp
 
 cp $SRC/cncf-fuzzing/projects/kubeedge/mqtt_broker_fuzzer.go $SRC/kubeedge/edge/pkg/eventbus/mqtt/
 go get github.com/256dpi/gomqtt/client
