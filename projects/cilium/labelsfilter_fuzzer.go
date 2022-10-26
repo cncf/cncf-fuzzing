@@ -18,9 +18,10 @@ package labelsfilter
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/cilium/cilium/pkg/labels"
-	"os"
 )
 
 func FuzzLabelsfilterPkg(data []byte) int {

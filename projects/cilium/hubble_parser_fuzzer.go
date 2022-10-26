@@ -16,9 +16,10 @@
 package parser
 
 import (
+	"io"
+
 	observerTypes "github.com/cilium/cilium/pkg/hubble/observer/types"
 	"github.com/sirupsen/logrus"
-	"io"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
