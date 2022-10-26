@@ -1,5 +1,10 @@
 # cncf-fuzzing
-This repository is related to fuzzing of CNCF projects. It holds fuzzers as well as documentation on fuzzing
+This repository is related to fuzzing of CNCF projects. It holds fuzzers as well as documentation on fuzzing.
+
+See the blog post [Improving security by fuzzing the cncf landscape](https://www.cncf.io/blog/2022/06/28/improving-security-by-fuzzing-the-cncf-landscape/) for details.
+
+Are you a CNCF project and would like to have it fuzzed? Please create an issue on this repository requesting to be fuzzed and we will assist.
+
 
 ## CNCF projects and fuzzing
 Fuzzing is a technique for automating stress testing of applications
