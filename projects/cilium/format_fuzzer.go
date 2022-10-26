@@ -16,8 +16,9 @@
 package format
 
 import (
-	"github.com/cilium/cilium/pkg/monitor/payload"
 	"runtime"
+
+	"github.com/cilium/cilium/pkg/monitor/payload"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
