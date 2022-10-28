@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func FuzzfixLongPath(data []byte) int {
@@ -43,6 +44,9 @@ func FuzzfixLongPath(data []byte) int {
 		return -1
 	}
 	srcfPath := filepath.Join(dir, filename1)
+	if !strings.HasPrefix(srcfPath, dir) {
+		return -1
+	}
 	srcf, err := os.Create(srcfPath)
 	if err != nil {
 		return -1
@@ -62,6 +66,9 @@ func FuzzfixLongPath(data []byte) int {
 		return -1
 	}
 	destf := filepath.Join(dir, destfName)
+	if !strings.HasPrefix(destf, dir) {
+		return -1
+	}
 	if err := copyFile(srcf.Name(), destf); err != nil {
 		return 0
 	}
