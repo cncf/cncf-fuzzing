@@ -37,10 +37,13 @@ go get github.com/AdaLogics/go-fuzz-headers@latest
 # Create fuzzers for all marshaling and unmarshaling routines
 #############################################################################
 mkdir $SRC/kubernetes/test/fuzz/fuzzing
-grep -r ") Marshal()" . > $SRC/grep_result.txt
-mv $SRC/cncf-fuzzing/projects/kubernetes/autogenerate.py ./
-python3 autogenerate.py --input_file $SRC/grep_result.txt
-mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
+
+if [ "$SANITIZER" != "coverage" ]; then
+   grep -r ") Marshal()" . > $SRC/grep_result.txt
+   mv $SRC/cncf-fuzzing/projects/kubernetes/autogenerate.py ./
+   python3 autogenerate.py --input_file $SRC/grep_result.txt
+   mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
+fi
 # Done creating fuzzer for all marshaling and unmarshaling routines
 #############################################################################
 
@@ -151,7 +154,9 @@ echo -e "\nvar swaggerjson = \`">>kubectl_fuzzer.go
 cat swagger.json>>kubectl_fuzzer.go
 echo -e "\`">>kubectl_fuzzer.go
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCreateElement fuzz_create_element
-compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
+if [ "$SANITIZER" != "coverage" ]; then
+   compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
+fi
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiRoundtrip fuzz_api_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/kuberuntime FuzzKubeRuntime fuzz_kube_runtime
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod
