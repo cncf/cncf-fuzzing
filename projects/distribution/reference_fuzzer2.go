@@ -15,10 +15,7 @@
 
 package reference
 
-import (
-	"github.com/distribution/distribution/v3/digestset"
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-)
+import fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 func FuzzWithNameAndWithTag(data []byte) int {
 	f := fuzz.NewConsumer(data)
@@ -51,16 +48,5 @@ func FuzzAllNormalizeApis(data []byte) int {
 		return 0
 	}
 	_, _ = ParseAnyReference(ref)
-	ds := &digestset.Set{}
-	err = f.GenerateStruct(ds)
-	if err != nil {
-		return 0
-	}
-	ref, err = f.GetString()
-	if err != nil {
-		return 0
-	}
-	_, _ = ParseAnyReferenceWithSet(ref, ds)
 	return 1
 }
-
