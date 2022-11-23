@@ -115,8 +115,13 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzWriteFile fuzz_write_file
 mv $SRC/cncf-fuzzing/projects/helm/ignore_fuzzer_test.go \
    $SRC/helm/internal/ignore/
 
+cd $SRC
+git clone --branch=dev https://github.com/AdamKorcz/go-118-fuzz-build $SRC/go-118-fuzz-build
+cd $SRC/helm
+go mod edit -replace github.com/AdamKorcz/go-118-fuzz-build=/src/go-118-fuzz-build
+
 go mod download && go mod tidy
-go get github.com/AdamKorcz/go-118-fuzz-build/utils
+go get github.com/AdamKorcz/go-118-fuzz-build/testing
 compile_native_go_fuzzer helm.sh/helm/v3/internal/ignore FuzzIgnoreParse fuzz_ignore_parse
 
 zip $OUT/fuzz_create_from_seed_corpus.zip $SRC/helm/pkg/chartutil/testdata/frobnitz/*
