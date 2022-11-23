@@ -52,9 +52,6 @@ go mod tidy && go mod vendor
 mv $SRC/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
 compile_go_fuzzer github.com/cilium/cilium/pkg/bgp/config FuzzConfigParse fuzz_config_parse
 
-mv $CILIUM/trace_fuzzer.go $SRC/cilium/pkg/policy/trace/
-compile_go_fuzzer github.com/cilium/cilium/pkg/policy/trace FuzzGetLabelsFromYaml fuzz_get_labels_from_yaml
-
 mv $CILIUM/policy_fuzzer.go $SRC/cilium/pkg/policy/
 compile_go_fuzzer github.com/cilium/cilium/pkg/policy FuzzNewVisibilityPolicy fuzz_NewVisibilityPolicy
 

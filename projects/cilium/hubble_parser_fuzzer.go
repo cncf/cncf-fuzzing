@@ -39,7 +39,7 @@ func init() {
 }
 
 func FuzzParserDecode(data []byte) int {
-	p, err := New(log, nil, nil, nil, nil, nil, nil)
+	p, err := New(log, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		return 0
 	}
