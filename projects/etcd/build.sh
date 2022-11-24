@@ -13,6 +13,7 @@ sed 's/panic(err)/panic("GOT A FUZZ ERROR")/g' -i $SRC/etcd/raft/raft.go
 cd $SRC
 
 wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
+mkdir newgo
 tar -C ./newgo -xzf go1.19.3.linux-amd64.tar.gz
 rm -r /root/.go
 mv ./newgo/go /root/.go
