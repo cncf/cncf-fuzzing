@@ -10,9 +10,13 @@ sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/raft/go.mod
 # Change panic message so we can catch them:
 sed 's/panic(err)/panic("GOT A FUZZ ERROR")/g' -i $SRC/etcd/raft/raft.go
 
+cd $SRC
 
+wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
+tar -C ./newgo -xzf go1.19.3.linux-amd64.tar.gz
+rm -r /root/.go
+mv ./newgo/go /root/.go
 mkdir $SRC/etcd/tests/fuzzing
-go get github.com/AdaLogics/go-fuzz-headers
 
 # api marshal fuzzer
 cd $SRC/etcd
@@ -22,6 +26,7 @@ go run autogenerate_api_marshal_fuzzer.go
 rm autogenerate_api_marshal_fuzzer.go
 mv api_marshal_fuzzer.go ./tests/fuzzing/
 cd tests/fuzzing
+go mod tidy
 compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marshal
 
 # wal fuzzer

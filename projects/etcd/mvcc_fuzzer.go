@@ -29,8 +29,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 
-	"github.com/google/btree"
-
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
@@ -201,7 +199,7 @@ func FuzzMvccIndex(data []byte) int {
 				return 0
 			}
 			lg2 := zaptest.NewLogger(t, zaptest.Level(zapcore.FatalLevel))
-			wti := &treeIndex{tree: btree.New(32), lg: lg2}
+			wti := newTreeIndex(lg2)
 			for i := 0; i < numb%10; i++ {
 				rev1, err := createRev(f)
 				if err != nil {
@@ -231,7 +229,7 @@ func FuzzMvccIndex(data []byte) int {
 					if remove {
 						wti.Tombstone(key, rev1)
 					} else {
-						restoreFuzz(wti, key, created, rev1, int64(ver))
+						restoreFuzz(wti.(*treeIndex), key, created, rev1, int64(ver))
 					}
 				}
 			}
@@ -258,12 +256,12 @@ func restoreFuzz(ti *treeIndex, key []byte, created, modified revision, ver int6
 
 	ti.Lock()
 	defer ti.Unlock()
-	item := ti.tree.Get(keyi)
-	if item == nil {
+	item, ok := ti.tree.Get(keyi)
+	if !ok {
 		keyi.restore(ti.lg, created, modified, ver)
 		ti.tree.ReplaceOrInsert(keyi)
 		return
 	}
-	okeyi := item.(*keyIndex)
+	okeyi := item
 	okeyi.put(ti.lg, modified.main, modified.sub)
 }
