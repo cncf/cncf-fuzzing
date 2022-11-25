@@ -606,7 +606,7 @@ func FuzzValidatePodDisruptionBudget(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	if errs := policyValidation.ValidatePodDisruptionBudget(pdb); len(errs) > 0 {
+	if errs := policyValidation.ValidatePodDisruptionBudget(pdb, policyValidation.PodDisruptionBudgetValidationOptions{}); len(errs) > 0 {
 		for _, err := range errs {
 			_ = err
 			//fmt.Println(err)
@@ -806,7 +806,7 @@ func FuzzValidateClusterRoleUpdate(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = rbacValidation.ValidateClusterRoleUpdate(clusterRole1, clusterRole2)
+	_ = rbacValidation.ValidateClusterRoleUpdate(clusterRole1, clusterRole2, rbacValidation.ClusterRoleValidationOptions{})
 	return 1
 }
 
