@@ -42,7 +42,7 @@ if [ "$SANITIZER" != "coverage" ]; then
    grep -r ") Marshal()" . > $SRC/grep_result.txt
    mv $SRC/cncf-fuzzing/projects/kubernetes/autogenerate.py ./
    python3 autogenerate.py --input_file $SRC/grep_result.txt
-   mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
+   #mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
 fi
 # Done creating fuzzer for all marshaling and unmarshaling routines
 #############################################################################
@@ -100,7 +100,7 @@ mkdir native_fuzzing && cd native_fuzzing
 # This is a small hack to install this dependency, since it is not used anywhere,
 # and Go would therefore remove it from go.mod once we run "go mod tidy && go mod vendor".
 go install github.com/AdamKorcz/go-118-fuzz-build@latest
-printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/utils\"\n _ \"github.com/AdamKorcz/go-118-fuzz-build/testingtypes\")\n" > register.go
+printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n )\n" > register.go
 cat register.go
 
 go mod tidy
@@ -154,9 +154,9 @@ echo -e "\nvar swaggerjson = \`">>kubectl_fuzzer.go
 cat swagger.json>>kubectl_fuzzer.go
 echo -e "\`">>kubectl_fuzzer.go
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCreateElement fuzz_create_element
-if [ "$SANITIZER" != "coverage" ]; then
-   compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
-fi
+#if [ "$SANITIZER" != "coverage" ]; then
+   #compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
+#fi
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiRoundtrip fuzz_api_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/kuberuntime FuzzKubeRuntime fuzz_kube_runtime
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod

@@ -178,7 +178,7 @@ func FuzzHandlePodCleanups(data []byte) int {
 	kubelet := testKubelet.kubelet
 	kubelet.cgroupsPerQOS = true
 
-	kubelet.HandlePodCleanups()
+	kubelet.HandlePodCleanups(context.Background())
 	if actual, expected := kubelet.podWorkers.(*fakePodWorkers).triggeredDeletion, []types.UID{podID}; !reflect.DeepEqual(actual, expected) {
 		panic(fmt.Sprintf("expected %v to be deleted, got %v\n", expected, actual))
 	}
