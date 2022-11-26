@@ -14,12 +14,22 @@
 # limitations under the License.
 #
 
-apt-get update && apt-get install -y zip
 
-ls $SRC/cncf-fuzzing/projects/argo
+# gitops-engine fuzzers
+cd $SRC/gitops-engine
+mv $SRC/cncf-fuzzing/projects/argo/gitops-eng_diff_fuzzer.go ./pkg/diff/
+compile_go_fuzzer github.com/argoproj/gitops-engine/pkg/diff FuzzGitopsDiff fuzz_gitops_diff
+
+# install Go 1.19.3
+apt-get update && apt-get install -y wget
 cd $SRC
+wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
 
-git clone https://github.com/argoproj/argo-rollouts 
+mkdir temp-go
+rm -rf /root/.go/*
+tar -C temp-go/ -xzf go1.19.3.linux-amd64.tar.gz
+mv temp-go/go/* /root/.go/
+
 cd $SRC/argo-rollouts
 go mod tidy
 mv analysis/controller_test.go analysis/controller_test_fuzz.go
@@ -48,23 +58,12 @@ mv $SRC/cncf-fuzzing/projects/argo/rollouts-kayenta_fuzzer.go \
    $SRC/argo-rollouts/metricproviders/kayenta/
 compile_go_fuzzer github.com/argoproj/argo-rollouts/metricproviders/kayenta FuzzKayenta fuzz_kayenta_provider
 
-
-
-# gitops-engine fuzzers
-cd $SRC 
-git clone https://github.com/argoproj/gitops-engine 
-cd gitops-engine
-mv $SRC/cncf-fuzzing/projects/argo/gitops-eng_diff_fuzzer.go ./pkg/diff/
-compile_go_fuzzer github.com/argoproj/gitops-engine/pkg/diff FuzzGitopsDiff fuzz_gitops_diff
-
-
 # argo-events fuzzers
 cd $SRC/argo-events
 mv $SRC/cncf-fuzzing/projects/argo/eventbus_controller_fuzzer.go $SRC/argo-events/controllers/eventbus/
 mv $SRC/cncf-fuzzing/projects/argo/eventsource_controller_fuzzer.go $SRC/argo-events/controllers/eventsource/
 mv $SRC/cncf-fuzzing/projects/argo/sensor_controller_fuzzer.go $SRC/argo-events/controllers/sensor/
 mv $SRC/cncf-fuzzing/projects/argo/events_triggers_fuzzer.go $SRC/argo-events/sensors/triggers/
-
 
 
 # event sources:
@@ -118,16 +117,6 @@ then
 	go-fuzz -tags gofuzz -func FuzzValidateEventSource -o FuzzValidateEventSource.a github.com/argoproj/argo-events/controllers/eventsource
 	$CXX $CXXFLAGS $LIB_FUZZING_ENGINE FuzzValidateEventSource.a /src/zstd-1.4.2/lib/libzstd.a -lpthread -o $OUT/fuzz_validate_event_source
 fi
-
-# install Go 1.19
-apt-get update && apt-get install -y wget
-cd $SRC
-wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
-
-mkdir temp-go
-rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.19.linux-amd64.tar.gz
-mv temp-go/go/* /root/.go/
 
 # argo-cd fuzzers
 cd $SRC/argo-cd
