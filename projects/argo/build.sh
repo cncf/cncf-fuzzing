@@ -89,7 +89,7 @@ compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/github Fu
 compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/awssns FuzzAWSSNSsource fuzz_awssns_eventsource
 compile_go_fuzzer github.com/argoproj/argo-events/eventsources/sources/slack FuzzSlackEventsource fuzz_slack_eventsource
 compile_go_fuzzer github.com/argoproj/argo-events/sensors/triggers FuzzConstructPayload fuzz_construct_payload
-compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEventbusReconciler fuzz_eventbus_reconciler
+compile_go_fuzzer github.com/argoproj/argo-events/controllers/eventbus FuzzEventbusReconcilerInternal fuzz_eventbus_reconciler
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorController fuzz_sensor_controller
 compile_go_fuzzer github.com/argoproj/argo-events/controllers/sensor FuzzSensorControllerReconcile fuzz_sensor_controller_reconcile
 compile_go_fuzzer github.com/argoproj/argo-events/sensors FuzzgetDependencyExpression fuzz_get_dependency_expression
