@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"testing"
 
 	"github.com/crossplane/crossplane-runtime/pkg/parser"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,46 +29,48 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzParse(data []byte) int {
-	objScheme := runtime.NewScheme()
-	metaScheme := runtime.NewScheme()
-	p := parser.New(metaScheme, objScheme)
-	r := ioutil.NopCloser(bytes.NewReader(data))
-	_, _ = p.Parse(context.Background(), r)
-	return 1
+func FuzzParse(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		objScheme := runtime.NewScheme()
+		metaScheme := runtime.NewScheme()
+		p := parser.New(metaScheme, objScheme)
+		r := ioutil.NopCloser(bytes.NewReader(data))
+		_, _ = p.Parse(context.Background(), r)
+	})
 }
 
-func FuzzFindXpkgInDir(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	noOfFiles, err := f.GetInt()
-	if err != nil {
-		return 0
-	}
-	fs := afero.NewMemMapFs()
-	createdFiles := make([]string, 0)
-
-	defer func() {
-		for _, createdFile := range createdFiles {
-			fs.Remove(createdFile)
-		}
-	}()
-
-	for i := 0; i < noOfFiles%500; i++ {
-		fname, err := f.GetString()
+func FuzzFindXpkgInDir(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ff := fuzz.NewConsumer(data)
+		noOfFiles, err := ff.GetInt()
 		if err != nil {
-			return 0
+			t.Skip()
 		}
-		fcontents, err := f.GetBytes()
-		if err != nil {
-			return 0
+		fs := afero.NewMemMapFs()
+		createdFiles := make([]string, 0)
+
+		defer func() {
+			for _, createdFile := range createdFiles {
+				fs.Remove(createdFile)
+			}
+		}()
+		for i := 0; i < noOfFiles%500; i++ {
+			fname, err := ff.GetString()
+			if err != nil {
+				t.Skip()
+			}
+			fcontents, err := ff.GetBytes()
+			if err != nil {
+				t.Skip()
+			}
+
+			if err = afero.WriteFile(fs, fname, fcontents, 0777); err != nil {
+				t.Skip()
+			}
 		}
 
-		if err = afero.WriteFile(fs, fname, fcontents, 0777); err != nil {
-			return 0
-		}
-	}
-
-	_, _ = FindXpkgInDir(fs, "/")
-	_, _ = ParseNameFromMeta(fs, "/")
-	return 1
+		_, _ = FindXpkgInDir(fs, "/")
+		_, _ = ParseNameFromMeta(fs, "/")
+	})
+	
 }

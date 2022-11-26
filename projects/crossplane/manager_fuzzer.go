@@ -17,6 +17,7 @@ package manager
 
 import (
 	"context"
+	"testing"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	v1 "github.com/crossplane/crossplane/apis/pkg/v1"
 	"github.com/crossplane/crossplane/internal/xpkg/fake"
@@ -25,23 +26,24 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzPackageRevision(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	pkg := &v1.Provider{}
-	f.GenerateStruct(pkg)
-	fetcher := &fake.MockFetcher{
-		MockHead: fake.NewMockHeadFn(nil, errors.New("boom")),
-	}
-	r := NewPackageRevisioner(fetcher)
-	_, _ = r.Revision(context.Background(), pkg)
-	n, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	h, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	_ = xpkg.FriendlyID(n, h)
-	return 1
+func FuzzPackageRevision(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ff := fuzz.NewConsumer(data)
+		pkg := &v1.Provider{}
+		ff.GenerateStruct(pkg)
+		fetcher := &fake.MockFetcher{
+			MockHead: fake.NewMockHeadFn(nil, errors.New("boom")),
+		}
+		r := NewPackageRevisioner(fetcher)
+		_, _ = r.Revision(context.Background(), pkg)
+		n, err := ff.GetString()
+		if err != nil {
+			t.Skip()
+		}
+		h, err := ff.GetString()
+		if err != nil {
+			t.Skip()
+		}
+		_ = xpkg.FriendlyID(n, h)
+	})
 }
