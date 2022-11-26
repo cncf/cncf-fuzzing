@@ -81,7 +81,7 @@ func FuzzPatchApply(data []byte) int {
 	}
 	addType(p, typeIndex)
 
-	p.Apply(cd, cp)
+	p.Apply(cp, cd)
 
 	return 1
 }

@@ -26,19 +26,19 @@ mv $CNCF/xcrd_fuzzer.go $SRC/crossplane/internal/xcrd/
 mv $CNCF/patch_fuzzer.go $SRC/crossplane/apis/apiextensions/v1/
 mv $CNCF/dag_fuzzer.go $SRC/crossplane/internal/dag/
 mv $CNCF/claims_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/claim/
+printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n )\n" > register.go
 go mod tidy
-rm /root/go/pkg/mod/github.com/aws/aws-sdk-go-v2/internal/ini@v1.3.11/fuzz.go
 
 compile_go_fuzzer github.com/crossplane/crossplane/apis/apiextensions/v1 FuzzPatchApply fuzz_patch_apply
 compile_go_fuzzer github.com/crossplane/crossplane/apis/apiextensions/v1 FuzzTransform fuzz_transform
-compile_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzParse fuzz_parse
+compile_native_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzParse fuzz_parse
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/claim FuzzPropagateConnection fuzz_propagate_connection
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composition FuzzNewCompositionRevision fuzz_NewCompositionRevision
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composite FuzzAsComposition fuzz_AsComposition
-compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/manager FuzzPackageRevision fuzz_PackageRevision
-compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/revision FuzzGCRExtract fuzz_gcr_extract
-compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/revision FuzzParseReference fuzz_parse_reference
+compile_native_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/manager FuzzPackageRevision fuzz_PackageRevision
+compile_native_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/revision FuzzGCRExtract fuzz_gcr_extract
+compile_native_go_fuzzer github.com/crossplane/crossplane/internal/controller/pkg/revision FuzzParseReference fuzz_parse_reference
 compile_go_fuzzer github.com/crossplane/crossplane/internal/xcrd FuzzForCompositeResource fuzz_ForCompositeResource
 compile_go_fuzzer github.com/crossplane/crossplane/internal/xcrd FuzzForCompositeResourceClaim fuzz_FuzzForCompositeResourceClaim
-compile_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzFindXpkgInDir fuzz_find_xpkg_in_dir
+compile_native_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzFindXpkgInDir fuzz_find_xpkg_in_dir
 compile_go_fuzzer github.com/crossplane/crossplane/internal/dag FuzzDag fuzz_dag

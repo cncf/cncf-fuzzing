@@ -20,32 +20,35 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"os"
+	"testing"
 )
 
 // Tests mutate.Extract() - an API used by Crossplane.
-func FuzzGCRExtract(data []byte) int {
-	f, err := os.Create("tarfile")
-	if err != nil {
-		return 0
-	}
-	defer func() {
-		f.Close()
-		os.Remove("tarfile")
-	}()
-	_, err = f.Write(data)
-	if err != nil {
-		return 0
-	}
-	img, err := tarball.ImageFromPath("tarfile", nil)
-	if err == nil {
-		_, _ = img.Manifest()
-		_ = mutate.Extract(img)
-	}
-	return 0
+func FuzzGCRExtract(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		f, err := os.Create("tarfile")
+		if err != nil {
+			t.Skip()
+		}
+		defer func() {
+			f.Close()
+			os.Remove("tarfile")
+		}()
+		_, err = f.Write(data)
+		if err != nil {
+			t.Skip()
+		}
+		img, err := tarball.ImageFromPath("tarfile", nil)
+		if err == nil {
+			_, _ = img.Manifest()
+			_ = mutate.Extract(img)
+		}
+	})
 }
 
 // Tests name.ParseReference - an API used by Crossplane
-func FuzzParseReference(data []byte) int {
-	_, _ = name.ParseReference(string(data))
-	return 1
+func FuzzParseReference(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data string) {
+		_, _ = name.ParseReference(data)
+	})
 }
