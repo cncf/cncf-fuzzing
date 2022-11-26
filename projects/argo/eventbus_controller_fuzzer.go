@@ -30,16 +30,16 @@ import (
 	"github.com/argoproj/argo-events/pkg/apis/eventbus/v1alpha1"
 )
 
-var initter sync.Once
+var fuzzInitter sync.Once
 
-func initScheme() {
+func initFuzzScheme() {
 	_ = v1alpha1.AddToScheme(scheme.Scheme)
 	_ = appv1.AddToScheme(scheme.Scheme)
 	_ = corev1.AddToScheme(scheme.Scheme)
 }
 
-func FuzzEventbusReconciler(data []byte) int {
-	initter.Do(initScheme)
+func FuzzEventbusReconcilerInternal(data []byte) int {
+	fuzzInitter.Do(initFuzzScheme)
 	f := fuzz.NewConsumer(data)
 	nativeBus := &v1alpha1.EventBus{}
 	err := f.GenerateStruct(nativeBus)
