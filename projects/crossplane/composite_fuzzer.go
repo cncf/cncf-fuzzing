@@ -17,12 +17,12 @@ package composite
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/crossplane/crossplane/apis/apiextensions/v1alpha1"
+	"github.com/crossplane/crossplane/apis/apiextensions/v1beta1"
 )
 
 func FuzzAsComposition(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	c := &v1alpha1.CompositionRevision{}
+	c := &v1beta1.CompositionRevision{}
 	f.GenerateStruct(c)
 
 	_ = AsComposition(c)
