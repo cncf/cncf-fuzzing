@@ -23,14 +23,13 @@ mv $CNCF/composite_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/c
 mv $CNCF/manager_fuzzer.go $SRC/crossplane/internal/controller/pkg/manager/
 mv $CNCF/revision_fuzzer.go $SRC/crossplane/internal/controller/pkg/revision/
 mv $CNCF/xcrd_fuzzer.go $SRC/crossplane/internal/xcrd/
-mv $CNCF/patch_fuzzer.go $SRC/crossplane/apis/apiextensions/v1/
 mv $CNCF/dag_fuzzer.go $SRC/crossplane/internal/dag/
 mv $CNCF/claims_fuzzer.go $SRC/crossplane/internal/controller/apiextensions/claim/
 printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n )\n" > register.go
 go mod tidy
 
-compile_go_fuzzer github.com/crossplane/crossplane/apis/apiextensions/v1 FuzzPatchApply fuzz_patch_apply
-compile_go_fuzzer github.com/crossplane/crossplane/apis/apiextensions/v1 FuzzTransform fuzz_transform
+compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composite FuzzPatchApply fuzz_patch_apply
+compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composite FuzzTransform fuzz_transform
 compile_native_go_fuzzer github.com/crossplane/crossplane/internal/xpkg FuzzParse fuzz_parse
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/claim FuzzPropagateConnection fuzz_propagate_connection
 compile_go_fuzzer github.com/crossplane/crossplane/internal/controller/apiextensions/composition FuzzNewCompositionRevision fuzz_NewCompositionRevision
