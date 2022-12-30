@@ -72,7 +72,6 @@ zip $OUT/parser_fuzzer_seed_corpus.zip $CNCFPATH/corpus/parserFuzzer/*
 rm -r ./vendor
 
 # Used to build native fuzzers
-go get github.com/AdamKorcz/go-118-fuzz-build/utils
 go get github.com/AdaLogics/go-fuzz-headers
 #compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
 rm $SRC/distribution/reference/native_reference_fuzzer.go
