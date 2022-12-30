@@ -48,6 +48,6 @@ func FuzzGenerateManifests(data []byte) int {
 	}
 	src := argoappv1.ApplicationSource{Path: "manifests/base"}
 	q := apiclient.ManifestRequest{Repo: &argoappv1.Repository{}, ApplicationSource: &src}
-	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false, &git.NoopCredsStore{}, res)
+	_, _ = GenerateManifests(context.Background(), dir, "/", "", &q, false, &git.NoopCredsStore{}, res, nil)
 	return 1
 }
