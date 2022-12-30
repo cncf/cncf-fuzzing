@@ -49,7 +49,6 @@ mv $CNCFPATH/schema1_fuzzer.go $SRC/distribution/manifest/schema1/
 
 mv $CNCFPATH/authchallenge_fuzzer.go $SRC/distribution/registry/client/auth/challenge/
 mv $CNCFPATH/token_fuzzer.go $SRC/distribution/registry/auth/token/
-mv $CNCFPATH/set_fuzzer.go $SRC/distribution/digestset/
 mv $CNCFPATH/reference_fuzzer2.go $SRC/distribution/reference/
 mv $CNCFPATH/native_reference_fuzzer.go $SRC/distribution/reference/
 mv $CNCFPATH/file_driver_fuzzer.go $SRC/distribution/registry/storage/driver/filesystem/
@@ -62,8 +61,6 @@ mv proxymanifeststore_test.go proxymanifeststore_test_fuzz.go
 mv proxyblobstore_test.go proxyblobstore_test_fuzz.go
 mv proxytagservice_test.go proxytagservice_test_fuzz.go
 cd -
-
-mv $CNCFPATH/digestset_fuzzer.go $SRC/distribution/digestset/
 
 mv $CNCFPATH/errcode_fuzzer.go $SRC/distribution/registry/api/errcode
 
@@ -101,10 +98,8 @@ compile_go_fuzzer $REGISTRYPATH/api/errcode FuzzErrcode fuzz_errcode
 compile_go_fuzzer $REGISTRYPATH/proxy FuzzProxyBlobstore fuzz_proxy_blobstore
 compile_go_fuzzer $REGISTRYPATH/proxy FuzzProxyManifestStore fuzz_proxy_manifest_store
 compile_go_fuzzer $REGISTRYPATH/auth/htpasswd FuzzAccessController fuzz_access_controller
-compile_go_fuzzer $DISTRIBUTION/digestset FuzzDigestSet fuzz_digestset
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Build fuzz_schema1_build
 compile_go_fuzzer $DISTRIBUTION/manifest/schema1 FuzzSchema1Verify fuzz_schema1_verify
-compile_go_fuzzer $DISTRIBUTION/digestset FuzzSet fuzz_set
 compile_go_fuzzer $REGISTRYPATH/auth/token FuzzToken fuzz_token
 compile_go_fuzzer $REGISTRYPATH/auth/token FuzzToken2 fuzz_token2
 compile_go_fuzzer $REGISTRYPATH/client/auth/challenge FuzzParseValueAndParams fuzz_parse_value_and_params
