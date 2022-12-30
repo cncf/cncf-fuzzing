@@ -22,8 +22,8 @@ import (
 	"runtime"
 	"strings"
 
-	"go.etcd.io/etcd/raft/v3/raftpb"
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb"
+	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -92,7 +92,6 @@ func catchPanics() {
 		}
 	}
 }
-
 
 func FuzzMinimalEtcdVersion(data []byte) int {
 	f := fuzz.NewConsumer(data)

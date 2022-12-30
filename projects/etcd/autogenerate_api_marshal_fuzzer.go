@@ -9,7 +9,6 @@ import (
 
 // importPathShort is a map to convert import paths to import aliases
 var importPathShort = map[string]string{
-	"go.etcd.io/etcd/raft/v3/raftpb":                                   "raftpb",
 	"go.etcd.io/etcd/server/v3/storage/wal/walpb":                      "walpb",
 	"go.etcd.io/etcd/server/v3/etcdserver/api/v3election/v3electionpb": "v3electionpb",
 	"go.etcd.io/etcd/server/v3/etcdserver/api/v3lock/v3lockpb":         "v3lockpb",
@@ -25,7 +24,6 @@ var importPathShort = map[string]string{
 // pathToImportPath is a map to convert filepaths to import paths.
 // the filepaths are available in the grep results.
 var pathToImportPath = map[string]string{
-	"./raft/raftpb/raft.pb.go":                                         "go.etcd.io/etcd/raft/v3/raftpb",
 	"./server/storage/wal/walpb/record.pb.go":                          "go.etcd.io/etcd/server/v3/storage/wal/walpb",
 	"./server/etcdserver/api/v3election/v3electionpb/v3election.pb.go": "go.etcd.io/etcd/server/v3/etcdserver/api/v3election/v3electionpb",
 	"./server/etcdserver/api/v3lock/v3lockpb/v3lock.pb.go":             "go.etcd.io/etcd/server/v3/etcdserver/api/v3lock/v3lockpb",
@@ -55,14 +53,17 @@ createFunctionCall creates a function call
 This is used to create the calls to the internal harnesses:
 switch funcOp {
 case 0:
-        _ = FuzzetcdserverpbRequest(data2)
+
+	_ = FuzzetcdserverpbRequest(data2)
 
 case 1:
-        _ = FuzzetcdserverpbMetadata(data2)
+
+	_ = FuzzetcdserverpbMetadata(data2)
 
 case 2:
-        _ = FuzzetcdserverpbResponseHeader(data2)
-}
+
+	        _ = FuzzetcdserverpbResponseHeader(data2)
+	}
 */
 func createFunctionCall(shortName, structName string) string {
 	return fmt.Sprintf("\t_ = Fuzz%s%s(data2)\n", shortName, structName)
@@ -71,31 +72,31 @@ func createFunctionCall(shortName, structName string) string {
 /*
 createHarness creates an internal harness.
 An example of a generated harness:
-func FuzzetcdserverpbDeleteRangeResponse(data []byte) error {
-        f := fuzz.NewConsumer(data)
-        s := &etcdserverpb.DeleteRangeResponse{}
-        err := f.GenerateStruct(s)
-        if err != nil {
-                return err
-        }
-        b, err := s.Marshal()
-        if err != nil {
-                return err
-        }
-        s2 := &etcdserverpb.DeleteRangeResponse{}
-        err = s2.Unmarshal(b)
-        if err != nil {
-                return err
-        }
-        newBytes, err := f.GetBytes()
-        if err != nil {
-                return err
-        }
-        s3 := &etcdserverpb.DeleteRangeResponse{}
-        err = s3.Unmarshal(newBytes)
-        return err
-}
 
+	func FuzzetcdserverpbDeleteRangeResponse(data []byte) error {
+	        f := fuzz.NewConsumer(data)
+	        s := &etcdserverpb.DeleteRangeResponse{}
+	        err := f.GenerateStruct(s)
+	        if err != nil {
+	                return err
+	        }
+	        b, err := s.Marshal()
+	        if err != nil {
+	                return err
+	        }
+	        s2 := &etcdserverpb.DeleteRangeResponse{}
+	        err = s2.Unmarshal(b)
+	        if err != nil {
+	                return err
+	        }
+	        newBytes, err := f.GetBytes()
+	        if err != nil {
+	                return err
+	        }
+	        s3 := &etcdserverpb.DeleteRangeResponse{}
+	        err = s3.Unmarshal(newBytes)
+	        return err
+	}
 */
 func createHarness(shortName, structName string) string {
 	var harnessString strings.Builder

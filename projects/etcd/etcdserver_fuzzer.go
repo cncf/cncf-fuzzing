@@ -36,8 +36,6 @@ import (
 	membershippb "go.etcd.io/etcd/api/v3/membershippb"
 	"go.etcd.io/etcd/client/pkg/v3/types"
 	"go.etcd.io/etcd/pkg/v3/wait"
-	"go.etcd.io/etcd/raft/v3"
-	"go.etcd.io/etcd/raft/v3/raftpb"
 	"go.etcd.io/etcd/server/v3/auth"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/membership"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/v2store"
@@ -53,6 +51,9 @@ import (
 	"go.etcd.io/etcd/pkg/v3/idutil"
 	"go.etcd.io/etcd/pkg/v3/notify"
 	"go.etcd.io/etcd/server/v3/config"
+
+	"go.etcd.io/raft/v3"
+	"go.etcd.io/raft/v3/raftpb"
 )
 
 var (
@@ -635,7 +636,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	
+
 	st := v2store.New()
 	srv = &EtcdServer{
 		be:           be,
@@ -643,7 +644,7 @@ func init() {
 		lg:           lg,
 		r:            *newRaftNodeForFuzzing(lg),
 		cluster:      cl,
-		v2store:	  st,
+		v2store:      st,
 		w:            wait.New(),
 		consistIndex: ci,
 		beHooks:      serverstorage.NewBackendHooks(lg, ci),
@@ -665,7 +666,7 @@ func init() {
 	//srv.applyV3Internal = srv.newApplierV3Internal()
 	//srv.applyV3 = srv.newApplierV3()
 	srv.applyV2 = &applierV2store{store: srv.v2store, cluster: srv.cluster}
-	
+
 	srv.uberApply = srv.NewUberApplier()
 	//ab = srv.newApplierV3Backend()
 
