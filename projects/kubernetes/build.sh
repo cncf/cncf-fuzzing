@@ -23,11 +23,11 @@ set -x
 #############################################################################
 apt-get update && apt-get install -y wget
 cd $SRC
-wget https://go.dev/dl/go1.19.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.19.4.linux-amd64.tar.gz
 
 mkdir temp-go
 rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.19.linux-amd64.tar.gz
+tar -C temp-go/ -xzf go1.19.4.linux-amd64.tar.gz
 mv temp-go/go/* /root/.go/
 #############################################################################
 
@@ -147,13 +147,6 @@ go mod tidy && go mod vendor
 # Delete broken fuzzer from a 3rd-party dependency
 find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
 
-# Add the swagger.json content to the kubectl fuzzer
-wget https://raw.githubusercontent.com/kubernetes/kubernetes/master/staging/src/k8s.io/kubectl/testdata/openapi/swagger.json
-sed -i 's/`//g' swagger.json
-echo -e "\nvar swaggerjson = \`">>kubectl_fuzzer.go
-cat swagger.json>>kubectl_fuzzer.go
-echo -e "\`">>kubectl_fuzzer.go
-compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCreateElement fuzz_create_element
 #if [ "$SANITIZER" != "coverage" ]; then
    #compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
 #fi
