@@ -23,6 +23,10 @@ cp $CNCFFuzzing/json_fuzzer.go $SRC/pkg/webhook/json/
 mv $SRC/pkg/webhook/json/decode_test.go $SRC/pkg/webhook/json/decode_test_fuzz.go
 compile_go_fuzzer knative.dev/pkg/webhook/json FuzzJsonDecode fuzz_json_decode
 
+cp $SRC/fuzz_configmaps.go $SRC/pkg/webhook/configmaps/
+mv $SRC/pkg/webhook/configmaps/configmaps_test.go $SRC/pkg/webhook/configmaps/configmaps_fuzz.go
+compile_native_go_fuzzer knative.dev/pkg/webhook/configmaps FuzzAdmit FuzzAdmit
+
 cp $CNCFFuzzing/fuzz_pkg_metrics.go $SRC/pkg/metrics/
 compile_native_go_fuzzer knative.dev/pkg/metrics FuzzNewObservabilityConfigFromConfigMap FuzzNewObservabilityConfigFromConfigMap
 
