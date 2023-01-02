@@ -51,3 +51,7 @@ mv $SRC/serving/pkg/reconciler/route/table_test.go $SRC/serving/pkg/reconciler/r
 mv $SRC/serving/pkg/reconciler/route/route_test.go $SRC/serving/pkg/reconciler/route/route_test_fuzz.go
 mv $SRC/serving/pkg/reconciler/route/reconcile_resources_test.go $SRC/serving/pkg/reconciler/route/reconcile_resources_test_fuzz.go
 compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route FuzzRouteReconciler FuzzRouteReconciler
+
+cp $CNCFFuzzing/fuzz_domains.go $SRC/serving/pkg/reconciler/route/domains/
+compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route/domains FuzzDomainNameFromTemplate FuzzDomainNameFromTemplate 
+
