@@ -55,3 +55,11 @@ compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route FuzzRouteRecon
 cp $CNCFFuzzing/fuzz_domains.go $SRC/serving/pkg/reconciler/route/domains/
 compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route/domains FuzzDomainNameFromTemplate FuzzDomainNameFromTemplate 
 
+cd $SRC
+git clone https://github.com/knative/eventing --depth=1
+cd eventing
+cp $CNCFFuzzing/fuzz_messaging_v1.go $SRC/eventing/pkg/apis/messaging/v1/
+printf "package v1\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/eventing/pkg/apis/messaging/v1/registerfuzzdep.go
+go mod tidy && go mod vendor
+mv $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test.go $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test_fuzz.go
+compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSON FuzzMessagingRoundTripTypesToJSON
