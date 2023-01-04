@@ -29,6 +29,7 @@ import (
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
+	tabletmanagerdatapb "vitess.io/vitess/go/vt/proto/tabletmanagerdata"
 	topodatapb "vitess.io/vitess/go/vt/proto/topodata"
 )
 
@@ -286,7 +287,10 @@ func (fs *fuzzStore) callExecuteFetchAsApp() error {
 	if err != nil {
 		return err
 	}
-	_, _ = fs.client.ExecuteFetchAsApp(context.Background(), tablet, false, byteQuery, maxRows)
+	_, _ = fs.client.ExecuteFetchAsApp(context.Background(), tablet, false, &tabletmanagerdatapb.ExecuteFetchAsAppRequest{
+		Query:   byteQuery,
+		MaxRows: uint64(maxRows),
+	})
 	return nil
 }
 
