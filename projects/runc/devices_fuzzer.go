@@ -27,7 +27,7 @@ func Fuzz(data []byte) int {
 		return -1
 	}
 	reader1 := strings.NewReader(str1)
-	emu1, err := EmulatorFromList(reader1)
+	emu1, err := emulatorFromList(reader1)
 	if err != nil {
 		return -1
 	}
@@ -37,7 +37,7 @@ func Fuzz(data []byte) int {
 		return -1
 	}
 	reader2 := strings.NewReader(str2)
-	emu2, err := EmulatorFromList(reader2)
+	emu2, err := emulatorFromList(reader2)
 	if err != nil {
 		return -1
 	}
