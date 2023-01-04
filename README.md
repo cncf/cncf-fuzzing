@@ -27,6 +27,7 @@ CNCF projects that use fuzzing include:
 - [Vitess](https://github.com/vitessio/vitess/blob/main/doc/VIT-02-report-fuzzing-audit.pdf)
 
 Talks on CNCF fuzzing:
+- [Finding Bugs and Vulnerabilities Automatically](https://www.youtube.com/watch?v=DSJePjhBN5E)
 - [Fuzzing the CNCF Landscape, Cloud Native SecurityCon, 2022](https://www.youtube.com/watch?v=zIyIZxAZLzo)
 - [Securing Fluent Bit by Way of Fuzzing, FluentCon, 2022](https://www.youtube.com/watch?v=Yp6IClswWQE)
 
