@@ -17,7 +17,7 @@ package raft
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	pb "go.etcd.io/etcd/raft/v3/raftpb"
+	pb "go.etcd.io/raft/v3/raftpb"
 	"os"
 	"runtime"
 	"strings"
