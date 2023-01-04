@@ -41,7 +41,7 @@ func FuzzAnalyse(data []byte) int {
 			return 0
 		}
 		ctx := plancontext.NewPlanningContext(nil, semTable, nil, 0)
-		_, _ = createOperatorFromSelect(ctx, semTable)
+		_, _ = createOperatorFromSelect(ctx, stmt)
 
 	default:
 		return 0
