@@ -58,14 +58,14 @@ rm $SRC/vitess/go/vt/vtgate/vindexes/fuzz.go
 rm $SRC/vitess/go/vt/vtgate/planbuilder/fuzz.go
 rm $SRC/vitess/go/vt/vttablet/tabletmanager/vreplication/fuzz.go
 rm $SRC/vitess/go/vt/vtgate/engine/fuzz.go
-rm $SRC/vitess/go/vt/vtgate/planbuilder/abstract/fuzz.go
+rm $SRC/vitess/go/vt/vtgate/planbuilder/operators/fuzz.go
 rm $SRC/vitess/go/vt/vtgate/grpcvtgateconn/fuzz_flaky_test.go
 rm $SRC/vitess/go/vt/vttablet/tabletserver/fuzz.go
 
 mv $SRC/cncf-fuzzing/projects/vitess/mysql_fuzzer.go $SRC/vitess/go/mysql/
 
 mv $SRC/cncf-fuzzing/projects/vitess/grpcvtgateconn_fuzzer.go $SRC/vitess/go/vt/vtgate/grpcvtgateconn/
-mv $SRC/cncf-fuzzing/projects/vitess/abstract_fuzzer.go $SRC/vitess/go/vt/vtgate/planbuilder/abstract/
+mv $SRC/cncf-fuzzing/projects/vitess/abstract_fuzzer.go $SRC/vitess/go/vt/vtgate/planbuilder/operators/
 
 # collation fuzzer
 mv ./go/mysql/collations/uca_test.go \
@@ -134,7 +134,7 @@ compile_go_fuzzer vitess.io/vitess/go/vt/vttablet/tabletserver FuzzGetPlan fuzz_
 compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/grpcvtgateconn FuzzGrpcvtgateconn grpc_vtgate_fuzzer
 
 
-compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/planbuilder/abstract FuzzAnalyse fuzz_analyse gofuzz
+compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/planbuilder/operators FuzzAnalyse fuzz_analyse gofuzz
 
 
 

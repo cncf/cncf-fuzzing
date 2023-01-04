@@ -13,10 +13,11 @@
 // limitations under the License.
 //
 
-package abstract
+package operators
 
 import (
 	"vitess.io/vitess/go/vt/sqlparser"
+	"vitess.io/vitess/go/vt/vtgate/planbuilder/plancontext"
 	"vitess.io/vitess/go/vt/vtgate/semantics"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -39,7 +40,8 @@ func FuzzAnalyse(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		_, _ = createOperatorFromSelect(stmt, semTable)
+		ctx := plancontext.NewPlanningContext(nil, semTable, nil, 0)
+		_, _ = createOperatorFromSelect(ctx, semTable)
 
 	default:
 		return 0
