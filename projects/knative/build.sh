@@ -55,6 +55,9 @@ compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route FuzzRouteRecon
 cp $CNCFFuzzing/fuzz_domains.go $SRC/serving/pkg/reconciler/route/domains/
 compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route/domains FuzzDomainNameFromTemplate FuzzDomainNameFromTemplate 
 
+cp $CNCFFuzzing/fuzz_validation.go $SRC/serving/pkg/apis/serving/v1/
+compile_native_go_fuzzer knative.dev/serving/pkg/apis/serving/v1 FuzzValidation FuzzValidation 
+
 cd $SRC
 git clone https://github.com/knative/eventing --depth=1
 cd eventing
