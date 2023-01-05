@@ -158,7 +158,7 @@ func FuzzBlob(data []byte) int {
 	ctx := context.Background()
 	imageName, _ := reference.WithName("foo/bar")
 	driver := testdriver.New()
-	registry, err := NewRegistry(ctx, driver, BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider()), EnableDelete, EnableRedirect)
+	registry, err := NewRegistry(ctx, driver, BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider(memory.UnlimitedSize)), EnableDelete, EnableRedirect)
 	if err != nil {
 		return 0
 	}
