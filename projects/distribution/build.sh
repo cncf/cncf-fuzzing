@@ -79,8 +79,6 @@ rm $SRC/distribution/reference/native_reference_fuzzer.go
 go mod edit -dropreplace google.golang.org/grpc
 go mod download && go mod tidy
 
-compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_normalized_named
-
 # Target(s) that break coverage build
 if [ "$SANITIZER" != "coverage" ]
 then
