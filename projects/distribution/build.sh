@@ -6,11 +6,11 @@ set -x
 
 apt-get update && apt-get install -y wget
 cd $SRC
-wget https://go.dev/dl/go1.18.2.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.19.4.linux-amd64.tar.gz
 
 mkdir temp-go
 rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.18.2.linux-amd64.tar.gz
+tar -C temp-go/ -xzf go1.19.4.linux-amd64.tar.gz
 mv temp-go/go/* /root/.go/
 cd $SRC/distribution
 
@@ -72,17 +72,12 @@ zip $OUT/parser_fuzzer_seed_corpus.zip $CNCFPATH/corpus/parserFuzzer/*
 rm -r ./vendor
 
 # Used to build native fuzzers
-go get github.com/AdamKorcz/go-118-fuzz-build/utils
 go get github.com/AdaLogics/go-fuzz-headers
 #compile_native_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamedNative fuzz_parse_normalized_name_native
 rm $SRC/distribution/reference/native_reference_fuzzer.go
 
 go mod edit -dropreplace google.golang.org/grpc
 go mod download && go mod tidy
-
-$SRC/distribution/script/oss_fuzz_build.sh
-
-compile_go_fuzzer $DISTRIBUTION/reference FuzzParseNormalizedNamed fuzz_parse_normalized_named
 
 # Target(s) that break coverage build
 if [ "$SANITIZER" != "coverage" ]

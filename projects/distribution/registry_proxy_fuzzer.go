@@ -152,7 +152,7 @@ func newManifestStoreTestEnvFuzz(f *fuzz.ConsumeFuzzer, name, tag string) (*mani
 
 	ctx := context.Background()
 	truthRegistry, err := storage.NewRegistry(ctx, inmemory.New(),
-		storage.BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider()),
+		storage.BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider(memory.UnlimitedSize)),
 		storage.Schema1SigningKey(k),
 		storage.EnableSchema1)
 	if err != nil {
@@ -176,7 +176,7 @@ func newManifestStoreTestEnvFuzz(f *fuzz.ConsumeFuzzer, name, tag string) (*mani
 		return nil, err
 	}
 
-	localRegistry, err := storage.NewRegistry(ctx, inmemory.New(), storage.BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider()), storage.EnableRedirect, storage.DisableDigestResumption, storage.Schema1SigningKey(k), storage.EnableSchema1)
+	localRegistry, err := storage.NewRegistry(ctx, inmemory.New(), storage.BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider(memory.UnlimitedSize)), storage.EnableRedirect, storage.DisableDigestResumption, storage.Schema1SigningKey(k), storage.EnableSchema1)
 	if err != nil {
 		return nil, err
 	}
