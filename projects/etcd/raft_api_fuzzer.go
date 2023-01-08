@@ -22,7 +22,7 @@ import (
 
 	"go.etcd.io/etcd/api/v3/version"
 	"go.etcd.io/etcd/client/pkg/v3/types"
-	"go.etcd.io/etcd/raft/v3/raftpb"
+	"go.etcd.io/raft/v3/raftpb"
 	"go.uber.org/zap"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
