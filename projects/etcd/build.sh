@@ -122,13 +122,13 @@ compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp FuzzRaftHttp
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp FuzzMessageEncodeDecode fuzz_message_encode_decode
 
 # raft fuzzer
-cd $SRC/etcd/raft
+cd $SRC/raft
 mv $SRC/cncf-fuzzing/projects/etcd/raft_fuzzer.go ./
 go mod tidy
 mv diff_test.go diff_test_fuzz.go
 mv log_test.go log_test_fuzz.go
 mv raft_test.go raft_test_fuzz.go
-compile_go_fuzzer go.etcd.io/etcd/raft/v3 FuzzStep fuzz_step
+compile_go_fuzzer go.etcd.io/raft/v3 FuzzStep fuzz_step
 
 # file_purge_fuzzer
 cd $SRC/etcd/client/pkg/fileutil
