@@ -21,7 +21,9 @@ compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers Fu
 
 cd $SRC/notation-go
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_verification.go" $SRC/notation-go/verifier/
+mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_trustpolicy.go" $SRC/notation-go/verifier/trustpolicy/
 printf "package verifier\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > verifier/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy
 compile_native_go_fuzzer github.com/notaryproject/notation-go/verifier FuzzVerify FuzzVerify
+compile_native_go_fuzzer github.com/notaryproject/notation-go/verifier/trustpolicy FuzzDocumentValidate FuzzDocumentValidate
