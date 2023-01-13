@@ -97,7 +97,7 @@ func FuzzAtomicUpdateHandler(f *testing.F) {
 	f.Fuzz(func(t *testing.T, body, headerData []byte) {
 		ff := fuzz.NewConsumer(headerData)
 
-		r, err := http.NewRequest("GET", "", bytes.NewReader(body))
+		r, err := http.NewRequest("POST", "", bytes.NewReader(body))
 		noOfHeaders, err := ff.GetInt()
 		if err != nil {
 			t.Skip()
