@@ -1,3 +1,25 @@
+#!/bin/bash -eu
+# Copyright 2023 the cncf-fuzzing authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+################################################################################
+
+set -o nounset
+set -o pipefail
+set -o errexit
+set -x
+
 sed 's/go 1.17/go 1.19/g' -i $SRC/notary/go.mod
 
 export CNCFFuzz="${SRC}/cncf-fuzzing/projects/notary"
@@ -27,3 +49,12 @@ go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/g
 go mod tidy
 compile_native_go_fuzzer github.com/notaryproject/notation-go/verifier FuzzVerify FuzzVerify
 compile_native_go_fuzzer github.com/notaryproject/notation-go/verifier/trustpolicy FuzzDocumentValidate FuzzDocumentValidate
+
+cd $SRC
+git clone --depth=1 https://github.com/notaryproject/notation-core-go
+cd notation-core-go
+printf "package cose\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > signature/cose/registerfuzzdep.go
+cp $CNCFFuzz/fuzz_cose.go $SRC/notation-core-go/signature/cose/
+go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
+go mod tidy
+compile_native_go_fuzzer github.com/notaryproject/notation-core-go/signature/cose FuzzSignatureCose FuzzSignatureCose
