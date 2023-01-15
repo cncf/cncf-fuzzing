@@ -85,9 +85,6 @@ type fuzztestRun struct {
 func (t fuzztestRun) ComQuery(c *Conn, query string, callback func(*sqltypes.Result) error) error {
 	return nil
 }
-func (t fuzztestRun) ComBinlogDumpGTID(c *Conn, gtidSet GTIDSet) error {
-	return nil
-}
 
 func (t fuzztestRun) ComPrepare(c *Conn, query string, bindVars map[string]*querypb.BindVariable) ([]*querypb.Field, error) {
 	return nil, nil
@@ -99,6 +96,18 @@ func (t fuzztestRun) ComStmtExecute(c *Conn, prepare *PrepareData, callback func
 
 func (t fuzztestRun) WarningCount(c *Conn) uint16 {
 	return 0
+}
+
+func (t fuzztestRun) ComRegisterReplica(c *Conn, replicaHost string, replicaPort uint16, replicaUser string, replicaPassword string) error {
+	return nil
+}
+
+func (t fuzztestRun) ComBinlogDump(c *Conn, logFile string, binlogPos uint32) error {
+	return nil
+}
+
+func (t fuzztestRun) ComBinlogDumpGTID(c *Conn, logFile string, logPos uint64, gtidSet GTIDSet) error {
+	return nil
 }
 
 var _ Handler = (*fuzztestRun)(nil)
@@ -269,10 +278,6 @@ func (th *fuzzTestHandler) NewConnection(c *Conn) {
 	th.lastConn = c
 }
 
-func (t fuzzTestHandler) ComBinlogDumpGTID(c *Conn, gtidSet GTIDSet) error {
-	return nil
-}
-
 func (th *fuzzTestHandler) ComQuery(c *Conn, query string, callback func(*sqltypes.Result) error) error {
 
 	return nil
@@ -294,6 +299,18 @@ func (th *fuzzTestHandler) WarningCount(c *Conn) uint16 {
 	th.mu.Lock()
 	defer th.mu.Unlock()
 	return th.warnings
+}
+
+func (th *fuzzTestHandler) ComRegisterReplica(c *Conn, replicaHost string, replicaPort uint16, replicaUser string, replicaPassword string) error {
+	return nil
+}
+
+func (th *fuzzTestHandler) ComBinlogDump(c *Conn, logFile string, binlogPos uint32) error {
+	return nil
+}
+
+func (th *fuzzTestHandler) ComBinlogDumpGTID(c *Conn, logFile string, logPos uint64, gtidSet GTIDSet) error {
+	return nil
 }
 
 func (c *Conn) writeFuzzedPacket(packet []byte) {
