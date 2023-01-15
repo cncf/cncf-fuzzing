@@ -73,9 +73,12 @@ compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagin
 # build experimental messaging fuzzer
 rm $SRC/eventing/pkg/apis/messaging/v1/fuzz_messaging_v1.go
 
+cp $CNCFFuzzing/fuzz_kncloudevents.go $SRC/eventing/pkg/kncloudevents/
 cp $CNCFFuzzing/fuzz_messaging_v1_experimental.go $SRC/eventing/pkg/apis/messaging/v1/
 cp $CNCFFuzzing/fuzz_sources_v1_experimental.go $SRC/eventing/pkg/apis/sources/v1/
 cp $CNCFFuzzing/fuzzer_funcs.go $SRC/eventing/pkg/apis/messaging/v1/
+go get github.com/AdamKorcz/kubefuzzing@latest
 go mod tidy && go mod vendor
 compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSONExperimental FuzzMessagingRoundTripTypesToJSONExperimental
-compile_native_go_fuzzer knative.dev/eventing/pkg/apis/sources/v1 FuzzMessagingRoundTripTypesToJSONExperimental FuzzMessagingRoundTripTypesToJSONExperimental
+compile_native_go_fuzzer knative.dev/eventing/pkg/apis/sources/v1 FuzzSourcesRoundTripTypesToJSONExperimental FuzzSourcesRoundTripTypesToJSONExperimental
+compile_native_go_fuzzer knative.dev/eventing/pkg/kncloudevents FuzzRetryablehttpFromRequest FuzzRetryablehttpFromRequest

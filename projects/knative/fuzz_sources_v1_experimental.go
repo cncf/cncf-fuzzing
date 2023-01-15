@@ -18,6 +18,8 @@ package v1
 import (
         utilruntime "k8s.io/apimachinery/pkg/util/runtime"
         "github.com/AdamKorcz/kubefuzzing/pkg/roundtrip"
+
+        fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 
@@ -28,11 +30,61 @@ func init() {
         roundtrip.AddFuncs(roundtrip.V1FuzzerFuncs())
         roundtrip.AddFuncs(roundtrip.V1beta1FuzzerFuncs())
         roundtrip.AddFuncs(roundtrip.FuzzerFuncs())
+        roundtrip.AddFuncs(SourcesFuzzerFuncs())
         addKnownTypes(roundtrip.Scheme)
 }
 
-func FuzzMessagingRoundTripTypesToJSONExperimental(f *testing.F) {
+func FuzzSourcesRoundTripTypesToJSONExperimental(f *testing.F) {
         f.Fuzz(func(t *testing.T, data []byte, typeToTest int) {
                 roundtrip.ExternalTypesViaJSON(data, typeToTest)
         })
+}
+
+// Funcs includes fuzzing funcs for knative.dev/serving types
+//
+// For other examples see
+// https://github.com/kubernetes/apimachinery/blob/master/pkg/apis/meta/fuzzer/fuzzer.go
+func SourcesFuzzerFuncs() []interface{} {
+        return []interface{}{
+                func(source *ApiServerSource, c fuzz.Continue) error {
+                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        // Clear the random fuzzed condition
+                        source.Status.SetConditions(nil)
+
+                        // Fuzz the known conditions except their type value
+                        source.Status.InitializeConditions()
+                        err := roundtrip.FuzzConditions(&source.Status, c)
+                        return err
+                },
+                func(source *PingSource, c fuzz.Continue) error {
+                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        // Clear the random fuzzed condition
+                        source.Status.SetConditions(nil)
+
+                        // Fuzz the known conditions except their type value
+                        source.Status.InitializeConditions()
+                        err := roundtrip.FuzzConditions(&source.Status, c)
+                        return err
+                },
+                func(source *ContainerSource, c fuzz.Continue) error {
+                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        // Clear the random fuzzed condition
+                        source.Status.SetConditions(nil)
+
+                        // Fuzz the known conditions except their type value
+                        source.Status.InitializeConditions()
+                        err := roundtrip.FuzzConditions(&source.Status, c)
+                        return err
+                },
+                func(source *SinkBinding, c fuzz.Continue) error {
+                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        // Clear the random fuzzed condition
+                        source.Status.SetConditions(nil)
+
+                        // Fuzz the known conditions except their type value
+                        source.Status.InitializeConditions()
+                        err := roundtrip.FuzzConditions(&source.Status, c)
+                        return err
+                },
+        }
 }
