@@ -18,6 +18,7 @@
 export CNCFFuzzing="${SRC}/cncf-fuzzing/projects/knative"
 
 printf "package metrics\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/pkg/metrics/registerfuzzdep.go
+go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy && go mod vendor
 cp $CNCFFuzzing/json_fuzzer.go $SRC/pkg/webhook/json/
 mv $SRC/pkg/webhook/json/decode_test.go $SRC/pkg/webhook/json/decode_test_fuzz.go
@@ -43,6 +44,7 @@ cd $SRC/serving
 mv pkg/activator/net/throttler_test.go pkg/activator/net/throttler_test_fuzz.go
 mv pkg/activator/net/revision_backends_test.go pkg/activator/net/revision_backends_test_fuzz.go
 printf "package net\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/serving/pkg/activator/net/registerfuzzdep.go
+go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy && go mod vendor
 compile_native_go_fuzzer knative.dev/serving/pkg/activator/net FuzzNewRevisionThrottler FuzzNewRevisionThrottler
 
@@ -63,6 +65,7 @@ git clone https://github.com/knative/eventing --depth=1
 cd eventing
 cp $CNCFFuzzing/fuzz_messaging_v1.go $SRC/eventing/pkg/apis/messaging/v1/
 printf "package v1\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/eventing/pkg/apis/messaging/v1/registerfuzzdep.go
+go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy && go mod vendor
 mv $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test.go $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test_fuzz.go
 compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSON FuzzMessagingRoundTripTypesToJSON
