@@ -74,6 +74,8 @@ compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagin
 rm $SRC/eventing/pkg/apis/messaging/v1/fuzz_messaging_v1.go
 
 cp $CNCFFuzzing/fuzz_messaging_v1_experimental.go $SRC/eventing/pkg/apis/messaging/v1/
+cp $CNCFFuzzing/fuzz_sources_v1_experimental.go $SRC/eventing/pkg/apis/sources/v1/
 cp $CNCFFuzzing/fuzzer_funcs.go $SRC/eventing/pkg/apis/messaging/v1/
 go mod tidy && go mod vendor
 compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSONExperimental FuzzMessagingRoundTripTypesToJSONExperimental
+compile_native_go_fuzzer knative.dev/eventing/pkg/apis/sources/v1 FuzzMessagingRoundTripTypesToJSONExperimental FuzzMessagingRoundTripTypesToJSONExperimental
