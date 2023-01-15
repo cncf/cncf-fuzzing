@@ -66,3 +66,11 @@ printf "package v1\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\
 go mod tidy && go mod vendor
 mv $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test.go $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test_fuzz.go
 compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSON FuzzMessagingRoundTripTypesToJSON
+
+# build experimental messaging fuzzer
+rm $SRC/eventing/pkg/apis/messaging/v1/fuzz_messaging_v1.go
+
+cp $CNCFFuzzing/fuzz_messaging_v1_experimental.go $SRC/eventing/pkg/apis/messaging/v1/
+cp $CNCFFuzzing/fuzzer_funcs.go $SRC/eventing/pkg/apis/messaging/v1/
+go mod tidy && go mod vendor
+compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSONExperimental FuzzMessagingRoundTripTypesToJSONExperimental
