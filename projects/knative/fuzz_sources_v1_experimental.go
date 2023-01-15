@@ -16,24 +16,23 @@
 package v1
 
 import (
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"github.com/AdamKorcz/kubefuzzing/pkg/roundtrip"
+        utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+        "github.com/AdamKorcz/kubefuzzing/pkg/roundtrip"
 )
 
 
 
 func init() {
-	utilruntime.Must(AddToScheme(roundtrip.Scheme))
-	roundtrip.AddFuncs(fuzzerFuncsGfh())
-	roundtrip.AddFuncs(roundtrip.GenericFuzzerFuncs())
-	roundtrip.AddFuncs(roundtrip.V1FuzzerFuncs())
-	roundtrip.AddFuncs(roundtrip.V1beta1FuzzerFuncs())
-	roundtrip.AddFuncs(roundtrip.FuzzerFuncs())
-	addKnownTypes(roundtrip.Scheme)
+        utilruntime.Must(AddToScheme(roundtrip.Scheme))
+        roundtrip.AddFuncs(roundtrip.GenericFuzzerFuncs())
+        roundtrip.AddFuncs(roundtrip.V1FuzzerFuncs())
+        roundtrip.AddFuncs(roundtrip.V1beta1FuzzerFuncs())
+        roundtrip.AddFuncs(roundtrip.FuzzerFuncs())
+        addKnownTypes(roundtrip.Scheme)
 }
 
 func FuzzMessagingRoundTripTypesToJSONExperimental(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte, typeToTest int) {
-		roundtrip.ExternalTypesViaJSON(data, typeToTest)
-	})
+        f.Fuzz(func(t *testing.T, data []byte, typeToTest int) {
+                roundtrip.ExternalTypesViaJSON(data, typeToTest)
+        })
 }
