@@ -37,6 +37,8 @@ compile_native_go_fuzzer knative.dev/pkg/kmeta FuzzChildName FuzzChildName
 cp $CNCFFuzzing/fuzz_pkg_websocket.go $SRC/pkg/websocket/
 mv $SRC/pkg/websocket/connection_test.go $SRC/pkg/websocket/connection_fuzz.go
 compile_native_go_fuzzer knative.dev/pkg/websocket FuzzSendRawMessage FuzzSendRawMessage
+compile_native_go_fuzzer knative.dev/pkg/websocket FuzzDurableConnection FuzzDurableConnection
+compile_native_go_fuzzer knative.dev/pkg/websocket FuzzReceiveMessage FuzzReceiveMessage
 
 # serving fuzzers
 cp $CNCFFuzzing/fuzz_activatornet.go $SRC/serving/pkg/activator/net/
