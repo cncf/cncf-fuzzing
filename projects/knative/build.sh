@@ -66,11 +66,13 @@ cd $SRC
 git clone https://github.com/knative/eventing --depth=1
 cd eventing
 cp $CNCFFuzzing/fuzz_messaging_v1.go $SRC/eventing/pkg/apis/messaging/v1/
+cp $CNCFFuzzing/fuzz_eventing_filter.go $SRC/eventing/pkg/broker/filter/
 printf "package v1\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/eventing/pkg/apis/messaging/v1/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy && go mod vendor
 mv $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test.go $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test_fuzz.go
 compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSON FuzzMessagingRoundTripTypesToJSON
+compile_native_go_fuzzer knative.dev/eventing/pkg/broker/filter FuzzFilters FuzzFilters
 
 # build experimental messaging fuzzer
 rm $SRC/eventing/pkg/apis/messaging/v1/fuzz_messaging_v1.go
