@@ -24,6 +24,7 @@ import (
 
 	notation "github.com/notaryproject/notation-go"
 	"github.com/notaryproject/notation-go/dir"
+	"github.com/notaryproject/notation-go/internal/file"
 	"github.com/notaryproject/notation-go/internal/mock"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/notaryproject/notation-go/verifier/truststore"
@@ -140,19 +141,54 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 				b.WriteString("signingAuthority")
 			}
 			b.WriteString(":")
-			trustStoreName, err := ff.GetString()
+			trustStoreLength, err := ff.GetInt()
 			if err != nil {
 				return trustpolicy.TrustPolicy{}, err
 			}
-			if trustStoreName == "" {
+			trustStoreName, err := ff.GetStringFrom(scopeChars, trustStoreLength)
+			if err != nil {
+				return trustpolicy.TrustPolicy{}, err
+			}
+			if !file.IsValidFileName(trustStoreName) {
 				continue
 			}
 			b.WriteString(trustStoreName)
 			trustStores = append(trustStores, b.String())
 		}
-		err = ff.CreateSlice(&trustedIdentities)
+
+		// trusted identities
+		noOfTrustedIdentities, err := ff.GetInt()
 		if err != nil {
 			return trustpolicy.TrustPolicy{}, err
+		}
+		noOfTrustedIdentities = noOfTrustedIdentities % 20
+		if noOfTrustedIdentities == 0 {
+			noOfTrustedIdentities = 1
+		}
+		for i := 0; i < noOfTrustStores%20; i++ {
+			var b strings.Builder
+			addX509Subject, err := ff.GetBool()
+			if err != nil {
+				return trustpolicy.TrustPolicy{}, err
+			}
+
+			var identityPrefix string
+			if addX509Subject {
+				identityPrefix = "x509.subject"
+			} else {
+				identityPrefix, err = ff.GetString()
+				if err != nil {
+					return trustpolicy.TrustPolicy{}, err
+				}
+			}
+			b.WriteString(identityPrefix)
+			b.WriteString(":")
+			identityValue, err := ff.GetString()
+			if err != nil {
+				return trustpolicy.TrustPolicy{}, err
+			}
+			b.WriteString(identityValue)
+			trustedIdentities = append(trustedIdentities, b.String())
 		}
 		if len(trustStores) == 0 || len(trustedIdentities) == 0 {
 			return trustpolicy.TrustPolicy{}, fmt.Errorf("Invalid configurations")
@@ -197,6 +233,39 @@ func createTrustPolicies(ff *fuzz.ConsumeFuzzer) ([]trustpolicy.TrustPolicy, err
 	return policies, nil
 }
 
+func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error) {
+	artifactReference1, err := ff.GetString()
+	if err != nil {
+		return notation.RemoteVerifyOptions{}, err
+	}
+	artifactReference2, err := ff.GetString()
+	if err != nil {
+		return notation.RemoteVerifyOptions{}, err
+	}
+	var b strings.Builder
+	b.WriteString(artifactReference1)
+	b.WriteString("@")
+	b.WriteString(artifactReference2)
+	err = validateRegistryScopeFormat(b.String())
+	if err != nil {
+		return notation.RemoteVerifyOptions{}, err
+	}
+	pluginConfig := make(map[string]string)
+	err = ff.FuzzMap(&pluginConfig)
+	if err != nil {
+		return notation.RemoteVerifyOptions{}, err
+	}
+	maxSignatureAttempts, err := ff.GetInt()
+	if err != nil {
+		return notation.RemoteVerifyOptions{}, err
+	}
+	return notation.RemoteVerifyOptions{
+		ArtifactReference:    b.String(),
+		PluginConfig:         pluginConfig,
+		MaxSignatureAttempts: maxSignatureAttempts,
+	}, nil
+}
+
 func FuzzVerify(f *testing.F) {
 	f.Fuzz(func(t *testing.T, policyDocBytes []byte) {
 		ff := fuzz.NewConsumer(policyDocBytes)
@@ -212,6 +281,10 @@ func FuzzVerify(f *testing.F) {
 		if err != nil {
 			t.Skip()
 		}
+		opts, err := createOptions(ff)
+		if err != nil {
+			t.Skip()
+		}
 
 		td := t.TempDir()
 		dir.UserConfigDir = td
@@ -220,6 +293,6 @@ func FuzzVerify(f *testing.F) {
 		if err != nil {
 			t.Skip()
 		}
-		_, _, _ = notation.Verify(context.Background(), v, mock.NewRepository(), notation.RemoteVerifyOptions{})
+		_, _, _ = notation.Verify(context.Background(), v, mock.NewRepository(), opts)
 	})
 }
