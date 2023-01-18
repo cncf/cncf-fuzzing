@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	stdTesting "testing"
@@ -86,6 +87,9 @@ func FuzzDurableConnection(f *testing.F) {
 
 func FuzzReceiveMessage(f *testing.F) {
 	f.Fuzz(func(t *testing.T, testMessage string) {
+		defer func() {
+			runtime.GC()
+		}()
 		spy := &inspectableConnection{
 			writeMessageCalls: make(chan struct{}, 1),
 			nextReaderCalls:   make(chan struct{}, 1),
