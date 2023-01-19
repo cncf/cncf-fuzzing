@@ -16,11 +16,76 @@
 package utils
 
 import (
+	"bytes"
+	"crypto/rsa"
+	"github.com/theupdateframework/notary/tuf/data"
 	"testing"
 )
 
+var (
+	keys = map[int]string{
+		0: "ed25519",
+		1: "ECDA",
+		2: "rsa",
+	}
+)
+
 func FuzzParsePEMPrivateKey(f *testing.F) {
-	f.Fuzz(func(t *testing.T, pemBytes []byte, passphrase string) {
-		_, _ = ParsePEMPrivateKey(pemBytes, passphrase)
+	f.Fuzz(func(t *testing.T, keyBytes []byte, keyType int, bits int64, passphrase string, usePassPhrase bool) {
+
+		var key data.PrivateKey
+		var edPEM []byte
+		var err error
+		switch keys[keyType%len(keys)] {
+		case "ed25519":
+			key, err = GenerateED25519Key(bytes.NewReader(keyBytes))
+			if err != nil {
+				t.Skip()
+			}
+		case "ECDA":
+			key, err = GenerateECDSAKey(bytes.NewReader(keyBytes))
+			if err != nil {
+				t.Skip()
+			}
+		case "rsa":
+			rsaKey, err := rsa.GenerateKey(bytes.NewReader(keyBytes), int(bits))
+			if err != nil {
+				t.Skip()
+			}
+			err = rsaKey.Validate()
+			if err != nil {
+				t.Skip()
+			}
+			key, err = RSAToPrivateKey(rsaKey)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		if usePassPhrase {
+			edPEM, err = ConvertPrivateKeyToPKCS8(key, data.CanonicalRootRole, "", passphrase)
+			if err != nil {
+				t.Fatal(err)
+			}
+		} else {
+			edPEM, err = ConvertPrivateKeyToPKCS8(key, data.CanonicalRootRole, "", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		role, _, err := ExtractPrivateKeyAttributes(edPEM)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if role != "root" {
+			t.Fatal("role should be root")
+		}
+
+		if usePassPhrase {
+			_, _ = ParsePEMPrivateKey(edPEM, passphrase)
+		} else {
+			_, _ = ParsePEMPrivateKey(edPEM, "")
+		}
 	})
 }
