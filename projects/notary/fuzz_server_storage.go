@@ -69,7 +69,7 @@ func sqlite3SetupFuzz() (*SQLStorage, func()) {
 	return dbStore, cleanup
 }
 
-func FuzzServerStorage(f *testing.F) {
+func FuzzServerStorageSQL(f *testing.F) {
 	f.Fuzz(func(t *testing.T, fuzzData []byte) {
 		ff := fuzz.NewConsumer(fuzzData)
 
@@ -261,5 +261,19 @@ func FuzzServerStorageMemStorage(f *testing.F) {
 				_, _ = dbStore.GetChanges(changeID, records, filterName)
 			}
 		}
+	})
+}
+
+func FuzzServerStorageTufStorage(f *testing.F) {
+	f.Fuzz(func(t *testing.T, fuzzData []byte, dataName string) {
+		role, gun := data.CanonicalRootRole, data.GUN(dataName)
+		rec := SampleCustomTUFObj(gun, role, 1, nil)
+
+		dbStore, cleanup := sqlite3SetupFuzz()
+		defer cleanup()
+		s := NewTUFMetaStorage(dbStore)
+		_, _, _ = s.GetCurrent(rec.Gun, rec.Role)
+		_, _, _ = s.MetaStore.GetCurrent(rec.Gun, rec.Role)
+
 	})
 }
