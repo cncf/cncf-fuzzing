@@ -40,6 +40,7 @@ compile_native_go_fuzzer github.com/theupdateframework/notary/tuf/utils FuzzPars
 
 mv $SRC/cncf-fuzzing/projects/notary/fuzz_handlers.go $SRC/notary/server/handlers/
 compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzAtomicUpdateHandler FuzzAtomicUpdateHandler
+compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzAtomicUpdateHandlerMultipart FuzzAtomicUpdateHandlerMultipart
 
 cd $SRC/notation-go
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_verification.go" $SRC/notation-go/verifier/
