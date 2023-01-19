@@ -50,6 +50,7 @@ compile_native_go_fuzzer github.com/theupdateframework/notary/signer/keydbstore 
 mv $SRC/cncf-fuzzing/projects/notary/fuzz_server_storage.go $SRC/notary/server/storage/
 mv $SRC/notary/server/storage/storage_test.go $SRC/notary/server/storage/storage_test_fuzz.go
 compile_native_go_fuzzer github.com/theupdateframework/notary/server/storage FuzzServerStorage FuzzServerStorage
+compile_native_go_fuzzer github.com/theupdateframework/notary/server/storage FuzzServerStorageMemStorage FuzzServerStorageMemStorage
 
 
 cd $SRC/notation-go

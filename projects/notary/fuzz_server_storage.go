@@ -166,3 +166,100 @@ func FuzzServerStorage(f *testing.F) {
 		}
 	})
 }
+
+func FuzzServerStorageMemStorage(f *testing.F) {
+	f.Fuzz(func(t *testing.T, fuzzData []byte) {
+		ff := fuzz.NewConsumer(fuzzData)
+
+		var noOfMetas int
+		var err error
+		var gunName string
+		sTufMetas := make([]StoredTUFMeta, 0)
+		noOfMetas, err = ff.GetInt()
+		if err != nil {
+			t.Skip()
+		}
+		noOfCalls, err := ff.GetInt()
+		if err != nil {
+			t.Skip()
+		}
+		if noOfCalls == 0 {
+			noOfCalls = 1
+		}
+		for i := 0; i < noOfCalls%20; i++ {
+			noOfMetas, err = ff.GetInt()
+			if err != nil {
+				t.Skip()
+			}
+			if noOfMetas == 0 {
+				noOfMetas = 1
+			}
+			for j := 0; j < noOfMetas%5; j++ {
+				sm := StoredTUFMeta{}
+				err := ff.GenerateStruct(&sm)
+				if err != nil {
+					t.Skip()
+				}
+				sTufMetas = append(sTufMetas, sm)
+			}
+		}
+
+		if len(sTufMetas) == 0 {
+			t.Skip()
+		}
+
+		noOfCalls, err = ff.GetInt()
+		if err != nil {
+			t.Skip()
+		}
+		if noOfCalls == 0 {
+			noOfCalls = 1
+		}
+		dbStore := NewMemStorage()
+		for i := 0; i < noOfCalls%20; i++ {
+			callType, err := ff.GetInt()
+			if err != nil {
+				t.Skip()
+			}
+			switch callType % 4 {
+			case 0:
+				ind, err := ff.GetInt()
+				if err != nil {
+					t.Skip()
+				}
+				gunName, err = ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				dbStore.UpdateCurrent(data.GUN(gunName), MakeUpdate(sTufMetas[ind%len(sTufMetas)]))
+				dbStore.Delete(data.GUN(gunName))
+			case 1:
+				gunName, err = ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				dbStore.Delete(data.GUN(gunName))
+			case 2:
+
+			case 3:
+				changeID, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				_, err = strconv.ParseInt(changeID, 10, 32)
+				if err != nil {
+					continue
+				}
+				records, err := ff.GetInt()
+				if err != nil {
+					t.Skip()
+				}
+				filterName, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				_, _ = dbStore.GetChanges(changeID, records, filterName)
+			}
+		}
+	})
+}
