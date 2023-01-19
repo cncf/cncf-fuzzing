@@ -279,3 +279,41 @@ func FuzzRotateKeyHandler(f *testing.F) {
 		RotateKeyHandler(getFuzzContext(state), MockWriter{}, r)
 	})
 }
+
+func FuzzDeleteHandler(f *testing.F) {
+	f.Fuzz(func(t *testing.T, body, headerData []byte, urlString string) {
+		ff := fuzz.NewConsumer(headerData)
+
+		r, err := http.NewRequest("POST", urlString, bytes.NewReader(body))
+		if err != nil {
+			t.Skip()
+		}
+		noOfHeaders, err := ff.GetInt()
+		if err != nil {
+			t.Skip()
+		}
+		for i := 0; i < noOfHeaders%5; i++ {
+			key, err := ff.GetString()
+			if err != nil {
+				t.Skip()
+			}
+			value, err := ff.GetString()
+			if err != nil {
+				t.Skip()
+			}
+			r.Header.Add(key, value)
+		}
+		boundary, err := ff.GetString()
+		if err != nil {
+			t.Skip()
+		}
+
+		var mp strings.Builder
+		mp.WriteString("multipart/form-data; boundary=")
+		mp.WriteString(boundary)
+		r.Header.Add("Content-Type", mp.String())
+
+		state := handlerStateFuzz{store: metaStore, crypto: crypto}
+		DeleteHandler(getFuzzContext(state), MockWriter{}, r)
+	})
+}
