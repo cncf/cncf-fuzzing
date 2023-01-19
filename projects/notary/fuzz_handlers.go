@@ -18,6 +18,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/theupdateframework/notary"
 	"github.com/theupdateframework/notary/server/storage"
+	store "github.com/theupdateframework/notary/storage"
 	"github.com/theupdateframework/notary/tuf"
 	"github.com/theupdateframework/notary/tuf/data"
 	"github.com/theupdateframework/notary/tuf/signed"
@@ -128,3 +130,35 @@ func FuzzAtomicUpdateHandler(f *testing.F) {
 	})
 }
 
+func FuzzAtomicUpdateHandlerMultipart(f *testing.F) {
+	f.Fuzz(func(t *testing.T, body, headerData []byte) {
+		ff := fuzz.NewConsumer(headerData)
+
+		metas := make(map[string][]byte)
+		ff.FuzzMap(&metas)
+
+		r, err := store.NewMultiPartMetaRequest("", metas)
+		if err != nil {
+			t.Skip()
+		}
+		reader, err := r.MultipartReader()
+		if err != nil {
+			t.Skip()
+		}
+		for {
+			part, err := reader.NextPart()
+			if err == io.EOF {
+				break
+			}
+			if part == nil {
+				t.Skip()
+			}
+			if part.Header == nil {
+				t.Skip()
+			}
+		}
+
+		state := handlerStateFuzz{store: metaStore, crypto: crypto}
+		AtomicUpdateHandler(getFuzzContext(state), MockWriter{}, r)
+	})
+}
