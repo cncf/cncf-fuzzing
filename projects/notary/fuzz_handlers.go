@@ -100,6 +100,9 @@ func FuzzAtomicUpdateHandler(f *testing.F) {
 		ff := fuzz.NewConsumer(headerData)
 
 		r, err := http.NewRequest("POST", "", bytes.NewReader(body))
+		if err != nil {
+			t.Skip()
+		}
 		noOfHeaders, err := ff.GetInt()
 		if err != nil {
 			t.Skip()
