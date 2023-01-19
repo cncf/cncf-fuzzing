@@ -41,6 +41,8 @@ compile_native_go_fuzzer github.com/theupdateframework/notary/tuf/utils FuzzPars
 mv $SRC/cncf-fuzzing/projects/notary/fuzz_handlers.go $SRC/notary/server/handlers/
 compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzAtomicUpdateHandler FuzzAtomicUpdateHandler
 compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzAtomicUpdateHandlerMultipart FuzzAtomicUpdateHandlerMultipart
+compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzGetKeyHandler FuzzGetKeyHandler
+
 
 mv $SRC/cncf-fuzzing/projects/notary/fuzz_keydbstore.go $SRC/notary/signer/keydbstore/
 mv $SRC/notary/signer/keydbstore/keydbstore_test.go $SRC/notary/signer/keydbstore/keydbstore_test_fuzz.go
