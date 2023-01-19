@@ -42,6 +42,11 @@ mv $SRC/cncf-fuzzing/projects/notary/fuzz_handlers.go $SRC/notary/server/handler
 compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzAtomicUpdateHandler FuzzAtomicUpdateHandler
 compile_native_go_fuzzer github.com/theupdateframework/notary/server/handlers FuzzAtomicUpdateHandlerMultipart FuzzAtomicUpdateHandlerMultipart
 
+mv $SRC/cncf-fuzzing/projects/notary/fuzz_keydbstore.go $SRC/notary/signer/keydbstore/
+mv $SRC/notary/signer/keydbstore/keydbstore_test.go $SRC/notary/signer/keydbstore/keydbstore_test_fuzz.go
+mv $SRC/notary/signer/keydbstore/cachedcryptoservice_test.go $SRC/notary/signer/keydbstore/cachedcryptoservice_test_fuzz.go
+compile_native_go_fuzzer github.com/theupdateframework/notary/signer/keydbstore FuzzKeyDBStore FuzzKeyDBStore
+
 cd $SRC/notation-go
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_verification.go" $SRC/notation-go/verifier/
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_notation_artifactref_parsing.go" $SRC/notation-go/
