@@ -21,6 +21,8 @@ import (
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
+	eventingduckv1 "knative.dev/eventing/pkg/apis/duck/v1"
+	eventingduckv1beta1 "knative.dev/eventing/pkg/apis/duck/v1"
 	eventingv1 "knative.dev/eventing/pkg/apis/eventing/v1"
 	eventingv1beta1 "knative.dev/eventing/pkg/apis/eventing/v1beta1"
 	flowsv1 "knative.dev/eventing/pkg/apis/flows/v1"
@@ -56,6 +58,8 @@ var (
 		18: "messagingv1_Channel",
 		19: "messagingv1_InMemoryChannel",
 		20: "messagingv1_Subscription",
+		21: "eventingduckv1_DeliverySpec",
+		22: "eventingduckv1_DeliverySpec",
 	}
 )
 
@@ -247,6 +251,24 @@ func FuzzValidation(f *testing.F) {
 			p1s := &messagingv1.InMemoryChannel{}
 			ff.GenerateStruct(p1s)
 			ps2 := &messagingv1.InMemoryChannel{}
+			ff.GenerateStruct(ps2)
+			ctxBackground := context.Background()
+			ctx := apis.WithinSubResourceUpdate(ctxBackground, ps2, sr)
+			p1s.Validate(ctx)
+
+		case "eventingduckv1beta1_DeliverySpec":
+			p1s := &eventingduckv1beta1.DeliverySpec{}
+			ff.GenerateStruct(p1s)
+			ps2 := &eventingduckv1beta1.DeliverySpec{}
+			ff.GenerateStruct(ps2)
+			ctxBackground := context.Background()
+			ctx := apis.WithinSubResourceUpdate(ctxBackground, ps2, sr)
+			p1s.Validate(ctx)
+
+		case "eventingduckv1_DeliverySpec":
+			p1s := &eventingduckv1.DeliverySpec{}
+			ff.GenerateStruct(p1s)
+			ps2 := &eventingduckv1.DeliverySpec{}
 			ff.GenerateStruct(ps2)
 			ctxBackground := context.Background()
 			ctx := apis.WithinSubResourceUpdate(ctxBackground, ps2, sr)
