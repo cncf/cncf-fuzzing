@@ -48,6 +48,7 @@ compile_native_go_fuzzer knative.dev/pkg/websocket FuzzReceiveMessage FuzzReceiv
 cp $CNCFFuzzing/fuzz_activatornet.go $SRC/serving/pkg/activator/net/
 cp $CNCFFuzzing/fuzz_knative_pkg_serving_v1.go $SRC/serving/pkg/apis/serving/v1/
 cd $SRC/serving
+cp $CNCFFuzzing/fuzz_validation.go $SRC/serving/pkg/apis/serving/v1/
 mv pkg/activator/net/throttler_test.go pkg/activator/net/throttler_test_fuzz.go
 mv pkg/activator/net/revision_backends_test.go pkg/activator/net/revision_backends_test_fuzz.go
 printf "package net\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/serving/pkg/activator/net/registerfuzzdep.go
@@ -64,7 +65,6 @@ compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route FuzzRouteRecon
 cp $CNCFFuzzing/fuzz_domains.go $SRC/serving/pkg/reconciler/route/domains/
 compile_native_go_fuzzer knative.dev/serving/pkg/reconciler/route/domains FuzzDomainNameFromTemplate FuzzDomainNameFromTemplate 
 
-cp $CNCFFuzzing/fuzz_validation.go $SRC/serving/pkg/apis/serving/v1/
 compile_native_go_fuzzer knative.dev/serving/pkg/apis/serving/v1 FuzzValidation FuzzValidation 
 compile_native_go_fuzzer knative.dev/serving/pkg/apis/serving/v1 FuzzServingV1RoundTripTypesToJSONExperimental FuzzServingV1RoundTripTypesToJSONExperimental 
 
