@@ -16,25 +16,48 @@
 package v1
 
 import (
-	"testing"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+        "testing"
 	"github.com/AdamKorcz/kubefuzzing/pkg/roundtrip"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
-
-
 
 func init() {
 	utilruntime.Must(AddToScheme(roundtrip.Scheme))
-	roundtrip.AddFuncs(fuzzerFuncsGfh())
 	roundtrip.AddFuncs(roundtrip.GenericFuzzerFuncs())
 	roundtrip.AddFuncs(roundtrip.V1FuzzerFuncs())
 	roundtrip.AddFuncs(roundtrip.V1beta1FuzzerFuncs())
 	roundtrip.AddFuncs(roundtrip.FuzzerFuncs())
+	roundtrip.AddFuncs(FuzzerFuncs)
 	addKnownTypes(roundtrip.Scheme)
 }
 
-func FuzzMessagingRoundTripTypesToJSONExperimental(f *testing.F) {
+func FuzzFlowsRoundTripTypesToJSONExperimental(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte, typeToTest int) {
 		roundtrip.ExternalTypesViaJSON(data, typeToTest)
 	})
+}
+
+var FuzzerFuncs = []interface{}{
+	func(s *SequenceStatus, c fuzz.Continue) error {
+		_ = c.F.GenerateStruct(s) // fuzz the source
+		// Clear the random fuzzed condition
+		s.Status.SetConditions(nil)
+
+		// Fuzz the known conditions except their type value
+		s.InitializeConditions()
+		err := roundtrip.FuzzConditions(&s.Status, c)
+		return err
+	},
+	func(s *ParallelStatus, c fuzz.Continue) error {
+		_ = c.F.GenerateStruct(s) // fuzz the source
+		// Clear the random fuzzed condition
+		s.Status.SetConditions(nil)
+
+		// Fuzz the known conditions except their type value
+		s.InitializeConditions()
+		err := roundtrip.FuzzConditions(&s.Status, c)
+		return err
+	},
 }
