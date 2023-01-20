@@ -36,6 +36,21 @@ func FuzzNewRevisionThrottler(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		ff := fuzz.NewConsumer(data)
 
+		ip1, err := ff.GetString()
+		if err != nil {
+			return
+		}
+
+		ip2, err := ff.GetString()
+		if err != nil {
+			return
+		}
+
+		ip3, err := ff.GetString()
+		if err != nil {
+			return
+		}
+
 		revName := types.NamespacedName{}
 		ff.GenerateStruct(&revName)
 
@@ -65,7 +80,7 @@ func FuzzNewRevisionThrottler(f *testing.F) {
 		update := revisionDestsUpdate{
 			Rev:           revName,
 			ClusterIPDest: "",
-			Dests:         sets.NewString("ip3", "ip2", "ip1"),
+			Dests:         sets.NewString(ip1, ip2, ip3),
 		}
 		throttler.handleUpdate(update)
 	})
