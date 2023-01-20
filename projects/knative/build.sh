@@ -20,11 +20,13 @@ export CNCFFuzzing="${SRC}/cncf-fuzzing/projects/knative"
 printf "package metrics\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/pkg/metrics/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 cp $CNCFFuzzing/fuzz_knative_duck_v1beta1.go $SRC/pkg/apis/duck/v1beta1/
+cp $CNCFFuzzing/fuzz_knative_duck_v1.go $SRC/pkg/apis/duck/v1/
 go mod tidy && go mod vendor
 cp $CNCFFuzzing/json_fuzzer.go $SRC/pkg/webhook/json/
 mv $SRC/pkg/webhook/json/decode_test.go $SRC/pkg/webhook/json/decode_test_fuzz.go
 compile_go_fuzzer knative.dev/pkg/webhook/json FuzzJsonDecode fuzz_json_decode
 compile_native_go_fuzzer knative.dev/pkg/apis/duck/v1beta1 FuzzDuckV1beta1RoundTripTypesToJSONExperimental FuzzDuckV1beta1RoundTripTypesToJSONExperimental
+compile_native_go_fuzzer knative.dev/pkg/apis/duck/v1 FuzzDuckV1RoundTripTypesToJSONExperimental FuzzDuckV1RoundTripTypesToJSONExperimental
 
 cp $CNCFFuzzing/fuzz_configmaps.go $SRC/pkg/webhook/configmaps/
 mv $SRC/pkg/webhook/configmaps/configmaps_test.go $SRC/pkg/webhook/configmaps/configmaps_fuzz.go
