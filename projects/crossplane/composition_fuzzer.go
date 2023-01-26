@@ -28,11 +28,7 @@ func FuzzNewCompositionRevision(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	compSpecHash, err := f.GetString()
-	if err != nil {
-		return 0
-	}
 
-	_ = NewCompositionRevision(c, int64(revision), compSpecHash)
+	_ = NewCompositionRevision(c, int64(revision))
 	return 1
 }
