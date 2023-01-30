@@ -124,7 +124,7 @@ func FuzzServerStorageSQL(f *testing.F) {
 			if err != nil {
 				t.Skip()
 			}
-			switch callType % 4 {
+			switch callType % 8 {
 			case 0:
 				ind, err := ff.GetInt()
 				if err != nil {
@@ -162,6 +162,52 @@ func FuzzServerStorageSQL(f *testing.F) {
 					t.Skip()
 				}
 				_, _ = dbStore.GetChanges(changeID, records, filterName)
+			case 4:
+				noOfUpdates, err := ff.GetInt()
+				if err != nil {
+					t.Skip()
+				}
+				updates := make([]MetaUpdate, 0)
+				for i := 0; i < noOfUpdates%10; i++ {
+					update := &MetaUpdate{}
+					ff.GenerateStruct(update)
+					updates = append(updates, *update)
+				}
+				gunName, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				dbStore.UpdateMany(data.GUN(gunName), updates)
+			case 5:
+				gunName, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				role, gun := data.CanonicalRootRole, data.GUN(gunName)
+				cs, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				_, _, _ = dbStore.GetChecksum(gun, role, cs)
+			case 6:
+				gunName, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				role, gun := data.CanonicalRootRole, data.GUN(gunName)
+				version, err := ff.GetInt()
+				if err != nil {
+					t.Skip()
+				}
+				_, _, _ = dbStore.GetVersion(gun, role, version)
+			case 7:
+				gunName, err := ff.GetString()
+				if err != nil {
+					t.Skip()
+				}
+				role, gun := data.CanonicalRootRole, data.GUN(gunName)
+				_, _, _ = dbStore.GetCurrent(gun, role)
+
 			}
 		}
 	})
