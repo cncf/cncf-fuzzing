@@ -76,6 +76,8 @@ git clone --depth=1 https://github.com/notaryproject/notation-core-go
 cd notation-core-go
 printf "package cose\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > signature/cose/registerfuzzdep.go
 cp $CNCFFuzz/fuzz_cose.go $SRC/notation-core-go/signature/cose/
+cp $CNCFFuzz/fuzz_jws.go $SRC/notation-core-go/signature/jws/
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy
 compile_native_go_fuzzer github.com/notaryproject/notation-core-go/signature/cose FuzzSignatureCose FuzzSignatureCose
+compile_native_go_fuzzer github.com/notaryproject/notation-core-go/signature/jws FuzzSignatureJws FuzzSignatureJws
