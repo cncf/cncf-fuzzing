@@ -42,7 +42,7 @@ func FuzzServingV1RoundTripTypesToJSONExperimental(f *testing.F) {
 
 var FuzzerFuncs = []interface{}{
 	func(s *ConfigurationStatus, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(s) // fuzz the status object
+		_ = c.F.GenerateWithCustom(s) // fuzz the status object
 
 		// Clear the random fuzzed condition
 		s.Status.SetConditions(nil)
@@ -53,7 +53,7 @@ var FuzzerFuncs = []interface{}{
 		return err
 	},
 	func(s *RevisionStatus, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(s) // fuzz the status object
+		_ = c.F.GenerateWithCustom(s) // fuzz the status object
 
 		// Clear the random fuzzed condition
 		s.Status.SetConditions(nil)
@@ -64,7 +64,7 @@ var FuzzerFuncs = []interface{}{
 		return err
 	},
 	func(s *RouteStatus, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(s) // fuzz the status object
+		_ = c.F.GenerateWithCustom(s) // fuzz the status object
 
 		// Clear the random fuzzed condition
 		s.Status.SetConditions(nil)
@@ -75,7 +75,7 @@ var FuzzerFuncs = []interface{}{
 		return err
 	},
 	func(s *ServiceStatus, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(s) // fuzz the status object
+		_ = c.F.GenerateWithCustom(s) // fuzz the status object
 
 		// Clear the random fuzzed condition
 		s.Status.SetConditions(nil)
@@ -86,7 +86,7 @@ var FuzzerFuncs = []interface{}{
 		return err
 	},
 	func(ps *corev1.PodSpec, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(ps)
+		_ = c.F.GenerateWithCustom(ps)
 
 		if len(ps.Containers) == 0 {
 			// There must be at least 1 container.

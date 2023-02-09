@@ -44,7 +44,7 @@ func FuzzDuckV1beta1RoundTripTypesToJSONExperimental(f *testing.F) {
 
 var FuzzerFuncs = []interface{}{
 	func(status *Status, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(status) // fuzz the source
+		_ = c.F.GenerateWithCustom(status) // fuzz the source
 		status.SetConditions(testConditions)
 		err := roundtrip.FuzzConditions(status, c)
 		return err
