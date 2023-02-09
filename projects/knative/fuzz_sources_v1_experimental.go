@@ -47,7 +47,7 @@ func FuzzSourcesRoundTripTypesToJSONExperimental(f *testing.F) {
 func SourcesFuzzerFuncs() []interface{} {
         return []interface{}{
                 func(source *ApiServerSource, c fuzz.Continue) error {
-                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        _ = c.F.GenerateWithCustom(source) // fuzz the source
                         // Clear the random fuzzed condition
                         source.Status.SetConditions(nil)
 
@@ -57,7 +57,7 @@ func SourcesFuzzerFuncs() []interface{} {
                         return err
                 },
                 func(source *PingSource, c fuzz.Continue) error {
-                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        _ = c.F.GenerateWithCustom(source) // fuzz the source
                         // Clear the random fuzzed condition
                         source.Status.SetConditions(nil)
 
@@ -67,7 +67,7 @@ func SourcesFuzzerFuncs() []interface{} {
                         return err
                 },
                 func(source *ContainerSource, c fuzz.Continue) error {
-                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        _ = c.F.GenerateWithCustom(source) // fuzz the source
                         // Clear the random fuzzed condition
                         source.Status.SetConditions(nil)
 
@@ -77,7 +77,7 @@ func SourcesFuzzerFuncs() []interface{} {
                         return err
                 },
                 func(source *SinkBinding, c fuzz.Continue) error {
-                        _ = c.F.GenerateStruct(source) // fuzz the source
+                        _ = c.F.GenerateWithCustom(source) // fuzz the source
                         // Clear the random fuzzed condition
                         source.Status.SetConditions(nil)
 

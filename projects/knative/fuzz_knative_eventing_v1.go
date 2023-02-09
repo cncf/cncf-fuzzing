@@ -41,7 +41,7 @@ func FuzzEventingRoundTripTypesToJSONExperimental(f *testing.F) {
 
 var FuzzerFuncs = []interface{}{
 	func(s *TriggerStatus, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(s) // fuzz the source
+		_ = c.F.GenerateWithCustom(s) // fuzz the source
 		// Clear the random fuzzed condition
 		s.Status.SetConditions(nil)
 
@@ -51,7 +51,7 @@ var FuzzerFuncs = []interface{}{
 		return err
 	},
 	func(s *BrokerStatus, c fuzz.Continue) error {
-		_ = c.F.GenerateStruct(s) // fuzz the source
+		_ = c.F.GenerateWithCustom(s) // fuzz the source
 		// Clear the random fuzzed condition
 		s.Status.SetConditions(nil)
 
