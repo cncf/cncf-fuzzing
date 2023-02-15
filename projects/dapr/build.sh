@@ -23,3 +23,7 @@ go mod tidy
 
 cp $CNCFFuzzing/fuzz_expr_test.go $SRC/dapr/pkg/expr/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/expr FuzzExprDecodeString FuzzExprDecodeString
+
+cp $CNCFFuzzing/fuzz_messaging_test.go $SRC/dapr/pkg/messaging/
+mv $SRC/dapr/pkg/messaging/direct_messaging_test.go $SRC/dapr/pkg/messaging/direct_messaging_test_fuzz.go 
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/messaging FuzzInvokeRemote FuzzInvokeRemote
