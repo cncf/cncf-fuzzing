@@ -44,7 +44,7 @@ func FuzzDuckV1RoundTripTypesToJSONExperimental(f *testing.F) {
 
 var FuzzerFuncs = []interface{}{
 	func(status *Status, c fuzz.Continue) error {
-		_ = c.F.GenerateWithCustom(source) // fuzz the source
+		_ = c.F.GenerateWithCustom(status) // fuzz the source
 		// Clear the random fuzzed condition
 		status.SetConditions(testConditions)
 		err := roundtrip.FuzzConditions(status, c)
