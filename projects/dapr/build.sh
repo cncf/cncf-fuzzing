@@ -28,6 +28,7 @@ cp $CNCFFuzzing/fuzz_messaging_test.go $SRC/dapr/pkg/messaging/
 mv $SRC/dapr/pkg/messaging/direct_messaging_test.go $SRC/dapr/pkg/messaging/direct_messaging_test_fuzz.go 
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/messaging FuzzInvokeRemote FuzzInvokeRemote
 
+cp $CNCFFuzzing/fuzz_actors_test.go $SRC/dapr/pkg/actors/
 cp $SRC/dapr/pkg/actors/actors_test.go $SRC/dapr/pkg/actors/actors_test_fuzz.go
 cp $SRC/dapr/pkg/actors/actor_test.go $SRC/dapr/pkg/actors/actor_test_fuzz.go
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/actors FuzzActorsRuntime FuzzActorsRuntime
