@@ -30,6 +30,10 @@ compile_native_go_fuzzer github.com/dapr/dapr/pkg/injector FuzzHandleRequest Fuz
 cp $CNCFFuzzing/fuzz_placement_raft_test.go $SRC/dapr/pkg/placement/raft/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/placement/raft FuzzFSMPlacementState FuzzFSMPlacementState
 
+mv $SRC/dapr/pkg/runtime/runtime_test.go $SRC/dapr/pkg/runtime/runtime_test_fuzz.go
+cp $CNCFFuzzing/fuzz_runtime_test.go $SRC/dapr/pkg/runtime/
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/runtime FuzzDaprRuntime FuzzDaprRuntime
+
 cp $CNCFFuzzing/fuzz_messaging_test.go $SRC/dapr/pkg/messaging/
 mv $SRC/dapr/pkg/messaging/direct_messaging_test.go $SRC/dapr/pkg/messaging/direct_messaging_test_fuzz.go 
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/messaging FuzzInvokeRemote FuzzInvokeRemote
