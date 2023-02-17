@@ -19,13 +19,15 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	stdTesting "testing"
 
-	"github.com/phayes/freeport"
-	"google.golang.org/grpc"
+	grpc "google.golang.org/grpc"
+
+	grpcMetadata "google.golang.org/grpc/metadata"
 
 	invokev1 "github.com/dapr/dapr/pkg/messaging/v1"
 	commonv1pb "github.com/dapr/dapr/pkg/proto/common/v1"
+	v1 "github.com/dapr/dapr/pkg/proto/common/v1"
+	internalv1pb "github.com/dapr/dapr/pkg/proto/internals/v1"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
@@ -34,32 +36,88 @@ var (
 	messaging *directMessaging
 )
 
-func prepareEnvironment(t *stdTesting.T, enableStreaming bool, chunks []string) (*directMessaging, func()) {
-	port, err := freeport.GetFreePort()
-	if err != nil {
-		panic(err)
-	}
-	server := startInternalServer(port, enableStreaming, chunks)
-	clientConn := createTestClient(port)
-
-	messaging := NewDirectMessaging(NewDirectMessagingOpts{
-		MaxRequestBodySize: 10 << 20,
-		ClientConnFn: func(ctx context.Context, address string, id string, namespace string, customOpts ...grpc.DialOption) (*grpc.ClientConn, func(destroy bool), error) {
-			return clientConn, func(_ bool) {}, nil
-		},
-		IsStreamingEnabled: true,
-	}).(*directMessaging)
-
-	teardown := func() {
-		server.Stop()
-		clientConn.Close()
-	}
-
-	return messaging, teardown
+type fakeStream struct {
+	ff  *fuzz.ConsumeFuzzer
+	ctx context.Context
 }
 
-func init() {
-	messaging, _ = prepareEnvironment(&stdTesting.T{}, true, nil)
+func (f *fakeStream) Context() context.Context {
+	if f.ctx == nil {
+		return context.Background()
+	}
+	return f.ctx
+}
+
+func (f *fakeStream) Header() (grpcMetadata.MD, error) {
+	md := make(grpcMetadata.MD)
+	err := f.ff.FuzzMap(&md)
+	return md, err
+}
+
+func (f *fakeStream) SetHeader(grpcMetadata.MD) error {
+	return nil
+}
+
+func (f *fakeStream) SendHeader(grpcMetadata.MD) error {
+	return nil
+}
+
+func (f *fakeStream) SetTrailer(grpcMetadata.MD) {
+}
+
+func (f *fakeStream) Trailer() grpcMetadata.MD {
+	md := make(grpcMetadata.MD)
+	f.ff.FuzzMap(&md)
+	return md
+}
+
+func (f *fakeStream) SendMsg(m any) error {
+	return nil
+}
+
+func (f *fakeStream) RecvMsg(chunk interface{}) error {
+	resp := &internalv1pb.InternalInvokeResponse{}
+	payload := &v1.StreamPayload{}
+	f.ff.GenerateStruct(resp)
+	f.ff.GenerateStruct(payload)
+	chunk.(*internalv1pb.InternalInvokeResponseStream).Response = resp
+	chunk.(*internalv1pb.InternalInvokeResponseStream).Payload = payload
+	return nil
+}
+
+func (f *fakeStream) CloseSend() error {
+	return nil
+}
+
+func (f *fakeStream) Send(*internalv1pb.InternalInvokeRequestStream) error {
+	panic("Not implemented")
+	return nil
+}
+
+func (f *fakeStream) Recv() (*internalv1pb.InternalInvokeResponseStream, error) {
+	panic("Not implemented")
+	return &internalv1pb.InternalInvokeResponseStream{}, nil
+}
+
+type serviceInvocationClientForFuzing struct {
+	ff *fuzz.ConsumeFuzzer
+}
+
+func (c *serviceInvocationClientForFuzing) CallActor(ctx context.Context, in *internalv1pb.InternalInvokeRequest, opts ...grpc.CallOption) (*internalv1pb.InternalInvokeResponse, error) {
+	panic("Not implemented")
+	return &internalv1pb.InternalInvokeResponse{}, nil
+}
+
+func (c *serviceInvocationClientForFuzing) CallLocal(ctx context.Context, in *internalv1pb.InternalInvokeRequest, opts ...grpc.CallOption) (*internalv1pb.InternalInvokeResponse, error) {
+	panic("Not implemented")
+	return &internalv1pb.InternalInvokeResponse{}, nil
+}
+
+func (c *serviceInvocationClientForFuzing) CallLocalStream(ctx context.Context, opts ...grpc.CallOption) (internalv1pb.ServiceInvocation_CallLocalStreamClient, error) {
+	return &fakeStream{
+		ff:  c.ff,
+		ctx: context.Background(),
+	}, nil
 }
 
 func FuzzInvokeRemote(f *testing.F) {
@@ -75,6 +133,10 @@ func FuzzInvokeRemote(f *testing.F) {
 			WithRawDataBytes(data3).
 			WithActor(actorType, actorID).
 			WithMetadata(md)
-		_, _, _ = messaging.invokeRemote(context.Background(), "app1", "namespace1", "addr1", r)
+		d := &directMessaging{}
+		c := &serviceInvocationClientForFuzing{
+			ff: ff,
+		}
+		_, _ = d.invokeRemoteStream(context.Background(), c, r, "appID", nil)
 	})
 }
