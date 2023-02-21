@@ -18,6 +18,7 @@ package verifier
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -39,24 +40,52 @@ var (
 		2: "audit",
 		3: "skip",
 	}
-	separators = []string{".", "/", "-"}
-	scopeChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-_/.:"
+	defaultVerificationLevel = "audit"
+	separators               = []string{".", "/", "-"}
+	scopeChars               = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789-_/.:[]@"
 )
 
 func createScope(ff *fuzz.ConsumeFuzzer) (string, error) {
+	var b strings.Builder
+	var noOfChars int
 	noOfChars, err := ff.GetInt()
+	if noOfChars == 0 {
+		noOfChars = 10
+	}
 	if err != nil {
-		return "", err
+		return "domain.com/my/repository", err
 	}
 	str, err := ff.GetStringFrom(scopeChars, noOfChars)
 	if err != nil {
-		return "", err
+		return "domain.com/my/repository", err
 	}
-	err = validateRegistryScopeFormat(str)
-	if err != nil {
-		return "", err
+	b.WriteString(str)
+	if !strings.Contains(str, ".") {
+		b.WriteString(".com/")
+
+		noOfChars, err = ff.GetInt()
+		if noOfChars == 0 {
+			noOfChars = 10
+		}
+		repoStr1, err := ff.GetStringFrom(scopeChars, noOfChars)
+		if err != nil {
+			return "domain.com/my/repository", err
+		}
+		b.WriteString(repoStr1)
+		b.WriteString("/")
+
+		noOfChars, err = ff.GetInt()
+		if noOfChars == 0 {
+			noOfChars = 10
+		}
+		repoStr2, err := ff.GetStringFrom(scopeChars, noOfChars)
+		if err != nil {
+			return "domain.com/my/repository", err
+		}
+		b.WriteString(repoStr2)
 	}
-	return str, nil
+
+	return b.String(), nil
 
 }
 
@@ -80,12 +109,15 @@ func validateRegistryScopeFormat(scope string) error {
 }
 
 func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) {
-	name, err := ff.GetString()
+	var name string
+	var noOfChars int
+	noOfChars, err := ff.GetInt()
+	if err != nil || noOfChars == 0 {
+		noOfChars = 10
+	}
+	name, err = ff.GetStringFrom(scopeChars, noOfChars)
 	if err != nil {
 		return trustpolicy.TrustPolicy{}, err
-	}
-	if name == "" {
-		return trustpolicy.TrustPolicy{}, fmt.Errorf("name cannot be empty")
 	}
 	registryScopes := make([]string, 0)
 	// create trust stores according to the v2 specification
@@ -102,6 +134,11 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 		if err != nil {
 			return trustpolicy.TrustPolicy{}, err
 		}
+		err = validateRegistryScopeFormat(registryScope)
+		if err != nil {
+			return trustpolicy.TrustPolicy{}, err
+		}
+
 		registryScopes = append(registryScopes, registryScope)
 	}
 
@@ -133,27 +170,33 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 			var b strings.Builder
 			addCA, err := ff.GetBool()
 			if err != nil {
-				return trustpolicy.TrustPolicy{}, err
+				break
 			}
+
+			trustStoreLength, err := ff.GetInt()
+			if err != nil {
+				break
+			}
+			trustStoreName, err := ff.GetStringFrom(scopeChars, trustStoreLength)
+			if err != nil {
+				break
+			}
+			if !file.IsValidFileName(trustStoreName) {
+				continue
+			}
+
 			if addCA {
 				b.WriteString("ca")
 			} else {
 				b.WriteString("signingAuthority")
 			}
 			b.WriteString(":")
-			trustStoreLength, err := ff.GetInt()
-			if err != nil {
-				return trustpolicy.TrustPolicy{}, err
-			}
-			trustStoreName, err := ff.GetStringFrom(scopeChars, trustStoreLength)
-			if err != nil {
-				return trustpolicy.TrustPolicy{}, err
-			}
-			if !file.IsValidFileName(trustStoreName) {
-				continue
-			}
 			b.WriteString(trustStoreName)
 			trustStores = append(trustStores, b.String())
+		}
+
+		if len(trustStores) < 3 {
+			return trustpolicy.TrustPolicy{}, fmt.Errorf("Could not create truststores")
 		}
 
 		// trusted identities
@@ -169,7 +212,7 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 			var b strings.Builder
 			addX509Subject, err := ff.GetBool()
 			if err != nil {
-				return trustpolicy.TrustPolicy{}, err
+				break
 			}
 
 			var identityPrefix string
@@ -178,19 +221,22 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 			} else {
 				identityPrefix, err = ff.GetString()
 				if err != nil {
-					return trustpolicy.TrustPolicy{}, err
+					break
 				}
 			}
 			b.WriteString(identityPrefix)
 			b.WriteString(":")
 			identityValue, err := ff.GetString()
 			if err != nil {
-				return trustpolicy.TrustPolicy{}, err
+				break
+			}
+			if identityValue == "" {
+				continue
 			}
 			b.WriteString(identityValue)
 			trustedIdentities = append(trustedIdentities, b.String())
 		}
-		if len(trustStores) == 0 || len(trustedIdentities) == 0 {
+		if len(trustStores) < 2 || len(trustedIdentities) < 2 {
 			return trustpolicy.TrustPolicy{}, fmt.Errorf("Invalid configurations")
 		}
 	}
@@ -200,6 +246,7 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 	if err != nil {
 		return trustpolicy.TrustPolicy{}, err
 	}
+	//fmt.Println("here3")
 	sv.VerificationLevel = verificationLevelName
 	return trustpolicy.TrustPolicy{
 		Name:                  name,
@@ -223,7 +270,11 @@ func createTrustPolicies(ff *fuzz.ConsumeFuzzer) ([]trustpolicy.TrustPolicy, err
 	for i := 0; i < numberOfPolicies; i++ {
 		policy, err := createTrustPolicy(ff)
 		if err != nil {
-			return policies, err
+			if len(policies) > 1 {
+				return policies, nil
+			} else {
+				return policies, err
+			}
 		}
 		policies = append(policies, policy)
 	}
@@ -234,22 +285,37 @@ func createTrustPolicies(ff *fuzz.ConsumeFuzzer) ([]trustpolicy.TrustPolicy, err
 }
 
 func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error) {
-	artifactReference1, err := ff.GetString()
+	var scope string
+	var i int
+	scope, err := createScope(ff)
 	if err != nil {
 		return notation.RemoteVerifyOptions{}, err
 	}
-	artifactReference2, err := ff.GetString()
+
+	i = strings.LastIndex(scope, "@")
+	if i < 0 {
+		var b strings.Builder
+		b.WriteString(scope)
+		b.WriteString("@")
+		noOfChars, err := ff.GetInt()
+		if err != nil || noOfChars == 0 {
+			noOfChars = 10
+		}
+		name2, err := ff.GetStringFrom(scopeChars, noOfChars)
+		if err != nil {
+			return notation.RemoteVerifyOptions{}, err
+		}
+		b.WriteString(name2)
+		scope = b.String()
+		i = strings.LastIndex(scope, "@")
+	}
+
+	artifactPath := scope[:i]
+	err = validateRegistryScopeFormat(artifactPath)
 	if err != nil {
 		return notation.RemoteVerifyOptions{}, err
 	}
-	var b strings.Builder
-	b.WriteString(artifactReference1)
-	b.WriteString("@")
-	b.WriteString(artifactReference2)
-	err = validateRegistryScopeFormat(b.String())
-	if err != nil {
-		return notation.RemoteVerifyOptions{}, err
-	}
+
 	pluginConfig := make(map[string]string)
 	err = ff.FuzzMap(&pluginConfig)
 	if err != nil {
@@ -260,7 +326,7 @@ func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error)
 		return notation.RemoteVerifyOptions{}, err
 	}
 	return notation.RemoteVerifyOptions{
-		ArtifactReference:    b.String(),
+		ArtifactReference:    scope,
 		PluginConfig:         pluginConfig,
 		MaxSignatureAttempts: maxSignatureAttempts,
 	}, nil
@@ -277,10 +343,12 @@ func FuzzVerify(f *testing.F) {
 			Version:       "1.0",
 			TrustPolicies: policies,
 		}
+
 		err = policyDoc.Validate()
 		if err != nil {
 			t.Skip()
 		}
+
 		opts, err := createOptions(ff)
 		if err != nil {
 			t.Skip()
@@ -293,6 +361,16 @@ func FuzzVerify(f *testing.F) {
 		if err != nil {
 			t.Skip()
 		}
-		_, _, _ = notation.Verify(context.Background(), v, mock.NewRepository(), opts)
+
+		trustPolicy, err := policyDoc.GetApplicableTrustPolicy(opts.ArtifactReference)
+		if err != nil {
+			t.Skip()
+		}
+		verificationLevel, _ := trustPolicy.SignatureVerification.GetVerificationLevel()
+		if reflect.DeepEqual(verificationLevel, trustpolicy.LevelSkip) {
+			_, _, _ = notation.Verify(context.Background(), v, nil, opts)
+		} else {
+			_, _, _ = notation.Verify(context.Background(), v, mock.NewRepository(), opts)
+		}
 	})
 }
