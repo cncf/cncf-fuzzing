@@ -62,6 +62,7 @@ compile_native_go_fuzzer github.com/theupdateframework/notary/server/storage Fuz
 
 cd $SRC/notation-go
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_verification.go" $SRC/notation-go/verifier/
+mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_pkix_test.go" $SRC/notation-go/internal/pkix/
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_notation_artifactref_parsing.go" $SRC/notation-go/
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_trustpolicy.go" $SRC/notation-go/verifier/trustpolicy/
 printf "package verifier\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > verifier/registerfuzzdep.go
@@ -70,6 +71,8 @@ go mod tidy
 compile_native_go_fuzzer github.com/notaryproject/notation-go/verifier FuzzVerify FuzzVerify
 compile_native_go_fuzzer github.com/notaryproject/notation-go/verifier/trustpolicy FuzzDocumentValidate FuzzDocumentValidate
 compile_native_go_fuzzer github.com/notaryproject/notation-go FuzzArtifactReferenceParsing FuzzArtifactReferenceParsing
+compile_native_go_fuzzer github.com/notaryproject/notation-go/internal/pkix FuzzParseDistinguishedName FuzzParseDistinguishedName
+
 
 cd $SRC
 git clone --depth=1 https://github.com/notaryproject/notation-core-go
