@@ -43,7 +43,7 @@ func init() {
 func FuzzActorsRuntime(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte, apiCall int) {
 		ff := fuzz.NewConsumer(data)
-		switch apiCall % 3 {
+		switch apiCall % 10 {
 		case 0:
 			r := &RenameReminderRequest{}
 			ff.GenerateStruct(r)
@@ -81,6 +81,55 @@ func FuzzActorsRuntime(f *testing.F) {
 				WithMetadata(md)
 
 			_, _ = testActorsRuntime.Call(context.Background(), r)
+		case 3:
+			r := &GetStateRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.GetState(context.Background(), r)
+		case 4:
+			r := &TransactionalRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.TransactionalStateOperation(context.Background(), r)
+		case 5:
+			r := &ActorHostedRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.IsActorHosted(context.Background(), r)
+		case 6:
+			r := &CreateReminderRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.CreateReminder(context.Background(), r)
+		case 7:
+			r := &CreateTimerRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.CreateTimer(context.Background(), r)
+		case 8:
+			r := &DeleteTimerRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.DeleteTimer(context.Background(), r)
+		case 9:
+			r := &RenameReminderRequest{}
+			err := ff.GenerateStruct(r)
+			if err != nil {
+				return
+			}
+			testActorsRuntime.RenameReminder(context.Background(), r)
 		}
 	})
 }
