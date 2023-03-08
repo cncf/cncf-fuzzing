@@ -54,9 +54,8 @@ compile_go_fuzzer github.com/cilium/cilium/proxylib/cassandra FuzzMultipleParser
 rm $SRC/cilium/pkg/lock/lock_debug.go
 
 cd $SRC && git clone https://github.com/AdamKorcz/instrumentation
-cd instrumentation
 cd $SRC/instrumentation
-go run main.go $SRC/cilium
+go run main.go --target_dir=$SRC/cilium
 
 cd $SRC/cilium
 go mod tidy && go mod vendor
