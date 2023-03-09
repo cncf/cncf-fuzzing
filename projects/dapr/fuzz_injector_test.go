@@ -81,12 +81,15 @@ func FuzzHandleRequest(f *testing.F) {
 			return
 		}
 		r.Header.Add("Content-Type", runtime.ContentTypeJSON)
-		i := NewInjector([]string{"authID"}, Config{
+		i, err := NewInjector([]string{"authID"}, Config{
 			TLSCertFile:  "test-cert",
 			TLSKeyFile:   "test-key",
 			SidecarImage: "test-image",
 			Namespace:    "test-ns",
 		}, fake.NewSimpleClientset(), kubernetesfake.NewSimpleClientset())
+		if err != nil {
+			panic(err)
+		}
 
 		i.(*injector).handleRequest(MockWriter{}, r)
 	})
