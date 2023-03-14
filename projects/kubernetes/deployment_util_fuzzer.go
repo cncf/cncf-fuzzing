@@ -16,10 +16,12 @@
 package util
 
 import (
+	"context"
 	apps "k8s.io/api/apps/v1"
 	intstrutil "k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/informers"
+	"k8s.io/klog/v2"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
@@ -181,7 +183,7 @@ func FuzzSetNewReplicaSetAnnotations(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	SetNewReplicaSetAnnotations(deployment, newRS, newRevision, exists, revHistoryLimitInChars)
+	SetNewReplicaSetAnnotations(context.Background(), deployment, newRS, newRevision, exists, revHistoryLimitInChars)
 	return 1
 }
 
@@ -224,7 +226,7 @@ func FuzzGetDesiredReplicasAnnotation(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_, _ = GetDesiredReplicasAnnotation(rs)
+	_, _ = GetDesiredReplicasAnnotation(klog.FromContext(context.Background()), rs)
 	return 1
 }
 
@@ -319,7 +321,7 @@ func FuzzGetProportion(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = GetProportion(rs, deployment, int32(deploymentReplicasToAdd), int32(deploymentReplicasAdded))
+	_ = GetProportion(klog.FromContext(context.Background()), rs, deployment, int32(deploymentReplicasToAdd), int32(deploymentReplicasAdded))
 	return 1
 }
 
