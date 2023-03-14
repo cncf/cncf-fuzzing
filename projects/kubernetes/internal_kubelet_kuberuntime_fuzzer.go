@@ -16,6 +16,7 @@
 package kuberuntime
 
 import (
+	"context"
 	v1 "k8s.io/api/core/v1"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 
@@ -38,6 +39,6 @@ func FuzzKubeRuntime(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = m.computePodActions(pod, status)
+	_ = m.computePodActions(context.Background(), pod, status)
 	return 1
 }

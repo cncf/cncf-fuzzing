@@ -19,30 +19,15 @@ set -o pipefail
 set -o errexit
 set -x
 
-# install Go 1.19
-#############################################################################
-apt-get update && apt-get install -y wget
-cd $SRC
-wget https://go.dev/dl/go1.19.4.linux-amd64.tar.gz
-
-
-mkdir temp-go
-rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.19.4.linux-amd64.tar.gz
-mv temp-go/go/* /root/.go/
-#############################################################################
-
 # Add more sanitizers
 #############################################################################
-cd $SRC
-git clone --depth=1 https://github.com/AdamKorcz/instrumentation
-cd instrumentation
-go run main.go $SRC/kubernetes
+cd $SRC/instrumentation
+go run main.go --target_dir=$SRC/kubernetes
 cd $SRC
 #############################################################################
 
 cd $SRC/kubernetes
-go get github.com/AdaLogics/go-fuzz-headers@latest
+go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@22e92b7968997eabd210694dd4825dd0d19b697c
 
 # Create fuzzers for all marshaling and unmarshaling routines
 #############################################################################

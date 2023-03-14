@@ -62,7 +62,7 @@ func FuzzSyncPod(data []byte) int {
 	pod.Annotations[kubetypes.ConfigSourceAnnotationKey] = "file"
 	pods := []*v1.Pod{pod, pod2}
 	kl.podManager.SetPods(pods)
-	_, _ = kl.syncPod(context.Background(), syncType, pod, nil, &kubecontainer.PodStatus{})
+	_, _ = kl.SyncPod(context.Background(), syncType, pod, nil, &kubecontainer.PodStatus{})
 	return 1
 }
 
