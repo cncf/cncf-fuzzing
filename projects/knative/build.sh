@@ -45,6 +45,10 @@ compile_native_go_fuzzer knative.dev/pkg/websocket FuzzDurableConnection FuzzDur
 compile_native_go_fuzzer knative.dev/pkg/websocket FuzzReceiveMessage FuzzReceiveMessage
 
 # serving fuzzers
+
+# use dependency with fix for a crash
+cd $SRC
+git clone --depth=1 --branch=parser-fix1 https://github.com/AdamKorcz/cron
 cp $CNCFFuzzing/fuzz_activatornet.go $SRC/serving/pkg/activator/net/
 cp $CNCFFuzzing/fuzz_knative_pkg_serving_v1.go $SRC/serving/pkg/apis/serving/v1/
 cd $SRC/serving
@@ -52,6 +56,7 @@ cp $CNCFFuzzing/fuzz_validation.go $SRC/serving/pkg/apis/serving/v1/
 mv pkg/activator/net/throttler_test.go pkg/activator/net/throttler_test_fuzz.go
 mv pkg/activator/net/revision_backends_test.go pkg/activator/net/revision_backends_test_fuzz.go
 printf "package net\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/serving/pkg/activator/net/registerfuzzdep.go
+go mod edit -replace github.com/robfig/cron/v3=$SRC/cron
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy && go mod vendor
 compile_native_go_fuzzer knative.dev/serving/pkg/activator/net FuzzNewRevisionThrottler FuzzNewRevisionThrottler
