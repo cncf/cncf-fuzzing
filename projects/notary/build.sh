@@ -65,6 +65,7 @@ mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_verification.go" $SRC/notation-go/v
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_pkix_test.go" $SRC/notation-go/internal/pkix/
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_notation_artifactref_parsing.go" $SRC/notation-go/
 mv "${SRC}/cncf-fuzzing/projects/notary/fuzz_trustpolicy.go" $SRC/notation-go/verifier/trustpolicy/
+mv ./verifier/helpers_test.go ./verifier/helpers_test_fuzz.go
 printf "package verifier\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > verifier/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy
