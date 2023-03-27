@@ -19,8 +19,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"reflect"
-	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -29,8 +27,10 @@ import (
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/internal/file"
 	"github.com/notaryproject/notation-go/internal/mock"
+	"github.com/notaryproject/notation-go/plugin"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	orasRegistry "oras.land/oras-go/v2/registry"
@@ -91,25 +91,6 @@ func createScope(ff *fuzz.ConsumeFuzzer) (string, error) {
 
 }
 
-func validateRegistryScopeFormat(scope string) error {
-	// Domain and Repository regexes are adapted from distribution implementation
-	// https://github.com/distribution/distribution/blob/main/reference/regexp.go#L31
-	domainRegexp := regexp.MustCompile(`^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])(?:(?:\.(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]))+)?(?::[0-9]+)?$`)
-	repositoryRegexp := regexp.MustCompile(`^[a-z0-9]+(?:(?:(?:[._]|__|[-]*)[a-z0-9]+)+)?(?:(?:/[a-z0-9]+(?:(?:(?:[._]|__|[-]*)[a-z0-9]+)+)?)+)?$`)
-	errorMessage := "registry scope %q is not valid, make sure it is the fully qualified registry URL without the scheme/protocol. e.g domain.com/my/repository"
-	domain, repository, found := strings.Cut(scope, "/")
-	if !found {
-		return fmt.Errorf(errorMessage, scope)
-	}
-
-	if domain == "" || repository == "" || !domainRegexp.MatchString(domain) || !repositoryRegexp.MatchString(repository) {
-		return fmt.Errorf(errorMessage, scope)
-	}
-
-	// No errors
-	return nil
-}
-
 func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) {
 	var name string
 	var noOfChars int
@@ -148,10 +129,6 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 			if err != nil {
 				return
 			}
-			/*err = validateRegistryScopeFormat(registryScope)
-			if err != nil {
-				return
-			}*/
 			m.Lock()
 			registryScopes = append(registryScopes, registryScope)
 			m.Unlock()
@@ -173,10 +150,6 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 	}
 
 	verificationLevelName := verificationLevels[veriLevel%len(verificationLevels)]
-	if verificationLevelName == "skip" {
-		fmt.Println("Another skip")
-		return trustpolicy.TrustPolicy{}, fmt.Errorf("Skipping skip leve")
-	}
 	if verificationLevelName != "skip" {
 
 		// create trust stores according to the v2 specification
@@ -285,7 +258,6 @@ func createTrustPolicy(ff *fuzz.ConsumeFuzzer) (trustpolicy.TrustPolicy, error) 
 	if err != nil || sv.VerificationLevel == trustpolicy.LevelSkip.Name {
 		sv = &trustpolicy.SignatureVerification{VerificationLevel: trustpolicy.LevelStrict.Name}
 	}
-	//fmt.Println("here3")
 	sv.VerificationLevel = verificationLevelName
 	return trustpolicy.TrustPolicy{
 		Name:                  name,
@@ -337,39 +309,8 @@ func createTrustPolicies(ff *fuzz.ConsumeFuzzer) ([]trustpolicy.TrustPolicy, err
 }
 
 func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error) {
-	var scope string
-	var i int
-	scope, err := createScope(ff)
-	if err != nil {
-		return notation.RemoteVerifyOptions{}, err
-	}
-
-	i = strings.LastIndex(scope, "@")
-	if i < 0 {
-		var b strings.Builder
-		b.WriteString(scope)
-		b.WriteString("@")
-		noOfChars, err := ff.GetInt()
-		if err != nil || noOfChars == 0 {
-			noOfChars = 10
-		}
-		name2, err := ff.GetStringFrom(scopeChars, noOfChars)
-		if err != nil {
-			return notation.RemoteVerifyOptions{}, err
-		}
-		b.WriteString(name2)
-		scope = b.String()
-		i = strings.LastIndex(scope, "@")
-	}
-
-	//artifactPath := scope[:i]
-	/*err = validateRegistryScopeFormat(artifactPath)
-	if err != nil {
-		return notation.RemoteVerifyOptions{}, err
-	}*/
-
 	pluginConfig := make(map[string]string)
-	err = ff.FuzzMap(&pluginConfig)
+	err := ff.FuzzMap(&pluginConfig)
 	if err != nil {
 		return notation.RemoteVerifyOptions{}, err
 	}
@@ -378,7 +319,7 @@ func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error)
 		return notation.RemoteVerifyOptions{}, err
 	}
 	return notation.RemoteVerifyOptions{
-		ArtifactReference:    scope,
+		ArtifactReference:    "",
 		PluginConfig:         pluginConfig,
 		MaxSignatureAttempts: maxSignatureAttempts,
 	}, nil
@@ -387,10 +328,21 @@ func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error)
 var (
 	ts             truststore.X509TrustStore
 	policyDocument = dummyPolicyDocument()
-	//vv, _ = New(&policyDocument, ts, mock.PluginManager{})
-	vv       *verifier
-	mockRepo = mock.NewRepository()
+	vv             *verifier
+	skv            *noSkipVerifier
+	mockRepo       = mock.NewRepository()
+	counter        = 0
 )
+
+type noSkipVerifier struct {
+	trustPolicyDoc *trustpolicy.Document
+	trustStore     truststore.X509TrustStore
+	pluginManager  plugin.Manager
+}
+
+func (v *noSkipVerifier) Verify(ctx context.Context, desc ocispec.Descriptor, signature []byte, opts notation.VerifyOptions) (*notation.VerificationOutcome, error) {
+	return vv.Verify(ctx, desc, signature, opts)
+}
 
 func init() {
 	os.Mkdir("fuzz-dir", 0750)
@@ -401,18 +353,11 @@ func init() {
 		trustStore:     ts,
 		pluginManager:  mock.PluginManager{},
 	}
-}
-
-func getArtifactPathFromReference(artifactReference string) (string, error) {
-	// TODO support more types of URI like "domain.com/repository",
-	// "domain.com/repository:tag"
-	i := strings.LastIndex(artifactReference, "@")
-	if i < 0 {
-		return "", fmt.Errorf("artifact URI %q could not be parsed, make sure it is the fully qualified OCI artifact URI without the scheme/protocol. e.g domain.com:80/my/repository@sha256:digest", artifactReference)
+	skv = &noSkipVerifier{
+		trustPolicyDoc: &policyDocument,
+		trustStore:     ts,
+		pluginManager:  mock.PluginManager{},
 	}
-
-	artifactPath := artifactReference[:i]
-	return artifactPath, nil
 }
 
 func FuzzVerify(f *testing.F) {
@@ -446,30 +391,6 @@ func FuzzVerify(f *testing.F) {
 			opts.MaxSignatureAttempts = 1
 		}
 
-		// Add the artifactPath to one of the policies
-		var newPolicies []trustpolicy.TrustPolicy
-		newPolicies = make([]trustpolicy.TrustPolicy, 0)
-		for i, p := range policies {
-			if i == 0 {
-				artifactPath, err := getArtifactPathFromReference(opts.ArtifactReference)
-				if err != nil {
-					return
-				}
-				rs := p.RegistryScopes
-				rs = append(rs, artifactPath)
-				newPolicies = append(newPolicies, trustpolicy.TrustPolicy{
-					Name:                  p.Name,
-					RegistryScopes:        p.RegistryScopes,
-					SignatureVerification: p.SignatureVerification,
-					TrustStores:           p.TrustStores,
-					TrustedIdentities:     p.TrustedIdentities,
-				})
-				continue
-			}
-			newPolicies = append(newPolicies, p)
-		}
-		policies = newPolicies
-
 		policyDoc := trustpolicy.Document{
 			Version:       "1.0",
 			TrustPolicies: policies,
@@ -479,24 +400,10 @@ func FuzzVerify(f *testing.F) {
 			t.Skip()
 		}
 		vv.trustPolicyDoc = &policyDoc
+		skv.trustPolicyDoc = &policyDoc
 
-		trustPolicy, err := policyDoc.GetApplicableTrustPolicy(opts.ArtifactReference)
-		if err != nil {
-			t.Skip()
-		}
-		verificationLevel, err := trustPolicy.SignatureVerification.GetVerificationLevel()
-		if err != nil {
-			return
-		}
-		if verificationLevel == trustpolicy.LevelSkip {
-			return
-		}
 		var err2 error
-		if reflect.DeepEqual(verificationLevel, trustpolicy.LevelSkip) {
-			return
-		} else {
-			_, _, err2 = notation.Verify(context.Background(), vv, mockRepo, opts)
-		}
+		_, _, err2 = notation.Verify(context.Background(), skv, mockRepo, opts)
 		if err2 != nil {
 			//fmt.Println("err2: ", err2)
 		}
