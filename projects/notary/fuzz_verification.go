@@ -422,8 +422,8 @@ func FuzzVerify(f *testing.F) {
 		if err != nil {
 			return
 		}
-		_, err = orasRegistry.ParseReference(artifactRef)
-		if err != nil {
+		ref, err := orasRegistry.ParseReference(artifactRef)
+		if err != nil || ref.Reference == "" {
 			return
 		}
 		policies, err := createTrustPolicies(ff)
