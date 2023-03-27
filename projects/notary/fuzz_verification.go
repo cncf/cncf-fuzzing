@@ -360,29 +360,93 @@ func init() {
 	}
 }
 
+func getArtifactPathFromReference(artifactReference string) (string, error) {
+	i := strings.LastIndex(artifactReference, "@")
+	if i < 0 {
+		return "", fmt.Errorf("Wrong format")
+	}
+	artifactPath := artifactReference[:i]
+	return artifactPath, nil
+}
+
 func FuzzVerify(f *testing.F) {
 	f.Fuzz(func(t *testing.T, policyDocBytes []byte) {
+		var (
+			wg            sync.WaitGroup
+			m             sync.Mutex
+			artifactError error
+			policiesError error
+			optsError     error
+			artifactRef   string
+			policies      []trustpolicy.TrustPolicy
+			opts          notation.RemoteVerifyOptions
+		)
 		ff := fuzz.NewConsumer(policyDocBytes)
 		artifactRef, err := ff.GetString()
 		if err != nil {
 			return
 		}
-		ref, err := orasRegistry.ParseReference(artifactRef)
-		if err != nil || ref.Reference == "" {
-			return
+		if !strings.Contains(artifactRef, "@") {
+			added, err := ff.GetString()
+			if err != nil {
+				return
+			}
+			var sb strings.Builder
+			sb.WriteString(artifactRef)
+			sb.WriteString("@")
+			sb.WriteString(added)
+			artifactRef = sb.String()
 		}
-		policies, err := createTrustPolicies(ff)
+
+		policyBytes, err := ff.GetBytes()
 		if err != nil {
-			t.Skip()
-		}
-		policiesLen := len(policies)
-		if policiesLen == 0 {
 			return
 		}
 
-		opts, err := createOptions(ff)
+		optionsBytes, err := ff.GetBytes()
 		if err != nil {
-			t.Skip()
+			return
+		}
+
+		wg.Add(3)
+		go func(artifactRef string) {
+			defer wg.Done()
+			ref, err := orasRegistry.ParseReference(artifactRef)
+			if err != nil || ref.Reference == "" {
+				artifactError = fmt.Errorf("Invalid artifactRef")
+				return
+			}
+		}(artifactRef)
+
+		ff2 := fuzz.NewConsumer(policyBytes)
+		go func(ff *fuzz.ConsumeFuzzer) {
+			defer wg.Done()
+			var err error
+			m.Lock()
+			defer m.Unlock()
+			policies, err = createTrustPolicies(ff)
+			if err != nil || len(policies) == 0 {
+				policiesError = fmt.Errorf("Could not create policies")
+				return
+			}
+		}(ff2)
+
+		ff3 := fuzz.NewConsumer(optionsBytes)
+		go func(ff *fuzz.ConsumeFuzzer) {
+			defer wg.Done()
+			var err error
+			m.Lock()
+			defer m.Unlock()
+			opts, err = createOptions(ff)
+			if err != nil {
+				optsError = fmt.Errorf("Optserror")
+				return
+			}
+		}(ff3)
+
+		wg.Wait()
+		if artifactError != nil || policiesError != nil || optsError != nil {
+			return
 		}
 		opts.ArtifactReference = artifactRef
 
@@ -390,6 +454,29 @@ func FuzzVerify(f *testing.F) {
 		if opts.MaxSignatureAttempts == 0 {
 			opts.MaxSignatureAttempts = 1
 		}
+
+		var newPolicies []trustpolicy.TrustPolicy
+		newPolicies = make([]trustpolicy.TrustPolicy, 0)
+		for i, p := range policies {
+			if i == 0 {
+				artifactPath, err := getArtifactPathFromReference(opts.ArtifactReference)
+				if err != nil {
+					return
+				}
+				rs := p.RegistryScopes
+				rs = append(rs, artifactPath)
+				newPolicies = append(newPolicies, trustpolicy.TrustPolicy{
+					Name:                  p.Name,
+					RegistryScopes:        p.RegistryScopes,
+					SignatureVerification: p.SignatureVerification,
+					TrustStores:           p.TrustStores,
+					TrustedIdentities:     p.TrustedIdentities,
+				})
+				continue
+			}
+			newPolicies = append(newPolicies, p)
+		}
+		policies = newPolicies
 
 		policyDoc := trustpolicy.Document{
 			Version:       "1.0",
