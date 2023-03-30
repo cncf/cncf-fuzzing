@@ -2,7 +2,9 @@ package net
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"runtime/debug"
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -34,6 +36,14 @@ func NewFuzzLogger() *zap.SugaredLogger {
 
 func FuzzNewRevisionThrottler(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("fatal error: out of memory")
+				debug.PrintStack()
+				panic("fatal error: out of memory")
+
+			}
+		}()
 		ff := fuzz.NewConsumer(data)
 
 		ip1, err := ff.GetString()
