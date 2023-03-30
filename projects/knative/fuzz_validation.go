@@ -17,6 +17,8 @@ package v1
 
 import (
 	"context"
+	"fmt"
+	"runtime/debug"
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -65,6 +67,14 @@ var (
 
 func FuzzValidation(f *testing.F) {
 	f.Fuzz(func(t *testing.T, objectBytes []byte, sr string, typeToTest int) {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("fatal error: out of memory")
+				debug.PrintStack()
+				panic("fatal error: out of memory")
+
+			}
+		}()
 		ff := fuzz.NewConsumer(objectBytes)
 
 		switch types[typeToTest%len(types)] {
