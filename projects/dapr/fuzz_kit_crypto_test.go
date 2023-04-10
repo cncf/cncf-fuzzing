@@ -18,6 +18,7 @@ package crypto
 import (
 	"bytes"
 	"testing"
+	"github.com/lestrrat-go/jwx/v2/jwk"
 )
 
 func FuzzCryptoKeys(f *testing.F) {
@@ -43,4 +44,27 @@ func FuzzCryptoKeys(f *testing.F) {
 			panic("Serialization issue")
 		}
 	})
+}
+
+func FuzzSymmetric(f *testing.F) {
+        f.Fuzz(func(t *testing.T, plaintext []byte, algorithm int, keyData []byte, nonce []byte, associatedData []byte) {
+                key, err := jwk.ParseKey(keyData)
+                if err != nil {
+                        return
+                }
+                algorithms := SupportedSymmetricAlgorithms()
+                a := algorithms[algorithm%len(algorithms)]
+                ciphertext, tag, err := EncryptSymmetric(plaintext, a, key, nonce, associatedData)
+                if err != nil {
+                        return
+                }
+
+                gotPlaintext, err := DecryptSymmetric(ciphertext, a, key, nonce, tag, associatedData)
+                if err != nil {
+                        panic(err)
+                }
+                if !bytes.Equal(plaintext, gotPlaintext) {
+                        panic("Plaintext incorrect")
+                }
+        })
 }
