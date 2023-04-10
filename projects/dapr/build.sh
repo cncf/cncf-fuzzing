@@ -55,5 +55,6 @@ go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/g
 go mod tidy
 go get github.com/AdamKorcz/go-118-fuzz-build/testing
 compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeys FuzzCryptoKeys
+compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzSymmetric FuzzSymmetric
 compile_native_go_fuzzer github.com/dapr/kit/crypto/aescbcaead FuzzAescbcaead FuzzAescbcaead
 
