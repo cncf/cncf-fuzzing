@@ -22,9 +22,8 @@ import (
 	"testing"
 
 	"vitess.io/vitess/go/sqltypes"
-	"vitess.io/vitess/go/sync2"
 	"vitess.io/vitess/go/vt/binlog/binlogplayer"
-	"vitess.io/vitess/go/vt/mysqlctl/fakemysqldaemon"
+	"vitess.io/vitess/go/vt/mysqlctl"
 	"vitess.io/vitess/go/vt/topo/memorytopo"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -93,7 +92,7 @@ func FuzzVreplicationEngine(data []byte) int {
 	resetBinlogClient()
 	dbClient := binlogplayer.NewMockDBClient(t)
 	dbClientFactory := func() binlogplayer.DBClient { return dbClient }
-	mysqld := &fakemysqldaemon.FakeMysqlDaemon{MysqlPort: sync2.NewAtomicInt32(3306)}
+	mysqld := &mysqlctl.FakeMysqlDaemon{}
 
 	vre := NewTestEngine(topoServer, "cell1", mysqld, dbClientFactory, dbClientFactory, dbClient.DBName(), nil)
 
