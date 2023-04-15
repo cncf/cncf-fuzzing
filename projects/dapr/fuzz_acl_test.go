@@ -27,10 +27,14 @@ func init() {
 }
 
 func FuzzParseAccessControlSpec(f *testing.F) {
-	f.Fuzz(func(t *testing.T, specData []byte, protocol string) {
+	f.Fuzz(func(t *testing.T, specData []byte) {
 		ff := fuzz.NewConsumer(specData)
 		s := &config.AccessControlSpec{}
 		ff.GenerateStruct(s)
-		_, _ = ParseAccessControlSpec(*s, protocol)
+		b, err := ff.GetBool()
+		if err != nil {
+			return
+		}
+		_, _ = ParseAccessControlSpec(*s, b)
 	})
 }

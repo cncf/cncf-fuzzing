@@ -22,9 +22,8 @@ import (
 
 	componentsV1alpha1 "github.com/dapr/dapr/pkg/apis/components/v1alpha1"
 
-	wfs "github.com/dapr/components-contrib/workflows"
-	workflowsLoader "github.com/dapr/dapr/pkg/components/workflows"
 	"github.com/dapr/dapr/pkg/modes"
+	"github.com/dapr/dapr/pkg/runtime/compstore"
 	"github.com/dapr/kit/logger"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -40,8 +39,6 @@ func init() {
 	l.SetOutputLevel(logger.FatalLevel)
 	log.SetOutputLevel(logger.FatalLevel)
 	fuzzRT = NewTestDaprRuntime(modes.StandaloneMode)
-	fuzzRT.workflowComponents = map[string]wfs.Workflow{}
-	fuzzRT.workflowComponentRegistry = workflowsLoader.NewRegistry()
 	if fuzzRT == nil {
 		panic("fuzzRT is nil so stopping the fuzzer")
 	}
@@ -49,6 +46,7 @@ func init() {
 
 type mockPublishPubSubFuzz struct {
 	PublishedRequest atomic.Pointer[pubsub.PublishRequest]
+	data             []byte
 }
 
 // Init is a mock initialization method.
@@ -73,6 +71,10 @@ func (m *mockPublishPubSubFuzz) BulkSubscribe(ctx context.Context, req pubsub.Su
 
 // Subscribe is a mock subscribe method.
 func (m *mockPublishPubSubFuzz) Subscribe(_ context.Context, req pubsub.SubscribeRequest, handler pubsub.Handler) error {
+	message := &pubsub.NewMessage{}
+	ff := fuzz.NewConsumer(m.data)
+	ff.GenerateStruct(message)
+	handler(context.Background(), message)
 	return nil
 }
 
@@ -84,9 +86,15 @@ func (m *mockPublishPubSubFuzz) Features() []pubsub.Feature {
 	return nil
 }
 
+func (m *mockPublishPubSubFuzz) GetComponentMetadata() map[string]string {
+	md := make(map[string]string)
+	ff := fuzz.NewConsumer(m.data)
+	ff.FuzzMap(&md)
+	return md
+}
+
 func FuzzDaprRuntime(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte, callType int) {
-		fuzzRT.pubSubs = make(map[string]pubsubItem)
 
 		ff := fuzz.NewConsumer(data)
 		switch callType % 4 {
@@ -100,44 +108,34 @@ func FuzzDaprRuntime(f *testing.F) {
 			if pubRequest.PubsubName == "" {
 				return
 			}
-			scopedSubscriptions := make([]string, 0)
-			ff.CreateSlice(&scopedSubscriptions)
-			if len(scopedSubscriptions) == 0 {
-				return
-			}
-			scopedPublishings := make([]string, 0)
-			ff.CreateSlice(&scopedPublishings)
-			if len(scopedPublishings) == 0 {
-				return
-			}
-			allowedTopics := make([]string, 0)
-			ff.CreateSlice(&allowedTopics)
-			if len(allowedTopics) == 0 {
-				return
-			}
-			namespaceScoped, err := ff.GetBool()
+			messageData, err := ff.GetBytes()
 			if err != nil {
 				return
 			}
-			pI := pubsubItem{component: &mockPublishPubSubFuzz{},
-				scopedSubscriptions: scopedSubscriptions,
-				scopedPublishings:   scopedPublishings,
-				allowedTopics:       allowedTopics,
-				namespaceScoped:     namespaceScoped,
-			}
-			fuzzRT.pubSubs[pubRequest.PubsubName] = pI
+			fuzzRT.compStore.AddPubSub(pubsubName,
+				compstore.PubsubItem{
+					Component: &mockPublishPubSubFuzz{
+						data: messageData,
+					},
+				})
+			defer func() {
+				fuzzRT.compStore.DeletePubSub(pubsubName)
+			}()
 			fuzzRT.Publish(pubRequest)
 		case 2:
 			pubRequest := &pubsub.BulkPublishRequest{}
 			ff.GenerateStruct(pubRequest)
-			fuzzRT.BulkPublish(pubRequest)
+			_, _ = fuzzRT.BulkPublish(pubRequest)
 		case 3:
 			name, err := ff.GetString()
 			if err != nil {
 				return
 			}
-			routes := make(map[string]TopicRouteElem)
-			err = ff.FuzzMap(&routes)
+			if name == "" {
+				return
+			}
+			routes := make(map[string]compstore.TopicRouteElem)
+			ff.FuzzMap(&routes)
 			fuzzRT.Subscribe(context.Background(), name, routes)
 		}
 	})
