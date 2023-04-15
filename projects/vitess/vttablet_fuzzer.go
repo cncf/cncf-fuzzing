@@ -484,7 +484,7 @@ func (fs *fuzzStore) callVReplicationExec() error {
 
 // callVExec implements a wrapper
 // for fuzzing VExec
-func (fs *fuzzStore) callVExec() error {
+/*func (fs *fuzzStore) callVExec() error {
 	tablet, err := fs.getTablet()
 	if err != nil {
 		return err
@@ -503,7 +503,7 @@ func (fs *fuzzStore) callVExec() error {
 	}
 	_, _ = fs.client.VExec(context.Background(), tablet, query, workflow, keyspace)
 	return nil
-}
+}*/
 
 // callVReplicationWaitForPos implements a wrapper
 // for fuzzing VReplicationWaitForPos
@@ -520,7 +520,7 @@ func (fs *fuzzStore) callVReplicationWaitForPos() error {
 	if err != nil {
 		return err
 	}
-	_ = fs.client.VReplicationWaitForPos(context.Background(), tablet, timeCreatedNS, pos)
+	_ = fs.client.VReplicationWaitForPos(context.Background(), tablet, int32(timeCreatedNS), pos)
 	return nil
 }
 
@@ -635,7 +635,7 @@ func (fs *fuzzStore) executeInRandomOrder() {
 		case 16:
 			err = fs.callVReplicationExec()
 		case 17:
-			err = fs.callVExec()
+			//err = fs.callVExec()
 		case 18:
 			err = fs.callStopReplicationAndGetStatus()
 		case 19:
