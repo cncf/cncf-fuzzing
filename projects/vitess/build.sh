@@ -85,6 +85,9 @@ compile_go_fuzzer vitess.io/vitess/go/vt/vttablet/tabletmanager/vreplication Fuz
 mv $SRC/cncf-fuzzing/projects/vitess/vtgate_engine_fuzzer.go $SRC/vitess/go/vt/vtgate/engine/
 compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/engine FuzzVtateEngine engine_fuzzer
 
+mv $SRC/cncf-fuzzing/projects/vitess/fuzz_keyspace_creation.go $SRC/vitess/go/vt/topo/topotests/
+mv $SRC/cncf-fuzzing/projects/vitess/fuzz_shard_creation.go $SRC/vitess/go/vt/topo/topotests/
+
 rm -r $SRC/vitess/go/test/fuzzing/*
 mv $SRC/cncf-fuzzing/projects/vitess/vtctl_fuzzer.go $SRC/vitess/go/test/fuzzing/
 mv $SRC/cncf-fuzzing/projects/vitess/ast_fuzzer.go $SRC/vitess/go/test/fuzzing/
@@ -95,6 +98,9 @@ mv $SRC/cncf-fuzzing/projects/vitess/tabletserver_schema_fuzzer.go $SRC/vitess/g
 mv $SRC/cncf-fuzzing/projects/vitess/vt_schema_fuzzer.go $SRC/vitess/go/test/fuzzing/
 mv $SRC/cncf-fuzzing/projects/vitess/vttablet_fuzzer.go $SRC/vitess/go/test/fuzzing/
 
+printf "package vtadmin\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/vitess/go/vt/vtadmin/register.go
+go mod tidy
+go mod vendor
 
 
 # autogenerate and build api_marshal_fuzzer:
@@ -102,9 +108,9 @@ cd $SRC/vitess/go/vt
 grep -r ') Unmarshal' .>>/tmp/marshal_targets.txt
 cd $SRC/cncf-fuzzing/projects/vitess/autogenerate
 go run convert_grep_to_fuzzer.go
-#mv api_marshal_fuzzer.go $SRC/vitess/go/test/fuzzing/
+mv api_marshal_fuzzer.go $SRC/vitess/go/test/fuzzing/
 cd $SRC/vitess
-#compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzAPIMarshal api_marshal_fuzzer
+compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzAPIMarshal api_marshal_fuzzer
 
 # build other fuzzers
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing Fuzz vtctl_fuzzer
@@ -120,7 +126,8 @@ compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzSplitStatementToPieces fu
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzUnmarshalJSON fuzz_tabletserver_rules_unmarshal_json
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzLoadTable fuzz_load_table
 
-
+compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzKeyspaceCreation fuzz_keyspace_creation
+compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzShardCreation fuzz_shard_creation
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzWritePacket write_packet_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzHandleNextCommand handle_next_command_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzReadQueryResults read_query_results_fuzzer

@@ -42,7 +42,6 @@ var importPathShort = map[string]string{
 	"vitess.io/vitess/go/vt/proto/tabletmanagerdata": "tabletmanagerdata",
 	"vitess.io/vitess/go/vt/proto/binlogdata":        "binlogdata",
 	"vitess.io/vitess/go/vt/proto/vtgate":            "vtgate",
-	"vitess.io/vitess/go/vt/proto/automation":        "automation",
 	"vitess.io/vitess/go/vt/proto/tableacl":          "tableacl",
 	"vitess.io/vitess/go/vt/proto/logutil":           "logutil",
 	"vitess.io/vitess/go/vt/proto/vttest":            "vttest",
@@ -54,7 +53,6 @@ var importPathShort = map[string]string{
 	"vitess.io/vitess/go/vt/proto/vschema":           "vschema",
 	"vitess.io/vitess/go/vt/proto/mysqlctl":          "mysqlctl",
 	"vitess.io/vitess/go/vt/proto/vtadmin":           "vtadmin",
-	"vitess.io/vitess/go/vt/proto/vtworkerdata":      "vtworkerdata",
 	"vitess.io/vitess/go/vt/proto/throttlerdata":     "throttlerdata",
 	"vitess.io/vitess/go/vt/proto/topodata":          "topodata",
 }
@@ -66,7 +64,6 @@ var pathToImportPath = map[string]string{
 	"./proto/tabletmanagerdata/tabletmanagerdata_vtproto.pb.go": "vitess.io/vitess/go/vt/proto/tabletmanagerdata",
 	"./proto/binlogdata/binlogdata_vtproto.pb.go":               "vitess.io/vitess/go/vt/proto/binlogdata",
 	"./proto/vtgate/vtgate_vtproto.pb.go":                       "vitess.io/vitess/go/vt/proto/vtgate",
-	"./proto/automation/automation_vtproto.pb.go":               "vitess.io/vitess/go/vt/proto/automation",
 	"./proto/tableacl/tableacl_vtproto.pb.go":                   "vitess.io/vitess/go/vt/proto/tableacl",
 	"./proto/logutil/logutil_vtproto.pb.go":                     "vitess.io/vitess/go/vt/proto/logutil",
 	"./proto/vttest/vttest_vtproto.pb.go":                       "vitess.io/vitess/go/vt/proto/vttest",
@@ -78,7 +75,6 @@ var pathToImportPath = map[string]string{
 	"./proto/vschema/vschema_vtproto.pb.go":                     "vitess.io/vitess/go/vt/proto/vschema",
 	"./proto/mysqlctl/mysqlctl_vtproto.pb.go":                   "vitess.io/vitess/go/vt/proto/mysqlctl",
 	"./proto/vtadmin/vtadmin_vtproto.pb.go":                     "vitess.io/vitess/go/vt/proto/vtadmin",
-	"./proto/vtworkerdata/vtworkerdata_vtproto.pb.go":           "vitess.io/vitess/go/vt/proto/vtworkerdata",
 	"./proto/throttlerdata/throttlerdata_vtproto.pb.go":         "vitess.io/vitess/go/vt/proto/throttlerdata",
 	"./proto/topodata/topodata_vtproto.pb.go":                   "vitess.io/vitess/go/vt/proto/topodata",
 }
