@@ -87,6 +87,7 @@ compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/engine FuzzVtateEngine engine_fu
 
 mv $SRC/cncf-fuzzing/projects/vitess/fuzz_keyspace_creation.go $SRC/vitess/go/vt/topo/topotests/
 mv $SRC/cncf-fuzzing/projects/vitess/fuzz_shard_creation.go $SRC/vitess/go/vt/topo/topotests/
+mv $SRC/cncf-fuzzing/projects/vitess/fuzz_tablet_test.go $SRC/vitess/go/vt/topo/topotests/
 
 rm -r $SRC/vitess/go/test/fuzzing/*
 mv $SRC/cncf-fuzzing/projects/vitess/vtctl_fuzzer.go $SRC/vitess/go/test/fuzzing/
@@ -128,6 +129,7 @@ compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzLoadTable fuzz_load_table
 
 compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzKeyspaceCreation fuzz_keyspace_creation
 compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzShardCreation fuzz_shard_creation
+compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzTabletCreation fuzz_tablet_creation
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzWritePacket write_packet_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzHandleNextCommand handle_next_command_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzReadQueryResults read_query_results_fuzzer
