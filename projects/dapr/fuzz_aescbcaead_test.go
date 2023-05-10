@@ -20,14 +20,38 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	_ "crypto/hmac"
+	_ "crypto/sha512"
+	"runtime"
+	"strings"
 	"testing"
 )
+
+func catchPanics() {
+        if r := recover(); r != nil {
+                var err string
+                switch r.(type) {
+                case string:
+                        err = r.(string)
+                case runtime.Error:
+                        err = r.(runtime.Error).Error()
+                case error:
+                        err = r.(error).Error()
+                }
+                if strings.Contains(err, "invalid buffer overlap") {
+			// known panic
+                        return
+                } else {
+                        panic(err)
+                }
+        }
+}
 
 func FuzzAescbcaead(f *testing.F) {
 	f.Fuzz(func(t *testing.T, key, dst, nonce, plaintext, additionalData []byte, keyType int){
 		if len(nonce) != aes.BlockSize {
 			return
 		}
+		defer catchPanics()
 		var aead cipher.AEAD
 		var err error
 		switch keyType%4 {
