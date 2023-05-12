@@ -28,6 +28,8 @@ import (
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/dapr/components-contrib/pubsub"
+	workflowsLoader "github.com/dapr/dapr/pkg/components/workflows"
+	cryptoLoader "github.com/dapr/dapr/pkg/components/crypto"
 )
 
 var (
@@ -95,7 +97,8 @@ func (m *mockPublishPubSubFuzz) GetComponentMetadata() map[string]string {
 
 func FuzzDaprRuntime(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte, callType int) {
-
+		fuzzRT.workflowComponentRegistry = workflowsLoader.NewRegistry()
+		fuzzRT.cryptoProviderRegistry = cryptoLoader.NewRegistry()
 		ff := fuzz.NewConsumer(data)
 		switch callType % 4 {
 		case 0:
