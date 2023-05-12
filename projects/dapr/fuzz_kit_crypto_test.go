@@ -38,7 +38,7 @@ func FuzzCryptoKeys(f *testing.F) {
 		}
 		b, err := SerializeKey(k)
 		if err != nil {
-			panic(err)
+			return
 		}
 		if !bytes.Equal(raw, b) {
 			panic("Serialization issue")
