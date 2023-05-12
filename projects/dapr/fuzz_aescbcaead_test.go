@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func catchPanics() {
@@ -47,13 +48,29 @@ func catchPanics() {
 }
 
 func FuzzAescbcaead(f *testing.F) {
-	f.Fuzz(func(t *testing.T, key, dst, nonce, plaintext, additionalData []byte, keyType int){
+	f.Fuzz(func(t *testing.T, data []byte, keyType int){
+		ff := fuzz.NewConsumer(data)
+		key, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
+		nonce, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
 		if len(nonce) != aes.BlockSize {
+			return
+		}
+		plaintext, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
+		additionalData, err := ff.GetBytes()
+		if err != nil {
 			return
 		}
 		defer catchPanics()
 		var aead cipher.AEAD
-		var err error
 		switch keyType%4 {
 		case 0:
 			aead, err = NewAESCBC128SHA256(key)
@@ -76,8 +93,11 @@ func FuzzAescbcaead(f *testing.F) {
 				return
 			}
 		}
+		if aead == nil {
+			return
+		}
 
-		gotCipherText := aead.Seal(dst, nonce, plaintext, additionalData)
+		gotCipherText := aead.Seal(nil, nonce, plaintext, additionalData)
 		gotPlaintext, err := aead.Open(nil, nonce, gotCipherText, additionalData)
 		if err != nil {
 			return
