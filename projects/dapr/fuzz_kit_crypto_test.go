@@ -17,8 +17,8 @@ package crypto
 
 import (
 	"bytes"
-	"testing"
 	"github.com/lestrrat-go/jwx/v2/jwk"
+	"testing"
 )
 
 func FuzzCryptoKeys(f *testing.F) {
@@ -40,31 +40,42 @@ func FuzzCryptoKeys(f *testing.F) {
 		if err != nil {
 			return
 		}
-		if !bytes.Equal(raw, b) {
+		var exported []byte
+		err = k.Raw(&exported)
+		if err != nil {
+			return
+		}
+		if !bytes.Equal(exported, b) {
+			panic(".Raw() issue")
+		}
+		if len(b) == 0 {
+			return
+		}
+		if !bytes.Equal(raw, exported) {
 			panic("Serialization issue")
 		}
 	})
 }
 
 func FuzzSymmetric(f *testing.F) {
-        f.Fuzz(func(t *testing.T, plaintext []byte, algorithm int, keyData []byte, nonce []byte, associatedData []byte) {
-                key, err := jwk.ParseKey(keyData)
-                if err != nil {
-                        return
-                }
-                algorithms := SupportedSymmetricAlgorithms()
-                a := algorithms[algorithm%len(algorithms)]
-                ciphertext, tag, err := EncryptSymmetric(plaintext, a, key, nonce, associatedData)
-                if err != nil {
-                        return
-                }
+	f.Fuzz(func(t *testing.T, plaintext []byte, algorithm int, keyData []byte, nonce []byte, associatedData []byte) {
+		key, err := jwk.ParseKey(keyData)
+		if err != nil {
+			return
+		}
+		algorithms := SupportedSymmetricAlgorithms()
+		a := algorithms[algorithm%len(algorithms)]
+		ciphertext, tag, err := EncryptSymmetric(plaintext, a, key, nonce, associatedData)
+		if err != nil {
+			return
+		}
 
-                gotPlaintext, err := DecryptSymmetric(ciphertext, a, key, nonce, tag, associatedData)
-                if err != nil {
-                        panic(err)
-                }
-                if !bytes.Equal(plaintext, gotPlaintext) {
-                        panic("Plaintext incorrect")
-                }
-        })
+		gotPlaintext, err := DecryptSymmetric(ciphertext, a, key, nonce, tag, associatedData)
+		if err != nil {
+			panic(err)
+		}
+		if !bytes.Equal(plaintext, gotPlaintext) {
+			panic("Plaintext incorrect")
+		}
+	})
 }
