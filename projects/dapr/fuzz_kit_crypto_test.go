@@ -23,7 +23,7 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzCryptoKeys(f *testing.F) {
+func FuzzCryptoKeysAny(f *testing.F) {
 	f.Fuzz(func(t *testing.T, raw []byte, contentTypeInt int) {
 		var contentType string
 		switch contentTypeInt % 3 {
@@ -35,6 +35,60 @@ func FuzzCryptoKeys(f *testing.F) {
 			contentType = "application/pkcs8"
 		}
 		k, err := ParseKey(raw, contentType)
+		if err != nil {
+			return
+		}
+		b, err := SerializeKey(k)
+		if err != nil {
+			return
+		}
+		var exported []byte
+		err = k.Raw(&exported)
+		if err != nil {
+			return
+		}
+		if !bytes.Equal(exported, b) {
+			panic(".Raw() issue")
+		}
+		if len(b) == 0 {
+			return
+		}
+		if !bytes.Equal(raw, exported) {
+			panic("Serialization issue")
+		}
+	})
+}
+
+func FuzzCryptoKeysJson(f *testing.F) {
+	f.Fuzz(func(t *testing.T, raw []byte) {
+		k, err := ParseKey(raw, "application/json")
+		if err != nil {
+			return
+		}
+		b, err := SerializeKey(k)
+		if err != nil {
+			return
+		}
+		var exported []byte
+		err = k.Raw(&exported)
+		if err != nil {
+			return
+		}
+		if !bytes.Equal(exported, b) {
+			panic(".Raw() issue")
+		}
+		if len(b) == 0 {
+			return
+		}
+		if !bytes.Equal(raw, exported) {
+			panic("Serialization issue")
+		}
+	})
+}
+
+func FuzzCryptoKeysRaw(f *testing.F) {
+	f.Fuzz(func(t *testing.T, raw []byte) {
+		k, err := ParseKey(raw, "")
 		if err != nil {
 			return
 		}
