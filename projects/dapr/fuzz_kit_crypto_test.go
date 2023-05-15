@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"testing"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func FuzzCryptoKeys(f *testing.F) {
@@ -58,7 +60,28 @@ func FuzzCryptoKeys(f *testing.F) {
 }
 
 func FuzzSymmetric(f *testing.F) {
-	f.Fuzz(func(t *testing.T, plaintext []byte, algorithm int, keyData []byte, nonce []byte, associatedData []byte) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ff := fuzz.NewConsumer(data)
+		plaintext, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
+		algorithm, err := ff.GetInt()
+		if err != nil {
+			return
+		}
+		keyData, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
+		nonce, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
+		associatedData, err := ff.GetBytes()
+		if err != nil {
+			return
+		}
 		key, err := jwk.ParseKey(keyData)
 		if err != nil {
 			return
