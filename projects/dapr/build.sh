@@ -55,7 +55,9 @@ printf "package expr\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy
 go get github.com/AdamKorcz/go-118-fuzz-build/testing
-compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeys FuzzCryptoKeys
+compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeysJson FuzzCryptoKeysJson
+compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeysRaw FuzzCryptoKeysRaw
+compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeysAny FuzzCryptoKeys
 compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzSymmetric FuzzSymmetric
 compile_native_go_fuzzer github.com/dapr/kit/crypto/aescbcaead FuzzAescbcaead FuzzAescbcaead
 
