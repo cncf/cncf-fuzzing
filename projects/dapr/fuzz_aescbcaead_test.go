@@ -21,34 +21,34 @@ import (
 	"crypto/cipher"
 	_ "crypto/hmac"
 	_ "crypto/sha512"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"runtime"
 	"strings"
 	"testing"
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func catchPanics() {
-        if r := recover(); r != nil {
-                var err string
-                switch r.(type) {
-                case string:
-                        err = r.(string)
-                case runtime.Error:
-                        err = r.(runtime.Error).Error()
-                case error:
-                        err = r.(error).Error()
-                }
-                if strings.Contains(err, "invalid buffer overlap") {
+	if r := recover(); r != nil {
+		var err string
+		switch r.(type) {
+		case string:
+			err = r.(string)
+		case runtime.Error:
+			err = r.(runtime.Error).Error()
+		case error:
+			err = r.(error).Error()
+		}
+		if strings.Contains(err, "invalid buffer overlap") {
 			// known panic
-                        return
-                } else {
-                        panic(err)
-                }
-        }
+			return
+		} else {
+			panic(err)
+		}
+	}
 }
 
 func FuzzAescbcaead(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data []byte, keyType int){
+	f.Fuzz(func(t *testing.T, data []byte) {
 		ff := fuzz.NewConsumer(data)
 		key, err := ff.GetBytes()
 		if err != nil {
@@ -65,13 +65,17 @@ func FuzzAescbcaead(f *testing.F) {
 		if err != nil {
 			return
 		}
+		keyType, err := ff.GetInt()
+		if err != nil {
+			return
+		}
 		additionalData, err := ff.GetBytes()
 		if err != nil {
 			return
 		}
 		defer catchPanics()
 		var aead cipher.AEAD
-		switch keyType%4 {
+		switch keyType % 4 {
 		case 0:
 			aead, err = NewAESCBC128SHA256(key)
 			if err != nil {
