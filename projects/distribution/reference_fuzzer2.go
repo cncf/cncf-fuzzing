@@ -42,6 +42,9 @@ func FuzzAllNormalizeApis(data []byte) int {
 		return 0
 	}
 	n, err := ParseDockerRef(ref)
+	if err != nil {
+		return 0
+	}
 	_ = TagNameOnly(n)
 	ref, err = f.GetString()
 	if err != nil {
