@@ -51,6 +51,7 @@ compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzParseAccessControlSpec
 cd $SRC/kit
 cp $CNCFFuzzing/fuzz_kit_crypto_test.go ./crypto
 cp $CNCFFuzzing/fuzz_aescbcaead_test.go ./crypto/aescbcaead/
+cp $CNCFFuzzing/pkcs7_padding.go ./crypto/padding/
 printf "package expr\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/dapr/pkg/expr/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy
