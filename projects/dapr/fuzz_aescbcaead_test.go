@@ -20,6 +20,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	_ "crypto/hmac"
+	_ "crypto/sha256"
 	_ "crypto/sha512"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"runtime"
