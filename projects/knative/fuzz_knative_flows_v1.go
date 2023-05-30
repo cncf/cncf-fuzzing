@@ -29,7 +29,7 @@ func init() {
 	roundtrip.AddFuncs(roundtrip.V1FuzzerFuncs())
 	roundtrip.AddFuncs(roundtrip.V1beta1FuzzerFuncs())
 	roundtrip.AddFuncs(roundtrip.FuzzerFuncs())
-	roundtrip.AddFuncs(FuzzerFuncs)
+	roundtrip.AddFuncs(FlowFuzzerFuncs)
 	addKnownTypes(roundtrip.Scheme)
 }
 
@@ -39,7 +39,7 @@ func FuzzFlowsRoundTripTypesToJSONExperimental(f *testing.F) {
 	})
 }
 
-var FuzzerFuncs = []interface{}{
+var FlowFuzzerFuncs = []interface{}{
 	func(s *SequenceStatus, c fuzz.Continue) error {
 		_ = c.F.GenerateWithCustom(s) // fuzz the source
 		// Clear the random fuzzed condition
