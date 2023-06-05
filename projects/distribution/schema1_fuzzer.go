@@ -62,7 +62,7 @@ func FuzzSchema1Build(data []byte) int {
 	if len(img.History) == 0 {
 		return 0
 	}
-	if len(img.RootFS.DiffIDs) == 0 {
+	if img.RootFS != nil && len(img.RootFS.DiffIDs) == 0 {
 		return 0
 	}
 
