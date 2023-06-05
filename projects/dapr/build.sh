@@ -48,6 +48,12 @@ compile_native_go_fuzzer github.com/dapr/dapr/pkg/actors FuzzActorsRuntime FuzzA
 cp $CNCFFuzzing/fuzz_acl_test.go $SRC/dapr/pkg/acl/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzParseAccessControlSpec FuzzParseAccessControlSpec
 
+cp $CNCFFuzzing/fuzz_http_server_test.go $SRC/dapr/pkg/http/
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzHTTPRegex FuzHTTPRegex
+
+cp $CNCFFuzzing/fuzz_sidecar_test.go $SRC/dapr/pkg/injector/sidecar/
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/injector/sidecar FuzzParseEnvString FuzzParseEnvString
+
 cd $SRC/kit
 cp $CNCFFuzzing/fuzz_kit_crypto_test.go ./crypto
 cp $CNCFFuzzing/fuzz_aescbcaead_test.go ./crypto/aescbcaead/
