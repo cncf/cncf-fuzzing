@@ -52,6 +52,10 @@ func FuzzLoadTable(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	tableType, err := f.GetString()
+	if err != nil {
+		return 0
+	}
 
 	t := &testing.T{}
 
@@ -59,17 +63,16 @@ func FuzzLoadTable(data []byte) int {
 	defer db.Close()
 	db.AddQuery(query, &sqltypes.Result{})
 
-	_, _ = newTestLoadTable(tableName, comment, db)
+	_, _ = newTestLoadTable(tableName, tableType, comment, db)
 	return 1
 }
 
-func newTestLoadTable(tableName, comment string, db *fakesqldb.DB) (*schema.Table, error) {
+func newTestLoadTable(tableName, tableType, comment string, db *fakesqldb.DB) (*schema.Table, error) {
 	ctx := context.Background()
 	appParams := db.ConnParams()
 	dbaParams := db.ConnParams()
 	connPool := connpool.NewPool(tabletenv.NewEnv(nil, "SchemaTest"), "", tabletenv.ConnPoolConfig{
 		Size:               2,
-		IdleTimeoutSeconds: 10,
 	})
 	connPool.Open(appParams, dbaParams, appParams)
 	conn, err := connPool.Get(ctx, nil)
@@ -78,5 +81,5 @@ func newTestLoadTable(tableName, comment string, db *fakesqldb.DB) (*schema.Tabl
 	}
 	defer conn.Recycle()
 
-	return schema.LoadTable(conn, "fakesqldb", tableName, comment)
+	return schema.LoadTable(conn, "fakesqldb", tableName, tableType, comment)
 }
