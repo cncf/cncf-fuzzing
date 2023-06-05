@@ -35,7 +35,6 @@ import (
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/distribution/distribution/v3/registry/storage/cache/memory"
 	"github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
-	"github.com/distribution/distribution/v3/registry/storage/driver/testdriver"
 	"github.com/distribution/distribution/v3/testutil"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -157,7 +156,7 @@ func FuzzBlob(data []byte) int {
 	}
 	ctx := context.Background()
 	imageName, _ := reference.WithName("foo/bar")
-	driver := testdriver.New()
+	driver := inmemory.New()
 	registry, err := NewRegistry(ctx, driver, BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider(memory.UnlimitedSize)), EnableDelete, EnableRedirect)
 	if err != nil {
 		return 0
