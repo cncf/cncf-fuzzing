@@ -47,6 +47,7 @@ cp $CNCFFuzzing/fuzz_actors_test.go $SRC/dapr/pkg/actors/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/actors FuzzActorsRuntime FuzzActorsRuntime unit
 cp $CNCFFuzzing/fuzz_acl_test.go $SRC/dapr/pkg/acl/
 cp $CNCFFuzzing/fuzz_acl_apply_test.go $SRC/dapr/pkg/acl/
+go mod tidy
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzParseAccessControlSpec FuzzParseAccessControlSpec
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzIsOperationAllowedByAccessControlPolicy FuzzIsOperationAllowedByAccessControlPolicy
 
