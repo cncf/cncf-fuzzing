@@ -58,6 +58,10 @@ func FuzzSchema1Build(data []byte) int {
 	if err := json.Unmarshal(imgJSON, &img); err != nil {
 		return 0
 	}
+	
+	if img.RootFS == nil {
+		return 0
+	}
 
 	if len(img.History) == 0 {
 		return 0
