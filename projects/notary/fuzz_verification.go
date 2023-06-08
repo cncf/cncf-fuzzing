@@ -308,17 +308,17 @@ func createTrustPolicies(ff *fuzz.ConsumeFuzzer) ([]trustpolicy.TrustPolicy, err
 	return policies, nil
 }
 
-func createOptions(ff *fuzz.ConsumeFuzzer) (notation.RemoteVerifyOptions, error) {
+func createOptions(ff *fuzz.ConsumeFuzzer) (notation.VerifyOptions, error) {
 	pluginConfig := make(map[string]string)
 	err := ff.FuzzMap(&pluginConfig)
 	if err != nil {
-		return notation.RemoteVerifyOptions{}, err
+		return notation.VerifyOptions{}, err
 	}
 	maxSignatureAttempts, err := ff.GetInt()
 	if err != nil {
-		return notation.RemoteVerifyOptions{}, err
+		return notation.VerifyOptions{}, err
 	}
-	return notation.RemoteVerifyOptions{
+	return notation.VerifyOptions{
 		ArtifactReference:    "",
 		PluginConfig:         pluginConfig,
 		MaxSignatureAttempts: maxSignatureAttempts,
@@ -340,7 +340,7 @@ type noSkipVerifier struct {
 	pluginManager  plugin.Manager
 }
 
-func (v *noSkipVerifier) Verify(ctx context.Context, desc ocispec.Descriptor, signature []byte, opts notation.VerifyOptions) (*notation.VerificationOutcome, error) {
+func (v *noSkipVerifier) Verify(ctx context.Context, desc ocispec.Descriptor, signature []byte, opts notation.VerifierVerifyOptions) (*notation.VerificationOutcome, error) {
 	return vv.Verify(ctx, desc, signature, opts)
 }
 
@@ -379,7 +379,7 @@ func FuzzVerify(f *testing.F) {
 			optsError     error
 			artifactRef   string
 			policies      []trustpolicy.TrustPolicy
-			opts          notation.RemoteVerifyOptions
+			opts          notation.VerifyOptions
 		)
 		ff := fuzz.NewConsumer(policyDocBytes)
 		artifactRef, err := ff.GetString()
