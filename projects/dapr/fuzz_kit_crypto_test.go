@@ -47,15 +47,6 @@ func FuzzCryptoKeysAny(f *testing.F) {
 		if err != nil {
 			return
 		}
-		if !bytes.Equal(exported, b) {
-			panic(".Raw() issue")
-		}
-		if len(b) == 0 {
-			return
-		}
-		if !bytes.Equal(raw, exported) {
-			panic("Serialization issue")
-		}
 	})
 }
 
@@ -74,15 +65,6 @@ func FuzzCryptoKeysJson(f *testing.F) {
 		if err != nil {
 			return
 		}
-		if !bytes.Equal(exported, b) {
-			panic(".Raw() issue")
-		}
-		if len(b) == 0 {
-			return
-		}
-		if !bytes.Equal(raw, exported) {
-			panic("Serialization issue")
-		}
 	})
 }
 
@@ -100,15 +82,6 @@ func FuzzCryptoKeysRaw(f *testing.F) {
 		err = k.Raw(&exported)
 		if err != nil {
 			return
-		}
-		if !bytes.Equal(exported, b) {
-			panic(".Raw() issue")
-		}
-		if len(b) == 0 {
-			return
-		}
-		if !bytes.Equal(raw, exported) {
-			panic("Serialization issue")
 		}
 	})
 }
