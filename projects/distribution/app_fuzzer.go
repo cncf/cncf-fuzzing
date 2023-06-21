@@ -34,6 +34,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/distribution/distribution/v3/configuration"
+	_ "github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
 	"github.com/distribution/distribution/v3/reference"
 	v2 "github.com/distribution/distribution/v3/registry/api/v2"
 	"github.com/docker/libtrust"
@@ -45,7 +46,7 @@ func init() {
 func FuzzApp(data []byte) int {
 	config := configuration.Configuration{
 		Storage: configuration.Storage{
-			"testdriver": configuration.Parameters{},
+			"inmemory": configuration.Parameters{},
 			"maintenance": configuration.Parameters{"uploadpurging": map[interface{}]interface{}{
 				"enabled": false,
 			}},
