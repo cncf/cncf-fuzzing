@@ -57,6 +57,20 @@ compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzHTTPRegex FuzHTTPRege
 cp $CNCFFuzzing/fuzz_http_server_endpoint_test.go $SRC/dapr/pkg/http/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzIsEndpointAllowed FuzzIsEndpointAllowed
 
+cp $CNCFFuzzing/fuzz_http_endpoints_test.go $SRC/dapr/pkg/http/
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnPostStateTransaction FuzzOnPostStateTransaction
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnBulkPublish FuzzOnBulkPublish
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnPublish FuzzOnPublish
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnDirectActorMessage FuzzOnDirectActorMessage
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnDeleteActorTimer FuzzOnDeleteActorTimer
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnGetActorReminder FuzzOnGetActorReminder
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnActorStateTransaction FuzzOnActorStateTransaction
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnDeleteActorReminder FuzzOnDeleteActorReminder
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnCreateActorTimer FuzzOnCreateActorTimer
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnRenameActorReminder FuzzOnRenameActorReminder 
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnCreateActorReminder FuzzOnCreateActorReminder
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnDirectMessage FuzzOnDirectMessage
+
 cp $CNCFFuzzing/fuzz_sidecar_test.go $SRC/dapr/pkg/injector/sidecar/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/injector/sidecar FuzzParseEnvString FuzzParseEnvString
 
