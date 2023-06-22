@@ -38,7 +38,7 @@ func FuzzCryptoKeysAny(f *testing.F) {
 		if err != nil {
 			return
 		}
-		b, err := SerializeKey(k)
+		_, err = SerializeKey(k)
 		if err != nil {
 			return
 		}
@@ -56,7 +56,7 @@ func FuzzCryptoKeysJson(f *testing.F) {
 		if err != nil {
 			return
 		}
-		b, err := SerializeKey(k)
+		_, err = SerializeKey(k)
 		if err != nil {
 			return
 		}
@@ -74,7 +74,7 @@ func FuzzCryptoKeysRaw(f *testing.F) {
 		if err != nil {
 			return
 		}
-		b, err := SerializeKey(k)
+		_, err = SerializeKey(k)
 		if err != nil {
 			return
 		}
