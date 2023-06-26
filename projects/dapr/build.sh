@@ -71,6 +71,15 @@ compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnRenameActorReminder
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnCreateActorReminder FuzzOnCreateActorReminder
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/http FuzzOnDirectMessage FuzzOnDirectMessage
 
+rm $SRC/dapr/pkg/grpc/*_test.go
+cp $CNCFFuzzing/fuzz_grpc_endpoints_test.go $SRC/dapr/pkg/grpc/
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/grpc FuzzPublishEvent FuzzPublishEvent
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/grpc FuzzInvokeService FuzzInvokeService
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/grpc FuzzBulkPublishEventAlpha1 FuzzBulkPublishEventAlpha1
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/grpc FuzzStateEndpoints FuzzStateEndpoints
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/grpc FuzzActorEndpoints FuzzActorEndpoints
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/grpc FuzzGetConfiguration FuzzGetConfiguration
+
 cp $CNCFFuzzing/fuzz_sidecar_test.go $SRC/dapr/pkg/injector/sidecar/
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/injector/sidecar FuzzParseEnvString FuzzParseEnvString
 
