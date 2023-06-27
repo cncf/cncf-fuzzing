@@ -17,13 +17,11 @@ package filter
 
 import (
 	"context"
-	"testing"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	eventingv1 "knative.dev/eventing/pkg/apis/eventing/v1"
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"testing"
 )
-
-
 
 func FuzzFilters(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte, apiCall int) {
@@ -31,7 +29,7 @@ func FuzzFilters(f *testing.F) {
 		event := &cloudevents.Event{}
 		ff.GenerateStruct(event)
 		ctx := context.Background()
-		switch apiCall%2 {
+		switch apiCall % 2 {
 		case 0:
 			filters := make([]eventingv1.SubscriptionsAPIFilter, 0)
 			noOfFilters, err := ff.GetInt()
@@ -41,7 +39,7 @@ func FuzzFilters(f *testing.F) {
 			if noOfFilters == 0 {
 				noOfFilters = 1
 			}
-			for i:=0;i<10%noOfFilters;i++ {
+			for i := 0; i < 10%noOfFilters; i++ {
 				filt := &eventingv1.SubscriptionsAPIFilter{}
 				ff.GenerateStruct(filt)
 				filters = append(filters, *filt)
