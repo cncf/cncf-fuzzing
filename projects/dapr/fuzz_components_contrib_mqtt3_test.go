@@ -13,10 +13,30 @@
 // limitations under the License.
 //
 
-package sidecar
+package mqtt
 
-func FuzzParseEnvString(f *testing.F) {
-	f.Fuzz(func(t *testing.T, envStr string) {
-		_ = ParseEnvString(envStr)
+import (
+	"regexp"
+	"testing"
+)
+
+func FuzzAddTopic(f *testing.F) {
+	f.Fuzz(func(t *testing.T, origTopicName string) {
+		m := &mqttPubSub{}
+		m.topics = make(map[string]mqttPubSubSubscription)
+		topicName := origTopicName
+		if found := sharedSubscriptionMatch.FindStringIndex(origTopicName); found != nil && found[0] == 0 {
+			topicName = topicName[(found[1] - 1):]
+		}
+
+		regexStr := buildRegexForTopic(topicName)
+		if regexStr != "" {
+			_, err := regexp.Compile(regexStr)
+			if err != nil {
+				return
+			}
+			m.addTopic(origTopicName, nil)
+		}
+
 	})
 }

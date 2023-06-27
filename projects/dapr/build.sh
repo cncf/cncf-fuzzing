@@ -97,3 +97,19 @@ compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeysAny FuzzCrypto
 compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzSymmetric FuzzSymmetric
 compile_native_go_fuzzer github.com/dapr/kit/crypto/aescbcaead FuzzAescbcaead FuzzAescbcaead
 
+cd $SRC
+git clone --depth=1 https://github.com/dapr/components-contrib
+cd components-contrib
+cp $CNCFFuzzing/fuzz_components_contrib_dubbo_test.go ./bindings/dubbo/
+cp $CNCFFuzzing/fuzz_components_contrib_mqtt3_test.go ./pubsub/mqtt3/
+cp $CNCFFuzzing/fuzz_components_contrib_state_query_test.go ./state/query/
+cp $CNCFFuzzing/fuzz_components_contrib_state_test.go ./state/
+cp $CNCFFuzzing/fuzz_components_contrib_metadata_test.go ./metadata/
+printf "package metadata\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > ./metadata/registerfuzzdep.go
+go mod tidy
+
+compile_native_go_fuzzer github.com/dapr/components-contrib/bindings/dubbo FuzzDubboSerialization FuzzDubboSerialization
+compile_native_go_fuzzer github.com/dapr/components-contrib/pubsub/mqtt3 FuzzAddTopic FuzzAddTopic
+compile_native_go_fuzzer github.com/dapr/components-contrib/state/query FuzzQuery FuzzQuery
+compile_native_go_fuzzer github.com/dapr/components-contrib/state FuzzCheckRequestOptions FuzzCheckRequestOptions
+compile_native_go_fuzzer github.com/dapr/components-contrib/metadata FuzzDecodeMetadata FuzzDecodeMetadata

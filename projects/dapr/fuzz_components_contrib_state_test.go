@@ -13,10 +13,29 @@
 // limitations under the License.
 //
 
-package sidecar
+package state
 
-func FuzzParseEnvString(f *testing.F) {
-	f.Fuzz(func(t *testing.T, envStr string) {
-		_ = ParseEnvString(envStr)
+import (
+	"testing"
+	fuzz "github.com/AdamKorcz/go-fuzz-headers-1"
+)
+
+func FuzzCheckRequestOptions(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte, callType int) {
+		ff := fuzz.NewConsumer(data)
+		switch callType%3 {
+		case 0:
+			o := &GetStateOption{}
+			ff.GenerateStruct(o)
+			CheckRequestOptions(*o)
+		case 1:
+			o := &DeleteStateOption{}
+			ff.GenerateStruct(o)
+			CheckRequestOptions(*o)
+		case 2:
+			o := &SetStateOption{}
+			ff.GenerateStruct(o)
+			CheckRequestOptions(*o)
+		}
 	})
 }
