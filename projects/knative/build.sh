@@ -78,11 +78,24 @@ git clone https://github.com/knative/eventing --depth=1
 cd eventing
 cp $CNCFFuzzing/fuzz_messaging_v1.go $SRC/eventing/pkg/apis/messaging/v1/
 cp $CNCFFuzzing/fuzz_eventing_filter.go $SRC/eventing/pkg/broker/filter/
+cp $CNCFFuzzing/fuzz_eventpodspread_test.go $SRC/eventing/pkg/scheduler/plugins/core/evenpodspread/
+cp $CNCFFuzzing/fuzz_availabilitynodepriority_test.go $SRC/eventing/pkg/scheduler/plugins/core/availabilitynodepriority/
+cp $CNCFFuzzing/fuzz_availabilityzonepriority_test.go $SRC/eventing/pkg/scheduler/plugins/core/availabilityzonepriority/
+cp $CNCFFuzzing/fuzz_removewithavailabilitynodepriority_test.go $SRC/eventing/pkg/scheduler/plugins/core/removewithavailabilitynodepriority/
+cp $CNCFFuzzing/fuzz_removewithavailabilityzonepriority_test.go $SRC/eventing/pkg/scheduler/plugins/core/removewithavailabilityzonepriority/
+cp $CNCFFuzzing/fuzz_removewithevenpodspreadpriority_test.go $SRC/eventing/pkg/scheduler/plugins/core/removewithevenpodspreadpriority/
 printf "package v1\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/eventing/pkg/apis/messaging/v1/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy && go mod vendor
 mv $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test.go $SRC/eventing/pkg/apis/messaging/v1/roundtrip_test_fuzz.go
 compile_native_go_fuzzer knative.dev/eventing/pkg/apis/messaging/v1 FuzzMessagingRoundTripTypesToJSON FuzzMessagingRoundTripTypesToJSON
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/evenpodspread FuzzEvenPodSpreadFilter FuzzEvenPodSpreadFilter
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/evenpodspread FuzzEvenPodSpreadScore FuzzEvenPodSpreadScore
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/availabilitynodepriority FuzzAvailabilityNodePriorityScore FuzzAvailabilityNodePriorityScore
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/availabilityzonepriority FuzzAvailabilityZonePriorityScore FuzzAvailabilityZonePriorityScore
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/removewithavailabilitynodepriority FuzzRemoveWithAvailabilityNodePriorityScore FuzzRemoveWithAvailabilityNodePriorityScore
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/removewithavailabilityzonepriority FuzzRemoveWithAvailabilityZonePriorityScore FuzzRemoveWithAvailabilityZonePriorityScore
+compile_native_go_fuzzer knative.dev/eventing/pkg/scheduler/plugins/core/removewithevenpodspreadpriority FuzzRemoveWithEvenPodSpreadPriorityScore FuzzRemoveWithEvenPodSpreadPriorityScore
 compile_native_go_fuzzer knative.dev/eventing/pkg/broker/filter FuzzFilters FuzzFilters
 
 # build experimental messaging fuzzer
