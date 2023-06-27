@@ -17,6 +17,6 @@ package sidecar
 
 func FuzzParseEnvString(f *testing.F) {
 	f.Fuzz(func(t *testing.T, envStr string) {
-		_ = ParseEnvString(envStr)
+		_, _ = ParseEnvString(envStr)
 	})
 }
