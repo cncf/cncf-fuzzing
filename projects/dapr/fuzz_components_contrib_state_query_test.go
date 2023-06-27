@@ -13,10 +13,15 @@
 // limitations under the License.
 //
 
-package sidecar
+package query
 
-func FuzzParseEnvString(f *testing.F) {
-	f.Fuzz(func(t *testing.T, envStr string) {
-		_ = ParseEnvString(envStr)
+import (
+	"testing"
+)
+
+func FuzzQuery(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		q := &Query{}
+		q.UnmarshalJSON(data)
 	})
 }

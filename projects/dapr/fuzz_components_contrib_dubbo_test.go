@@ -13,10 +13,16 @@
 // limitations under the License.
 //
 
-package sidecar
+package dubbo
 
-func FuzzParseEnvString(f *testing.F) {
-	f.Fuzz(func(t *testing.T, envStr string) {
-		_ = ParseEnvString(envStr)
+import (
+	"testing"
+	dubboImpl "dubbo.apache.org/dubbo-go/v3/protocol/dubbo/impl"
+)
+
+func FuzzDubboSerialization(f *testing.F) {
+	f.Fuzz(func(t *testing.T, input []byte) {
+		p := &dubboImpl.DubboPackage{}
+		HessianSerializer{}.Unmarshal(input, p)
 	})
 }

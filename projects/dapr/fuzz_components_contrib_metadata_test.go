@@ -13,10 +13,31 @@
 // limitations under the License.
 //
 
-package sidecar
+package metadata
 
-func FuzzParseEnvString(f *testing.F) {
-	f.Fuzz(func(t *testing.T, envStr string) {
-		_ = ParseEnvString(envStr)
+import (
+	"testing"
+	fuzz "github.com/AdamKorcz/go-fuzz-headers-1"
+)
+
+type FuzzStruct struct {
+	Name1 string
+	Name2 string
+	Name3 string
+	Int1 int
+	Int2 int
+	Float1 float64
+}
+
+func FuzzDecodeMetadata(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ff := fuzz.NewConsumer(data)
+		m := make(map[string]string)
+		ff.FuzzMap(&m)
+		if len(m) == 0 {
+			return
+		}
+		fs := &FuzzStruct{}
+		DecodeMetadata(m, fs)
 	})
 }
