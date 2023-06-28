@@ -234,10 +234,13 @@ func FuzzInvokeService(f *testing.F) {
 }
 
 func FuzzBulkPublishEventAlpha1(f *testing.F) {
-	f.Fuzz(func(t *testing.T, data1, data2 []byte) {
+	f.Fuzz(func(t *testing.T, data1, data2 []byte, appID string) {
 		a := &api{
 			pubsubAdapter: &FuzzPublisher{
 				data: data1,
+			},
+			UniversalAPI: &universalapi.UniversalAPI{
+				AppID: appID,
 			},
 		}
 		ff2 := fuzz.NewConsumer(data2)
