@@ -15,6 +15,10 @@
 
 package sidecar
 
+import (
+	"testing"
+)
+
 func FuzzParseEnvString(f *testing.F) {
 	f.Fuzz(func(t *testing.T, envStr string) {
 		_, _ = ParseEnvString(envStr)

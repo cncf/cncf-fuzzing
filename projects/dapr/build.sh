@@ -20,6 +20,7 @@ sed '1d' -i $SRC/dapr/pkg/diagnostics/diagtestutils/testutils.go
 
 export CNCFFuzzing="${SRC}/cncf-fuzzing/projects/dapr"
 
+rm $SRC/dapr/pkg/http/*_test.go # test files cause some issues and we don't need them
 printf "package expr\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/dapr/pkg/expr/registerfuzzdep.go
 go mod edit -replace github.com/adalogics/go-fuzz-headers=github.com/adamkorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 go mod tidy
@@ -89,6 +90,7 @@ cp $CNCFFuzzing/fuzz_aescbcaead_test.go ./crypto/aescbcaead/
 cp $CNCFFuzzing/pkcs7_padding.go ./crypto/padding/
 printf "package expr\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/dapr/pkg/expr/registerfuzzdep.go
 go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
+go get github.com/lestrrat-go/jwx/v2@246dde86988b21ca0585fc34146e3f3c13f46bc1
 go mod tidy
 go get github.com/AdamKorcz/go-118-fuzz-build/testing
 compile_native_go_fuzzer github.com/dapr/kit/crypto FuzzCryptoKeysJson FuzzCryptoKeysJson
