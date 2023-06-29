@@ -158,7 +158,7 @@ func (fp *FuzzPublisher) GetPubSub(pubsubName string) contribPubsub.PubSub { ret
 func (fp *FuzzPublisher) Publish(req *contribPubsub.PublishRequest) error  { return nil }
 
 func FuzzOnBulkPublish(f *testing.F) {
-	f.Fuzz(func(t *testing.T, body, data []byte, userValue1, userValue2 string) {
+	f.Fuzz(func(t *testing.T, body, data []byte, userValue1, userValue2, userValue3 string) {
 		a := &api{
 			pubsubAdapter: &FuzzPublisher{
 				data: data,
@@ -169,6 +169,7 @@ func FuzzOnBulkPublish(f *testing.F) {
 		req.SetBody(body)
 		reqCtx.SetUserValue("pubsubname", userValue1)
 		reqCtx.SetUserValue("topic", userValue2)
+		reqCtx.SetUserValue("*", userValue3)
 		a.onBulkPublish(reqCtx)
 	})
 }
