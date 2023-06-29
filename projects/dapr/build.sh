@@ -102,6 +102,7 @@ compile_native_go_fuzzer github.com/dapr/kit/crypto/aescbcaead FuzzAescbcaead Fu
 cd $SRC
 git clone --depth=1 https://github.com/dapr/components-contrib
 cd components-contrib
+go mod edit -replace github.com/apache/dubbo-go-hessian2=github.com/AdamKorcz/dubbo-go-hessian2@fix1
 cp $CNCFFuzzing/fuzz_components_contrib_dubbo_test.go ./bindings/dubbo/
 cp $CNCFFuzzing/fuzz_components_contrib_mqtt3_test.go ./pubsub/mqtt3/
 cp $CNCFFuzzing/fuzz_components_contrib_state_query_test.go ./state/query/
