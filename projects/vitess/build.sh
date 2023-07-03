@@ -32,6 +32,10 @@ mv ./go/vt/vttablet/tabletmanager/vreplication/framework_test.go \
 #consistent_lookup_test.go is needed for loggingVCursor
 mv ./go/vt/vtgate/vindexes/consistent_lookup_test.go \
    ./go/vt/vtgate/vindexes/consistent_lookup_test_fuzz.go
+mv ./go/vt/vtgate/vindexes/main_test.go \
+   ./go/vt/vtgate/vindexes/main_test_fuzz.go
+mv ./go/vt/vtgate/vindexes/lookup_test.go \
+   ./go/vt/vtgate/vindexes/lookup_test_fuzz.go
 
 # fake_vcursor_test.go is needed for loggingVCursor
 mv ./go/vt/vtgate/engine/fake_vcursor_test.go \
