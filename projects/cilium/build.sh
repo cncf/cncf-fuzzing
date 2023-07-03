@@ -1,12 +1,4 @@
 # install Go 1.19
-apt-get update && apt-get install -y wget
-cd $SRC
-wget https://go.dev/dl/go1.19.4.linux-amd64.tar.gz
-
-mkdir temp-go
-rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.19.4.linux-amd64.tar.gz
-mv temp-go/go/* /root/.go/
 cd $SRC/cilium
 
 export CILIUM=$SRC/cncf-fuzzing/projects/cilium
@@ -33,10 +25,7 @@ compile_native_go_fuzzer github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2 Fuzz
 compile_native_go_fuzzer github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2 FuzzCiliumClusterwideNetworkPolicyParse FuzzCiliumClusterwideNetworkPolicyParse
 
 mv $SRC/cilium/pkg/policy/l4_test.go $SRC/cilium/pkg/policy/l4_test_fuzz.go
-mv $SRC/cilium/pkg/policy/l4_filter_test.go $SRC/cilium/pkg/policy/l4_filer_test_fuzz.go
-mv $SRC/cilium/pkg/policy/policy_test.go $SRC/cilium/pkg/policy/policy_test_fuzz.go
-mv $SRC/cilium/pkg/policy/rule_test.go $SRC/cilium/pkg/policy/rule_test_fuzz.go
-mv $SRC/cilium/pkg/policy/selectorcache_test.go $SRC/cilium/pkg/policy/selectorcache_test_fuzz.go
+
 compile_native_go_fuzzer github.com/cilium/cilium/pkg/policy FuzzTest Fuzz_resolveEgressPolicy
 compile_go_fuzzer github.com/cilium/cilium/pkg/labelsfilter FuzzLabelsfilterPkg fuzz_labelsfilter_pkg
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor FuzzDecodeTraceNotify fuzz_DecodeTraceNotify
@@ -52,13 +41,6 @@ compile_go_fuzzer github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/labels FuzzLabe
 compile_go_fuzzer github.com/cilium/cilium/proxylib/cassandra FuzzMultipleParsers fuzz_multiple_parsers
 
 rm $SRC/cilium/pkg/lock/lock_debug.go
-
-cd $SRC && git clone https://github.com/AdamKorcz/instrumentation
-cd $SRC/instrumentation
-go run main.go --target_dir=$SRC/cilium
-
-cd $SRC/cilium
-go mod tidy && go mod vendor
 
 mv $SRC/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
 compile_go_fuzzer github.com/cilium/cilium/pkg/bgp/config FuzzConfigParse fuzz_config_parse
