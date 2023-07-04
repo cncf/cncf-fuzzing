@@ -31,7 +31,7 @@ RUNTIME_CLASSPATH=
 
 for JARFILE in $(find ./ -name *.jar)
 do
-  if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || [[ "$JARFILE" == *"jboss-log>
+  if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || [[ "$JARFILE" == *"jboss-log"* ]]
   then
     cp $JARFILE $OUT/
     RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
