@@ -1,5 +1,5 @@
 #!/bin/bash -eu
-# Copyright 2023 Google LLC
+# Copyright 2023 the cncf-fuzzing authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,25 +24,21 @@ JAVA_HOME=$SRC/keycloak/jdk-17
 MAVEN_ARGS="-Djavac.src.version=17 -Djavac.target.version=17 "
 MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip"
 $MVN clean package $MAVEN_ARGS
+CURRENT_VERSION=$($MVN org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate \
+ -Dexpression=project.version -q -DforceStdout)
 
-BUILD_CLASSPATH=
 RUNTIME_CLASSPATH=
 
 for JARFILE in $(find ./ -name *.jar)
 do
-  if [[ "$JARFILE" == *"target/"* ]]
+  if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || [[ "$JARFILE" == *"jboss-log>
   then
     cp $JARFILE $OUT/
-    BUILD_CLASSPATH=$BUILD_CLASSPATH$OUT/$(basename $JARFILE):
     RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
   fi
 done
 
-# The classpath at build-time includes the project jars in $OUT as well as the
-# Jazzer API.
-BUILD_CLASSPATH=$BUILD_CLASSPATH:$JAZZER_API_PATH
-
-# All .jar and .class files lie in the same directory as the fuzzer at runtime.
+BUILD_CLASSPATH=$OUT/*:$JAZZER_API_PATH
 RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
