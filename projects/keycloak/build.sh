@@ -47,7 +47,7 @@ RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   fuzzer_basename=$(basename -s .java $fuzzer)
-  javac -cp $BUILD_CLASSPATH $fuzzer
+  javac -cp $BUILD_CLASSPATH -d $SRC/ $SRC/$fuzzer
   cp $SRC/$fuzzer_basename.class $OUT/
 
 
