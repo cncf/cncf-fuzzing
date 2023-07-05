@@ -8,8 +8,6 @@ cp $CILIUM/bpf_fuzzer.go $SRC/cilium/pkg/bpf/
 cp $CILIUM/matchpattern_fuzzer.go $SRC/cilium/pkg/fqdn/matchpattern/
 cp $CILIUM/hubble_parser_fuzzer.go $SRC/cilium/pkg/hubble/parser/
 cp $CILIUM/labels_fuzzer.go $SRC/cilium/pkg/k8s/slim/k8s/apis/labels/
-mv $SRC/cilium/proxylib/cassandra/cassandraparser_test.go $SRC/cilium/proxylib/cassandra/cp_test_fuzz.go
-mv $CILIUM/OnData_fuzzer.go $SRC/cilium/proxylib/cassandra/
 mv $CILIUM/payload_fuzzer.go $SRC/cilium/pkg/monitor/payload
 mv $CILIUM/monitor_fuzzer.go $SRC/cilium/pkg/monitor/
 mv $CILIUM/format_fuzzer.go $SRC/cilium/pkg/monitor/format
