@@ -26,7 +26,17 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 
+/**
+  This fuzzer targets the serialize method of the StringOrArraySerializer
+  class and the deserialize method of the StringOrArrayDeserializer class.
+  The fuzzer class implements Serializable interface and specifies the target
+  classes to be used for serializing and deserializing of its String array
+  field. The specification is done by using the Jackson databind annotation
+  classes.
+  */
 public class JsonSerializerDeserializationFuzzer implements Serializable {
+  // Define the JsonProperty name and the serializer / deserializer used
+  // for this variable field using Jackson annotation classes.
   @JsonProperty("text")
   @JsonSerialize(using = StringOrArraySerializer.class)
   @JsonDeserialize(using = StringOrArrayDeserializer.class)
@@ -34,19 +44,30 @@ public class JsonSerializerDeserializationFuzzer implements Serializable {
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Initializing the String array input for the serialize
+      // and deserialize process
       Integer count = data.consumeInt(1, 10);
       String text = data.consumeRemainingAsString();
       String[] input = new String[count];
       for (int i=0; i < count; i++) {
         input[i] = text;
       }
+
+      // Initializing an instance of the fuzzer class with
+      // the prepared String array
       JsonSerializerDeserializationFuzzer target = new JsonSerializerDeserializationFuzzer();
       target.text = input;
 
+      // Serialize the instace of the fuzzer class which
+      // will use the target Serializer to serialize the
+      // String array field as specified by the annotation
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       ObjectOutputStream oos = new ObjectOutputStream(baos);
       oos.writeObject(target);
 
+      // Deserialize the instace of the fuzzer class which
+      // will use the target Deserializer to deserialize the
+      // String array field as specified by the annotation
       ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
       ObjectInputStream ois = new ObjectInputStream(bais);
       ois.readObject();

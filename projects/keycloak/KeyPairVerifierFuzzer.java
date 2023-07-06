@@ -17,12 +17,19 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.common.VerificationException;
 
+/**
+  This fuzzer targets the verify method of the KeyPairVerifier
+  class. It calls the verify methods with two random string.
+  */
 public class KeyPairVerifierFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Retrieves two random strings from the FuzzedDataProvider object
       String str1 = data.consumeString(data.remainingBytes() / 2);
       String str2 = data.consumeRemainingAsString();
 
+      // Call the verify method of KeyPairVerifier class
+      // with the retrieved random string
       KeyPairVerifier.verify(str1, str2);
     } catch (VerificationException e) {
       // Known exception
