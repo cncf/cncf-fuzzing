@@ -22,10 +22,9 @@ JAVA_HOME=$SRC/keycloak/jdk-17
 
 # Build Keycloak
 MAVEN_ARGS="-Djavac.src.version=17 -Djavac.target.version=17 "
-MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip"
+MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip "
+MAVEN_ARGS=$MAVEN_ARGS"-DskipExamples -DskipTestsuite"
 $MVN clean package $MAVEN_ARGS
-CURRENT_VERSION=$($MVN org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate \
- -Dexpression=project.version -q -DforceStdout)
 
 RUNTIME_CLASSPATH=
 
