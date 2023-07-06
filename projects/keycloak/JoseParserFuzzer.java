@@ -16,9 +16,16 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.keycloak.jose.JOSEParser;
 
+/**
+  This fuzzer targets the parse method of JOSEParser.
+  It calls the JOSEParser.parse method with random string
+  to fuzz its parsing ability.
+  */
 public class JoseParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Call the JOSEParser.parse method with random
+      // string generated from the FuzzedDataProvider
       JOSEParser.parse(data.consumeRemainingAsString());
     } catch (RuntimeException e) {
       // Known exception
