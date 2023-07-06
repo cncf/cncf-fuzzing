@@ -15,28 +15,58 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11SubjectParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11ResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11RequestParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11AssertionParser;
 
 /**
-  This fuzzer targets the parse method of SAMLParser class.
-  It creates a XMLEventReader with random bytes and
-  pass it as a source for the SAMLParser to parse it.
+  This fuzzer targets the parse method of all five SAML parser,
+  including SAMLParser, SAML11SubjectParser, SAML11ResponseParser,
+  SAML11RequestParser, SAML11AssertionParser. It creates a
+  XMLEventReader with random bytes in UTF-8 encoding and
+  pass it as a source for the a random SAML parser to parse it.
   */
 public class SamlParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Randomize which SAML Parser is used
+      Integer choice = data.consumeInt(1, 5);
+
       // Initialize a XMLEventReader with InputStream source pointing
-      // to a random byte array retrieved from the FuzzedDataProvider
-      ByteArrayInputStream bais = new ByteArrayInputStream(data.consumeRemainingAsBytes());
+      // to a random byte array in UTF-8 encoding retrieved from the
+      // FuzzedDataProvider
+      byte[] input = data.consumeRemainingAsString().getBytes(StandardCharsets.UTF_8);
+      ByteArrayInputStream bais = new ByteArrayInputStream(input);
       XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(bais);
 
-      // Retrieve a SAMLParser instance and call the parse method
-      // with the source pointing to the XMLEventReader
-      SAMLParser.getInstance().parse(reader);
+      // Retrieve or create a random SAML Parser object
+      // instance and run the parse method with the
+      // random data provided by the XMLEventReader
+      // object created above
+      switch(choice) {
+        case 1:
+          SAMLParser.getInstance().parse(reader);
+          break;
+        case 2:
+          new SAML11SubjectParser().parse(reader);
+          break;
+        case 3:
+          new SAML11ResponseParser().parse(reader);
+          break;
+        case 4:
+          new SAML11RequestParser().parse(reader);
+          break;
+        case 5:
+          new SAML11AssertionParser().parse(reader);
+          break;
+      }
     } catch (ParsingException | XMLStreamException e) {
       // Known exception
     }
