@@ -108,6 +108,7 @@ cp $CNCFFuzzing/fuzz_components_contrib_mqtt3_test.go ./pubsub/mqtt3/
 cp $CNCFFuzzing/fuzz_components_contrib_state_query_test.go ./state/query/
 cp $CNCFFuzzing/fuzz_components_contrib_state_test.go ./state/
 cp $CNCFFuzzing/fuzz_components_contrib_metadata_test.go ./metadata/
+cp $CNCFFuzzing/fuzz_components_contrib_ratelimiter_test.go ./middleware/http/ratelimit/
 printf "package metadata\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > ./metadata/registerfuzzdep.go
 go mod tidy
 
@@ -116,3 +117,4 @@ compile_native_go_fuzzer github.com/dapr/components-contrib/pubsub/mqtt3 FuzzAdd
 compile_native_go_fuzzer github.com/dapr/components-contrib/state/query FuzzQuery FuzzQuery
 compile_native_go_fuzzer github.com/dapr/components-contrib/state FuzzCheckRequestOptions FuzzCheckRequestOptions
 compile_native_go_fuzzer github.com/dapr/components-contrib/metadata FuzzDecodeMetadata FuzzDecodeMetadata
+compile_native_go_fuzzer github.com/dapr/components-contrib/middleware/http/ratelimit FuzzRLTest FuzzRLTest
