@@ -101,14 +101,19 @@ compile_native_go_fuzzer github.com/dapr/kit/crypto/aescbcaead FuzzAescbcaead Fu
 
 cd $SRC
 git clone --depth=1 https://github.com/dapr/components-contrib
+git clone --depth=1 https://github.com/AdamKorcz/dubbo-go-hessian2 --branch=fix1
 cd components-contrib
-go mod edit -replace github.com/apache/dubbo-go-hessian2=github.com/AdamKorcz/dubbo-go-hessian2@fix1
+go mod edit -replace 
+go mod edit -replace github.com/apache/dubbo-go-hessian2=$SRC/dubbo-go-hessian2
+go mod edit -replace github.com/adalogics/go-fuzz-headers=github.com/adamkorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 cp $CNCFFuzzing/fuzz_components_contrib_dubbo_test.go ./bindings/dubbo/
 cp $CNCFFuzzing/fuzz_components_contrib_mqtt3_test.go ./pubsub/mqtt3/
 cp $CNCFFuzzing/fuzz_components_contrib_state_query_test.go ./state/query/
 cp $CNCFFuzzing/fuzz_components_contrib_state_test.go ./state/
 cp $CNCFFuzzing/fuzz_components_contrib_metadata_test.go ./metadata/
 cp $CNCFFuzzing/fuzz_components_contrib_ratelimiter_test.go ./middleware/http/ratelimit/
+cp $CNCFFuzzing/fuzz_components_contrib_graphql_test.go ./bindings/graphql/
+cp $CNCFFuzzing/fuzz_components_contrib_azure_eventgrid_test.go ./bindings/azure/eventgrid/
 printf "package metadata\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > ./metadata/registerfuzzdep.go
 go mod tidy
 
@@ -118,3 +123,6 @@ compile_native_go_fuzzer github.com/dapr/components-contrib/state/query FuzzQuer
 compile_native_go_fuzzer github.com/dapr/components-contrib/state FuzzCheckRequestOptions FuzzCheckRequestOptions
 compile_native_go_fuzzer github.com/dapr/components-contrib/metadata FuzzDecodeMetadata FuzzDecodeMetadata
 compile_native_go_fuzzer github.com/dapr/components-contrib/middleware/http/ratelimit FuzzRLTest FuzzRLTest
+compile_native_go_fuzzer github.com/dapr/components-contrib/bindings/graphql FuzzGraphqlRETest FuzzGraphqlRETest
+compile_native_go_fuzzer github.com/dapr/components-contrib/bindings/azure/eventgrid FuzzAzureEventGridTest FuzzAzureEventGridTest
+
