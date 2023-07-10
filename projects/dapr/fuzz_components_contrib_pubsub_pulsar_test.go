@@ -13,35 +13,46 @@
 // limitations under the License.
 //
 
-package acl
+package pulsar
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/dapr/dapr/pkg/config"
-	"github.com/dapr/kit/logger"
-	"github.com/PuerkitoBio/purell"
 	"testing"
+
+	"github.com/dapr/components-contrib/pubsub"
+	fuzz "github.com/AdamKorcz/go-fuzz-headers-1"
 )
 
-func init() {
-	log.SetOutputLevel(logger.FatalLevel)
-}
+var (
+	protocols = map[int]string {
+		0: jsonProtocol,
+		1: avroProtocol,
+	}
+)
 
-func FuzzParseAccessControlSpec(f *testing.F) {
-	f.Fuzz(func(t *testing.T, specData []byte) {
-		ff := fuzz.NewConsumer(specData)
-		s := &config.AccessControlSpec{}
-		ff.GenerateStruct(s)
-		b, err := ff.GetBool()
+
+func FuzzAvroTest(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		ff := fuzz.NewConsumer(data)
+
+		req := &pubsub.PublishRequest{}
+		ff.GenerateStruct(req)
+
+		i, err := ff.GetInt()
 		if err != nil {
 			return
 		}
-		_, _ = ParseAccessControlSpec(*s, b)
-	})
-}
+		protocol := protocols[i%len(protocols)]
 
-func FuzzPurellTest(f *testing.F) {
-	f.Fuzz(func(t *testing.T, operation string) {
-		_, _ = purell.NormalizeURLString(operation, purell.FlagsUsuallySafeGreedy|purell.FlagRemoveDuplicateSlashes)
+		value, err := ff.GetString()
+		if err != nil {
+			return
+		}
+
+		schema := schemaMetadata{
+			protocol: protocol,
+			value: value,
+		}
+
+		parsePublishMetadata(req, schema)
 	})
 }

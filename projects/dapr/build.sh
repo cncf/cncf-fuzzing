@@ -50,6 +50,7 @@ cp $CNCFFuzzing/fuzz_acl_test.go $SRC/dapr/pkg/acl/
 cp $CNCFFuzzing/fuzz_acl_apply_test.go $SRC/dapr/pkg/acl/
 go mod tidy
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzParseAccessControlSpec FuzzParseAccessControlSpec
+compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzPurellTest FuzzPurellTest
 compile_native_go_fuzzer github.com/dapr/dapr/pkg/acl FuzzIsOperationAllowedByAccessControlPolicy FuzzIsOperationAllowedByAccessControlPolicy
 
 cp $CNCFFuzzing/fuzz_http_server_test.go $SRC/dapr/pkg/http/
@@ -114,6 +115,7 @@ cp $CNCFFuzzing/fuzz_components_contrib_metadata_test.go ./metadata/
 cp $CNCFFuzzing/fuzz_components_contrib_ratelimiter_test.go ./middleware/http/ratelimit/
 cp $CNCFFuzzing/fuzz_components_contrib_graphql_test.go ./bindings/graphql/
 cp $CNCFFuzzing/fuzz_components_contrib_azure_eventgrid_test.go ./bindings/azure/eventgrid/
+cp $CNCFFuzzing/fuzz_components_contrib_pubsub_pulsar_test.go ./pubsub/pulsar/
 printf "package metadata\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > ./metadata/registerfuzzdep.go
 go mod tidy
 
@@ -125,4 +127,4 @@ compile_native_go_fuzzer github.com/dapr/components-contrib/metadata FuzzDecodeM
 compile_native_go_fuzzer github.com/dapr/components-contrib/middleware/http/ratelimit FuzzRLTest FuzzRLTest
 compile_native_go_fuzzer github.com/dapr/components-contrib/bindings/graphql FuzzGraphqlRETest FuzzGraphqlRETest
 compile_native_go_fuzzer github.com/dapr/components-contrib/bindings/azure/eventgrid FuzzAzureEventGridTest FuzzAzureEventGridTest
-
+compile_native_go_fuzzer github.com/dapr/components-contrib/pubsub/pulsar FuzzAvroTest FuzzAvroTest
