@@ -104,7 +104,6 @@ cd $SRC
 git clone --depth=1 https://github.com/dapr/components-contrib
 git clone --depth=1 https://github.com/AdamKorcz/dubbo-go-hessian2 --branch=fix1
 cd components-contrib
-go mod edit -replace 
 go mod edit -replace github.com/apache/dubbo-go-hessian2=$SRC/dubbo-go-hessian2
 go mod edit -replace github.com/adalogics/go-fuzz-headers=github.com/adamkorcz/go-fuzz-headers-1@1f10f66a31bf0e5cc26a2f4a74bd3be5f6463b67
 cp $CNCFFuzzing/fuzz_components_contrib_dubbo_test.go ./bindings/dubbo/
