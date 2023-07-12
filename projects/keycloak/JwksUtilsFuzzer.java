@@ -60,21 +60,24 @@ public class JwksUtilsFuzzer {
       for (int i = 0; i < choices.length; i++) {
         builder.algorithm(data.pickValue(algorithm));
         if (choices[i]) {
-          // Generate JWK key using RSA and X.509 certificate
+          // Generate random X509 certificate
           CertificateFactory cf = CertificateFactory.getInstance("X.509");
           X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(byteArray));
           List<X509Certificate> certList = List.of(cert);
 
+          // Generate random RSA keypair
           KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
           generator.initialize(2048);
           KeyPair keyPair = generator.generateKeyPair();
 
+          // Generate JWK key with the random RSA public key, random X509 certificate and random choice of key use
           keys[i] = builder.rsa(keyPair.getPublic(), certList, data.pickValue(keyUse));
         } else {
-          // Generate JWK key using EC
+          // Generate random EC keypair
           KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
           KeyPair keyPair = generator.generateKeyPair();
 
+          // Generate JWK key with the random EC public key and random choice of key use
           keys[i] = builder.ec(keyPair.getPublic(), data.pickValue(keyUse));
         }
       }
