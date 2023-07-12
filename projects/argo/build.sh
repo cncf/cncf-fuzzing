@@ -29,6 +29,7 @@ mkdir temp-go
 rm -rf /root/.go/*
 tar -C temp-go/ -xzf go1.19.3.linux-amd64.tar.gz
 mv temp-go/go/* /root/.go/
+rm -r temp-go
 
 cd $SRC/argo-rollouts
 go mod tidy
@@ -164,6 +165,18 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/reposerver/repository FuzzGener
 
 mv $SRC/cncf-fuzzing/projects/argo/normalizer_fuzzer.go $SRC/argo-cd/util/argo/normalizers/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNormalize fuzz_normalize
+
+
+# install Go 1.20.5
+apt-get update && apt-get install -y wget
+cd $SRC
+wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz
+
+mkdir temp-go
+rm -rf /root/.go/*
+tar -C temp-go/ -xzf go1.20.5.linux-amd64.tar.gz
+mv temp-go/go/* /root/.go/
+
 
 # argo-workflows fuzzers
 cd $SRC/argo-workflows
