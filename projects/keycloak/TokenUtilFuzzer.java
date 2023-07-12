@@ -34,31 +34,27 @@ import org.keycloak.util.TokenUtil;
   result randomly.
   */
 public class TokenUtilFuzzer {
+  // Set up a list of valid algorithm for the JWE object
+  private static String[] alg = {
+    JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
+    JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256
+  };
+
+  // Set up a list of valid encryption / compression
+  // algorithm for the JWE object
+  private static String[] enc = {
+    JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
+    JWEConstants.A256CBC_HS512, JWEConstants.A128GCM,
+    JWEConstants.A192GCM, JWEConstants.A256GCM
+  };
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Set up a list of valid algorithm for the JWE object
-      String[] alg = {
-        JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
-        JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256
-      };
+      KeyGenerator generator = null;
+      Key aesKey = null;
+      Key hmacKey = null;
 
-      // Set up a list of valid encryption / compression
-      // algorithm for the JWE object
-      String[] enc = {
-        JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
-        JWEConstants.A256CBC_HS512, JWEConstants.A128GCM,
-        JWEConstants.A192GCM, JWEConstants.A256GCM
-      };
-
-      Integer choice = data.consumeInt(1, 7);
-
-      KeyGenerator generator = KeyGenerator.getInstance("AES");
-      generator.init(128);
-      Key aesKey = generator.generateKey();
-
-      generator = KeyGenerator.getInstance("HmacSHA256");
-      Key hmacKey = generator.generateKey();
-
+      Integer choice = data.consumeInt(1, 6);
       switch(choice) {
         case 1:
           TokenUtil.isOfflineToken(data.consumeRemainingAsString());
@@ -67,28 +63,43 @@ public class TokenUtilFuzzer {
           TokenUtil.getRefreshToken(data.consumeRemainingAsBytes());
           break;
         case 3:
+          generator = KeyGenerator.getInstance("AES");
+          generator.init(128);
+          aesKey = generator.generateKey();
+          generator = KeyGenerator.getInstance("HmacSHA256");
+          hmacKey = generator.generateKey();
           TokenUtil.jweDirectEncode(aesKey, hmacKey, data.consumeRemainingAsBytes());
           break;
         case 4:
+          generator = KeyGenerator.getInstance("AES");
+          generator.init(128);
+          aesKey = generator.generateKey();
+          generator = KeyGenerator.getInstance("HmacSHA256");
+          hmacKey = generator.generateKey();
           TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, data.consumeRemainingAsString());
           break;
         case 5:
+          generator = KeyGenerator.getInstance("AES");
+          generator.init(128);
+          aesKey = generator.generateKey();
           TokenUtil.jweKeyEncryptionVerifyAndDecode(aesKey, data.consumeRemainingAsString());
           break;
         case 6:
-        case 7:
-          String algAlgorithm = data.pickValue(alg);
-          String encAlgorithm = data.pickValue(enc);
-          String kid = data.consumeString(10);
+          generator = KeyGenerator.getInstance("AES");
+          generator.init(128);
+          aesKey = generator.generateKey();
           JWEAlgorithmProvider jweAlgorithmProvider = new DirectAlgorithmProvider();
           JWEEncryptionProvider jweEncryptionProvider;
           if (data.consumeBoolean()) {
-            jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(data.pickValue(enc));
+            jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
           } else {
-            jweEncryptionProvider = new AesGcmJWEEncryptionProvider(data.pickValue(enc));
+            jweEncryptionProvider = new AesGcmJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
           }
 
-          if (choice == 6) {
+          if (data.consumeBoolean()) {
+            String algAlgorithm = data.pickValue(TokenUtilFuzzer.alg);
+            String encAlgorithm = data.pickValue(TokenUtilFuzzer.enc);
+            String kid = data.consumeString(data.remainingBytes() / 2);
             TokenUtil.jweKeyEncryptionEncode(
                 aesKey, data.consumeRemainingAsBytes(), algAlgorithm, encAlgorithm,
                 kid, jweAlgorithmProvider, jweEncryptionProvider
