@@ -28,10 +28,9 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.util.TokenUtil;
 
 /**
-  This fuzzer targets the methods in JWKParser.
-  It passes random string to the JWKParser object
-  and call other methods that rely on the parsing
-  result randomly.
+  This fuzzer targets the methods in TokenUtil class.
+  It passes random string for choosing algorithm,
+  key creation and method call.
   */
 public class TokenUtilFuzzer {
   // Set up a list of valid algorithm for the JWE object
@@ -50,45 +49,67 @@ public class TokenUtilFuzzer {
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Create base object for method call
       KeyGenerator generator = null;
       Key aesKey = null;
       Key hmacKey = null;
 
+      // Randomly choose which method to invoke
       Integer choice = data.consumeInt(1, 6);
       switch(choice) {
         case 1:
+          // Call isOfflineToken method with random string
           TokenUtil.isOfflineToken(data.consumeRemainingAsString());
           break;
         case 2:
+          // Call getRefreshToken method with random string
           TokenUtil.getRefreshToken(data.consumeRemainingAsBytes());
           break;
         case 3:
+          // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
           generator.init(128);
           aesKey = generator.generateKey();
+
+          // Generate Hmac key for method call
           generator = KeyGenerator.getInstance("HmacSHA256");
           hmacKey = generator.generateKey();
+
+          // Call jweDirectEncode method with the created keys and random byte array
           TokenUtil.jweDirectEncode(aesKey, hmacKey, data.consumeRemainingAsBytes());
           break;
         case 4:
+          // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
           generator.init(128);
           aesKey = generator.generateKey();
+
+          // Generate Hmac key for method call
           generator = KeyGenerator.getInstance("HmacSHA256");
           hmacKey = generator.generateKey();
+
+          // Call jweDirectVerifyAndDecode method with the created keys and random byte array
           TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, data.consumeRemainingAsString());
           break;
         case 5:
+          // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
           generator.init(128);
           aesKey = generator.generateKey();
+
+          // Call jweKeyEncryptionVerifyAndDecode method with the created key and random string
           TokenUtil.jweKeyEncryptionVerifyAndDecode(aesKey, data.consumeRemainingAsString());
           break;
         case 6:
+          // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
           generator.init(128);
           aesKey = generator.generateKey();
+
+          // Initialize the jweAlgorithmProvider object for method call
           JWEAlgorithmProvider jweAlgorithmProvider = new DirectAlgorithmProvider();
+
+          // Randomly initialize a JWEEncryptionProvider object with randomly chosen encryption algorithm
           JWEEncryptionProvider jweEncryptionProvider;
           if (data.consumeBoolean()) {
             jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
@@ -96,15 +117,20 @@ public class TokenUtilFuzzer {
             jweEncryptionProvider = new AesGcmJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
           }
 
+          // Randomly choose which method to invoke
           if (data.consumeBoolean()) {
+            // Choose random algorithm and initialize a key id with random string
             String algAlgorithm = data.pickValue(TokenUtilFuzzer.alg);
             String encAlgorithm = data.pickValue(TokenUtilFuzzer.enc);
             String kid = data.consumeString(data.remainingBytes() / 2);
+
+            // Call jweKeyEncryptionEncode method with created object and random byte array
             TokenUtil.jweKeyEncryptionEncode(
                 aesKey, data.consumeRemainingAsBytes(), algAlgorithm, encAlgorithm,
                 kid, jweAlgorithmProvider, jweEncryptionProvider
             );
           } else {
+            // Call jweKeyEncryptionVerifyAndDecode method with created object and random byte array
             TokenUtil.jweKeyEncryptionVerifyAndDecode(
                 aesKey, data.consumeRemainingAsString(),
                 jweAlgorithmProvider, jweEncryptionProvider
