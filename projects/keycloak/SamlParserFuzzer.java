@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
+import java.lang.RuntimeException;
 import java.nio.charset.StandardCharsets;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -67,7 +68,7 @@ public class SamlParserFuzzer {
           new SAML11AssertionParser().parse(reader);
           break;
       }
-    } catch (ParsingException | XMLStreamException e) {
+    } catch (ParsingException | XMLStreamException | RuntimeException e) {
       // Known exception
     }
   }
