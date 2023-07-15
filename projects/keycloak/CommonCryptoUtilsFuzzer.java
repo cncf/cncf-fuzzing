@@ -101,10 +101,15 @@ public class CommonCryptoUtilsFuzzer {
           }
           break;
         case 10:
-          KeystoreUtil.loadKeyPairFromKeystore(data.consumeString(data.remainingBytes() / 2), data.consumeString(data.remainingBytes() / 2), data.consumeString(data.remainingBytes() / 2), data.consumeString(da>
+          KeystoreUtil.loadKeyPairFromKeystore(data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2),
+              data.pickValue(EnumSet.allOf(KeystoreUtil.KeystoreFormat.class)));
           break;
         case 11:
-          KeystoreUtil.getKeystoreType(data.consumeString(data.remainingBytes() / 2), data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          KeystoreUtil.getKeystoreType(data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 12:
           PemUtils.decodeCertificate(data.consumeRemainingAsString());
@@ -113,7 +118,8 @@ public class CommonCryptoUtilsFuzzer {
           PemUtils.decodePublicKey(data.consumeRemainingAsString());
           break;
         case 14:
-          PemUtils.decodePublicKey(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          PemUtils.decodePublicKey(
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 15:
           PemUtils.decodePrivateKey(data.consumeRemainingAsString());
@@ -123,7 +129,8 @@ public class CommonCryptoUtilsFuzzer {
           PemUtils.encodeKey(keyPair.getPrivate());
           break;
         case 17:
-          cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          cert = (X509Certificate) cf.generateCertificate(
+              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           PemUtils.encodeCertificate(cert);
           break;
         case 18:
@@ -140,7 +147,7 @@ public class CommonCryptoUtilsFuzzer {
           break;
         case 22:
           String encoding = data.consumeString(data.remainingBytes() / 2);
-          String[] chain =  {data.consumeRemainingAsString()};
+          String[] chain = {data.consumeRemainingAsString()};
           PemUtils.generateThumbprint(chain, encoding);
           break;
       }
