@@ -16,17 +16,17 @@
 ################################################################################
 
 # Retrieve JDK-17
-#wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz
-#tar -zxf openjdk-17+35_linux-x64_bin.tar.gz
-#cp -r jdk-17 $OUT/
+wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz
+tar -zxf openjdk-17+35_linux-x64_bin.tar.gz
+cp -r jdk-17 $OUT/
 JAVA_HOME=$OUT/jdk-17
 PATH=$JAVA_HOME/bin:$PATH
 
 # Build Keycloak
-#MAVEN_ARGS="-Djavac.src.version=17 -Djavac.target.version=17 "
-#MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip "
-#MAVEN_ARGS=$MAVEN_ARGS"-DskipExamples -DskipTestsuite"
-#$MVN clean package $MAVEN_ARGS
+MAVEN_ARGS="-Djavac.src.version=17 -Djavac.target.version=17 "
+MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip "
+MAVEN_ARGS=$MAVEN_ARGS"-DskipExamples -DskipTestsuite"
+$MVN clean package $MAVEN_ARGS
 
 # Dependency
 wget https://repo1.maven.org/maven2/org/bouncycastle/bc-fips/1.0.2.3/bc-fips-1.0.2.3.jar
