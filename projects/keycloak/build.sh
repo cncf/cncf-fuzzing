@@ -14,25 +14,30 @@
 # limitations under the License.
 #
 ################################################################################
-
+javac -version
 # Retrieve JDK-17
 wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz
+wget https://repo1.maven.org/maven2/javax/servlet/javax.servlet-api/4.0.1/javax.servlet-api-4.0.1.jar
 tar -zxf openjdk-17+35_linux-x64_bin.tar.gz
 JAVA_HOME=$SRC/keycloak/jdk-17
 
 # Build Keycloak
-MAVEN_ARGS="-Djavac.src.version=17 -Djavac.target.version=17 "
+MAVEN_ARGS="-Djavac.src.version=15 -Djavac.target.version=15 "
 MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip "
 MAVEN_ARGS=$MAVEN_ARGS"-DskipExamples -DskipTestsuite"
 $MVN clean package $MAVEN_ARGS
 
 RUNTIME_CLASSPATH=
 
-for JARFILE in $(find ./ -name *.jar)
+for JARFILE in $(find ./ -name "*.jar")
 do
   if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
-  [[ "$JARFILE" == *"jboss-log"* ]] || [[ "$JARFILE" == *"jackson"* ]]
+  [[ "$JARFILE" == *"adapters/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
+  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"bcprov"* ]] || \
+  [[ "$JARFILE" == *"bcutil/"* ]] || [[ "$JARFILE" == *"bcpkix"* ]] || \
+  [[ "$JARFILE" == *"jboss-log"* ]] || [[ "$JARFILE" == *"jackson"* ]] || \
+  [[ "$JARFILE" == *"wildfly"* ]] || [[ "$JARFILE" == *"javax.servlet"* ]]
   then
     cp $JARFILE $OUT/
     RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
