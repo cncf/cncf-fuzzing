@@ -34,18 +34,13 @@ import org.keycloak.util.TokenUtil;
   */
 public class TokenUtilFuzzer {
   // Set up a list of valid algorithm for the JWE object
-  private static String[] alg = {
-    JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
-    JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256
-  };
+  private static String[] alg = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
+      JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256};
 
   // Set up a list of valid encryption / compression
   // algorithm for the JWE object
-  private static String[] enc = {
-    JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
-    JWEConstants.A256CBC_HS512, JWEConstants.A128GCM,
-    JWEConstants.A192GCM, JWEConstants.A256GCM
-  };
+  private static String[] enc = {JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
+      JWEConstants.A256CBC_HS512, JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM};
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
@@ -56,7 +51,7 @@ public class TokenUtilFuzzer {
 
       // Randomly choose which method to invoke
       Integer choice = data.consumeInt(1, 6);
-      switch(choice) {
+      switch (choice) {
         case 1:
           // Call isOfflineToken method with random string
           TokenUtil.isOfflineToken(data.consumeRemainingAsString());
@@ -109,12 +104,15 @@ public class TokenUtilFuzzer {
           // Initialize the jweAlgorithmProvider object for method call
           JWEAlgorithmProvider jweAlgorithmProvider = new DirectAlgorithmProvider();
 
-          // Randomly initialize a JWEEncryptionProvider object with randomly chosen encryption algorithm
+          // Randomly initialize a JWEEncryptionProvider object with randomly chosen encryption
+          // algorithm
           JWEEncryptionProvider jweEncryptionProvider;
           if (data.consumeBoolean()) {
-            jweEncryptionProvider = new AesCbcHmacShaJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
+            jweEncryptionProvider =
+                new AesCbcHmacShaJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
           } else {
-            jweEncryptionProvider = new AesGcmJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
+            jweEncryptionProvider =
+                new AesGcmJWEEncryptionProvider(data.pickValue(TokenUtilFuzzer.enc));
           }
 
           // Randomly choose which method to invoke
@@ -125,16 +123,12 @@ public class TokenUtilFuzzer {
             String kid = data.consumeString(data.remainingBytes() / 2);
 
             // Call jweKeyEncryptionEncode method with created object and random byte array
-            TokenUtil.jweKeyEncryptionEncode(
-                aesKey, data.consumeRemainingAsBytes(), algAlgorithm, encAlgorithm,
-                kid, jweAlgorithmProvider, jweEncryptionProvider
-            );
+            TokenUtil.jweKeyEncryptionEncode(aesKey, data.consumeRemainingAsBytes(), algAlgorithm,
+                encAlgorithm, kid, jweAlgorithmProvider, jweEncryptionProvider);
           } else {
             // Call jweKeyEncryptionVerifyAndDecode method with created object and random byte array
-            TokenUtil.jweKeyEncryptionVerifyAndDecode(
-                aesKey, data.consumeRemainingAsString(),
-                jweAlgorithmProvider, jweEncryptionProvider
-            );
+            TokenUtil.jweKeyEncryptionVerifyAndDecode(aesKey, data.consumeRemainingAsString(),
+                jweAlgorithmProvider, jweEncryptionProvider);
           }
           break;
       }
