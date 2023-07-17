@@ -14,9 +14,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.TokenVerifier;
 
 public class TokenVerifierFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {

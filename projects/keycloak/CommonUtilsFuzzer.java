@@ -24,15 +24,15 @@ import org.keycloak.common.util.PathHelper;
 import org.keycloak.common.util.StackUtil;
 
 /**
-  * This fuzzer targets the methods in different util
-  * classes in the common package.
-  */
+ * This fuzzer targets the methods in different util
+ * classes in the common package.
+ */
 public class CommonUtilsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomly choose which utils method to invoke
       Integer choice = data.consumeInt(1, 21);
-      switch(choice) {
+      switch (choice) {
         case 1:
           Encode.encodeQueryString(data.consumeRemainingAsString());
           break;

@@ -21,11 +21,11 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
-import org.keycloak.saml.processing.core.parsers.saml.SAML11SubjectParser;
-import org.keycloak.saml.processing.core.parsers.saml.SAML11ResponseParser;
-import org.keycloak.saml.processing.core.parsers.saml.SAML11RequestParser;
 import org.keycloak.saml.processing.core.parsers.saml.SAML11AssertionParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11RequestParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11ResponseParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAML11SubjectParser;
+import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 
 /**
   This fuzzer targets the parse method of all five SAML parser,
@@ -51,7 +51,7 @@ public class SamlParserFuzzer {
       // instance and run the parse method with the
       // random data provided by the XMLEventReader
       // object created above
-      switch(choice) {
+      switch (choice) {
         case 1:
           SAMLParser.getInstance().parse(reader);
           break;
