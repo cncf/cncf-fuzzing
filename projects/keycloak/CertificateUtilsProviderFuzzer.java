@@ -23,6 +23,7 @@ import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.def.BCCertificateUtilsProvider;
 import org.keycloak.crypto.elytron.ElytronCertificateUtils;
+import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
 
 /**
  * This fuzzer targets the methods in different
@@ -38,10 +39,16 @@ public class CertificateUtilsProviderFuzzer {
 
     try {
       // Randomly create a certificate utils provider instance
-      if (data.consumeBoolean()) {
-        provider = new BCCertificateUtilsProvider();
-      } else {
-        provider = new ElytronCertificateUtils();
+      switch (data.consumeInt()) {
+        case 1:
+          provider = new BCCertificateUtilsProvider();
+          break;
+        case 2:
+          provider = new ElytronCertificateUtils();
+          break;
+        case 3:
+          provider = new BCFIPSCertificateUtilsProvider();
+          break;
       }
 
       CertificateFactory cf = CertificateFactory.getInstance("X.509");

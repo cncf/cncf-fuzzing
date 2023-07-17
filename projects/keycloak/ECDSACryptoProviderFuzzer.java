@@ -18,7 +18,7 @@ import java.io.IOException;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.crypto.def.BCECDSACryptoProvider;
 import org.keycloak.crypto.elytron.ElytronECDSACryptoProvider;
-import org.wildfly.security.asn1.ASN1Exception;
+import org.keycloak.crypto.fips.BCFIPSECDSACryptoProvider;
 
 /**
  * This fuzzer targets the methods in different
@@ -30,10 +30,16 @@ public class ECDSACryptoProviderFuzzer {
     try {
       // Randomly create an instance of ECDSACryptoProvider
       ECDSACryptoProvider provider = null;
-      if (data.consumeBoolean()) {
-        provider = new BCECDSACryptoProvider();
-      } else {
-        provider = new ElytronECDSACryptoProvider();
+      switch (data.consumeInt(1, 3)) {
+        case 1:
+          provider = new BCECDSACryptoProvider();
+          break;
+        case 2:
+          provider = new ElytronECDSACryptoProvider();
+          break;
+        case 3:
+          provider = new BCFIPSECDSACryptoProvider();
+          break;
       }
 
       // Randomly call method from the ECDSACryptoProvider instance
@@ -44,7 +50,7 @@ public class ECDSACryptoProviderFuzzer {
       } else {
         provider.asn1derToConcatenatedRS(bytes, length);
       }
-    } catch (IOException | ASN1Exception e) {
+    } catch (IOException | NullPointerException | IllegalArgumentException e) {
       // Known exception
     }
   }

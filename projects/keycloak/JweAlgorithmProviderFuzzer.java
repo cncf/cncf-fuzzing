@@ -18,9 +18,12 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import javax.crypto.KeyGenerator;
+import org.bouncycastle.crypto.fips.FipsRSA;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
 import org.keycloak.crypto.def.DefaultRsaKeyEncryption256JWEAlgorithmProvider;
 import org.keycloak.crypto.elytron.ElytronRsaKeyEncryption256JWEAlgorithmProvider;
+import org.keycloak.crypto.fips.FIPSAesKeyWrapAlgorithmProvider;
+import org.keycloak.crypto.fips.FIPSRsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
@@ -62,18 +65,29 @@ public class JweAlgorithmProviderFuzzer {
           encryptionKey = keyGenerator.generateKey();
           decryptionKey = encryptionKey;
           algorithmProvider = new org.keycloak.crypto.elytron.AesKeyWrapAlgorithmProvider();
-          break;
         case 3:
-          keyPair = generator.generateKeyPair();
-          encryptionKey = keyPair.getPublic();
-          decryptionKey = keyPair.getPrivate();
-          algorithmProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+          keyGenerator.init(256);
+          encryptionKey = keyGenerator.generateKey();
+          decryptionKey = encryptionKey;
+          algorithmProvider = new FIPSAesKeyWrapAlgorithmProvider();
           break;
         case 4:
           keyPair = generator.generateKeyPair();
           encryptionKey = keyPair.getPublic();
           decryptionKey = keyPair.getPrivate();
+          algorithmProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+          break;
+        case 5:
+          keyPair = generator.generateKeyPair();
+          encryptionKey = keyPair.getPublic();
+          decryptionKey = keyPair.getPrivate();
           algorithmProvider = new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+          break;
+        case 6:
+          keyPair = generator.generateKeyPair();
+          encryptionKey = keyPair.getPublic();
+          decryptionKey = keyPair.getPrivate();
+          algorithmProvider = new FIPSRsaKeyEncryptionJWEAlgorithmProvider(null);
           break;
       }
 
