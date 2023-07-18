@@ -15,12 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.List;
 import org.keycloak.crypto.Algorithm;
@@ -41,12 +41,10 @@ public class JwksUtilsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Prepare the set of algorithm and key use for random choice
-      String[] algorithm = {
-        Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.RS256,
-        Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384,
-        Algorithm.ES512, Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
-        Algorithm.RSA1_5, Algorithm.RSA_OAEP, Algorithm.RSA_OAEP_256, Algorithm.AES
-      };
+      String[] algorithm = {Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.RS256,
+          Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+          Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RSA1_5, Algorithm.RSA_OAEP,
+          Algorithm.RSA_OAEP_256, Algorithm.AES};
       EnumSet<JWK.Use> jwkUse = EnumSet.allOf(JWK.Use.class);
       EnumSet<KeyUse> keyUse = EnumSet.allOf(KeyUse.class);
 
@@ -62,7 +60,8 @@ public class JwksUtilsFuzzer {
         if (choices[i]) {
           // Generate random X509 certificate
           CertificateFactory cf = CertificateFactory.getInstance("X.509");
-          X509Certificate cert = (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(byteArray));
+          X509Certificate cert =
+              (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(byteArray));
           List<X509Certificate> certList = List.of(cert);
 
           // Generate random RSA keypair
@@ -70,7 +69,8 @@ public class JwksUtilsFuzzer {
           generator.initialize(2048);
           KeyPair keyPair = generator.generateKeyPair();
 
-          // Generate JWK key with the random RSA public key, random X509 certificate and random choice of key use
+          // Generate JWK key with the random RSA public key, random X509 certificate and random
+          // choice of key use
           keys[i] = builder.rsa(keyPair.getPublic(), certList, data.pickValue(keyUse));
         } else {
           // Generate random EC keypair

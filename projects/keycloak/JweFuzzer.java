@@ -32,22 +32,19 @@ public class JweFuzzer {
       Boolean choice = data.consumeBoolean();
 
       // Set up a list of valid algorithm for the JWE object
-      String[] alg = {
-        JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
-        JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256
-      };
+      String[] alg = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
+          JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256};
 
       // Set up a list of valid encryption / compression
       // algorithm for the JWE object
-      String[] enc = {
-        JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
-        JWEConstants.A256CBC_HS512, JWEConstants.A128GCM,
-        JWEConstants.A192GCM, JWEConstants.A256GCM
-      };
+      String[] enc = {JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
+          JWEConstants.A256CBC_HS512, JWEConstants.A128GCM, JWEConstants.A192GCM,
+          JWEConstants.A256GCM};
 
       // Creates and initializes a JWEHeader object with random
       // pick of algorithms and encryption / compression algorithms
-      JWEHeader header = new JWEHeader(data.pickValue(alg), data.pickValue(enc), data.pickValue(enc));
+      JWEHeader header =
+          new JWEHeader(data.pickValue(alg), data.pickValue(enc), data.pickValue(enc));
       JWE jwe;
 
       if (choice) {
