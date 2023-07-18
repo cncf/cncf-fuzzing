@@ -74,7 +74,7 @@ PLUGIN=$PLUGIN"</execution></executions></plugin></plugins><pluginManagement>"
 sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 
 ## Execute maven build
-#$MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
+$MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 # Dependency for PolicyEnforcerFuzzer
 wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar
