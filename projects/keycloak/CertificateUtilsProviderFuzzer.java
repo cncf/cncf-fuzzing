@@ -36,19 +36,11 @@ public class CertificateUtilsProviderFuzzer {
   private static Boolean initSuccess;
   private static CertificateFactory cf;
   private static KeyPair keyPair;
-  private static BCCertificateUtilsProvider bcuPovider;
-  private static ElytronCertificateUtils ecuProvider;
-  private static BCFIPSCertificateUtilsProvider bfcuProvider;
 
   public static void fuzzerInitialize() {
     try {
       // Initialize certificate factory
       cf = CertificateFactory.getInstance("X.509");
-
-      // Initialize base provider
-      bcuPovider = new BCCertificateUtilsProvider();
-      ecuProvider = new ElytronCertificateUtils();
-      bfcuProvider = new BCFIPSCertificateUtilsProvider();
 
       // Initialize key pair
       KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
@@ -69,15 +61,12 @@ public class CertificateUtilsProviderFuzzer {
       switch (data.consumeInt(1, 3)) {
         case 1:
             bcuPovider = new BCCertificateUtilsProvider();
-//          provider = bcuPovider;
           break;
         case 2:
             ecuProvider = new ElytronCertificateUtils();
-//          provider = ecuProvider;
           break;
         case 3:
             bfcuProvider = new BCFIPSCertificateUtilsProvider();
-//          provider = bfcuProvider;
           break;
       }
 
