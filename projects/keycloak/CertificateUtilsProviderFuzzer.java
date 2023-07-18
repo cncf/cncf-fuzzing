@@ -16,12 +16,13 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.def.BCCertificateUtilsProvider;
 import org.keycloak.crypto.elytron.ElytronCertificateUtils;
 import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
@@ -32,7 +33,9 @@ import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
  * in the crypto package.
  */
 public class CertificateUtilsProviderFuzzer {
+  private static Boolean initSuccess;
   private static CertificateFactory cf;
+  private static KeyPair keyPair;
   private static BCCertificateUtilsProvider bcuPovider;
   private static ElytronCertificateUtils ecuProvider;
   private static BCFIPSCertificateUtilsProvider bfcuProvider;
@@ -46,7 +49,12 @@ public class CertificateUtilsProviderFuzzer {
       bcuPovider = new BCCertificateUtilsProvider();
       ecuProvider = new ElytronCertificateUtils();
       bfcuProvider = new BCFIPSCertificateUtilsProvider();
-    } catch (CertificateException e) {
+
+      // Initialize key pair
+      KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+      generator.initialize(2048);
+      keyPair = generator.generateKeyPair();
+    } catch (CertificateException | NoSuchAlgorithmException e) {
       // Known exception
     }
   }
@@ -55,19 +63,21 @@ public class CertificateUtilsProviderFuzzer {
     // Initialise base certificate related object
     CertificateUtilsProvider provider = null;
     X509Certificate cert = null;
-    KeyPair keyPair = null;
 
     try {
       // Randomly create a certificate utils provider instance
-      switch (data.consumeInt()) {
+      switch (data.consumeInt(1, 3)) {
         case 1:
-          provider = bcuPovider;
+            bcuPovider = new BCCertificateUtilsProvider();
+//          provider = bcuPovider;
           break;
         case 2:
-          provider = ecuProvider;
+            ecuProvider = new ElytronCertificateUtils();
+//          provider = ecuProvider;
           break;
         case 3:
-          provider = bfcuProvider;
+            bfcuProvider = new BCFIPSCertificateUtilsProvider();
+//          provider = bfcuProvider;
           break;
       }
 
@@ -77,12 +87,10 @@ public class CertificateUtilsProviderFuzzer {
         case 1:
           cert = (X509Certificate) cf.generateCertificate(
               new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
-          keyPair = KeyUtils.generateRsaKeyPair(2048);
           provider.generateV3Certificate(
               keyPair, keyPair.getPrivate(), cert, data.consumeRemainingAsString());
           break;
         case 2:
-          keyPair = KeyUtils.generateRsaKeyPair(2048);
           provider.generateV1SelfSignedCertificate(keyPair, data.consumeRemainingAsString());
           break;
         case 3:
@@ -96,15 +104,16 @@ public class CertificateUtilsProviderFuzzer {
           provider.getCRLDistributionPoints(cert);
           break;
         case 5:
-          keyPair = KeyUtils.generateRsaKeyPair(2048);
           Date startDate = new Date(data.consumeLong());
           Date expiryDate = new Date(data.consumeLong());
           provider.createServicesTestCertificate(data.consumeString(data.remainingBytes() / 2),
               startDate, expiryDate, keyPair, data.consumeRemainingAsString());
           break;
       }
-    } catch (Exception e) {
-      // Known exception directly thrown from the above methods
+    } catch (Exception | NoSuchMethodError | ExceptionInInitializerError e) {
+      // Known exception and errors directly thrown from the above methods
+      // Some methods above capture all exception and throw the general
+      // Exception explicitly, thus it need to be catch.
     }
   }
 }
