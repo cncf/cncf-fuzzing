@@ -30,6 +30,8 @@ MAVEN_ARGS=$MAVEN_ARGS"-DskipTests -Dgpg.skip -Dmaven.source.skip "
 MAVEN_ARGS=$MAVEN_ARGS"-DskipExamples -DskipTestsuite -DskipQuarkus"
 
 ## Exclude unfuzzed modules
+## This is needed to decrease the build time by excluding modules
+## which are not used by the fuzzers.
 EXCLUDE_DOCS="!docs,!docs/maven-plugin,!docs/guides"
 
 EXCLUDE_DEPENDENCY="!dependencies/server-all"
@@ -59,6 +61,9 @@ EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_IN
 EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_MODEL,$EXCLUDE_QUARKUS,$EXCLUDE_REST
 
 ## Activate shade plugin
+## This is needed to activate the shade plugin to combine all needed dependencies and build classes
+## for each module into a single jar. This limit the maximum number of jars and exempt the need
+## to handle separate module dependencies.
 PLUGIN="<plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId>"
 PLUGIN=$PLUGIN"<version>\${shade.plugin.version}</version><executions><execution><phase>package</phase>"
 PLUGIN=$PLUGIN"<goals><goal>shade</goal></goals><configuration><filters><filter><artifact>*:*</artifact>"
