@@ -63,7 +63,8 @@ EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_MODEL,$EXCLUDE_QUARKUS,$EX
 ## Activate shade plugin
 ## This is needed to activate the shade plugin to combine all needed dependencies and build classes
 ## for each module into a single jar. This limit the maximum number of jars and exempt the need
-## to handle separate module dependencies.
+## to handle separate module dependencies. The limiting action of the maximum number of jars is needed
+## to avoid "Arguments too long" error in bash execution of oss-fuzz.
 PLUGIN="<plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId>"
 PLUGIN=$PLUGIN"<version>\${shade.plugin.version}</version><executions><execution><phase>package</phase>"
 PLUGIN=$PLUGIN"<goals><goal>shade</goal></goals><configuration><filters><filter><artifact>*:*</artifact>"
@@ -83,6 +84,7 @@ do
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
   [[ "$JARFILE" == *"crypto/"* ]]
   then
+    # Exclude original jar as all build jars and dependency jars are shaded into a single jar
     if [[ "$JARFILE" != *"original"* ]]
     then
       cp $JARFILE $OUT/
