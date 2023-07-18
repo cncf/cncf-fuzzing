@@ -17,14 +17,15 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.keycloak.json.StringOrArrayDeserializer;
-import org.keycloak.json.StringOrArraySerializer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;;
-import java.io.ObjectOutputStream;
+import java.io.IOException;
+;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import org.keycloak.json.StringOrArrayDeserializer;
+import org.keycloak.json.StringOrArraySerializer;
 
 /**
   This fuzzer targets the serialize method of the StringOrArraySerializer
@@ -49,7 +50,7 @@ public class JsonSerializerDeserializationFuzzer implements Serializable {
       Integer count = data.consumeInt(1, 10);
       String text = data.consumeRemainingAsString();
       String[] input = new String[count];
-      for (int i=0; i < count; i++) {
+      for (int i = 0; i < count; i++) {
         input[i] = text;
       }
 

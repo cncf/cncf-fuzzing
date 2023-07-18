@@ -170,13 +170,15 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNorma
 # install Go 1.20.5
 apt-get update && apt-get install -y wget
 cd $SRC
-wget https://go.dev/dl/go1.20.5.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
 
 mkdir temp-go
 rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.20.5.linux-amd64.tar.gz
+tar -C temp-go/ -xzf go1.20.6.linux-amd64.tar.gz
 mv temp-go/go/* /root/.go/
 
+# required by Go 1.20
+export CXX="${CXX} -lresolv"
 
 # argo-workflows fuzzers
 cd $SRC/argo-workflows
