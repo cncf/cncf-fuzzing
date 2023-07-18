@@ -17,6 +17,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import javax.crypto.KeyGenerator;
 import org.bouncycastle.crypto.fips.FipsRSA;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
@@ -36,16 +37,40 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
  * in the crypto package.
  */
 public class JweAlgorithmProviderFuzzer {
-  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
-    try {
-      // Set up a list of valid encryption algorithm for the JWE object
-      String[] enc = {JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM};
+  // Set up a list of valid encryption algorithm for the JWE object
+  private static final String[] enc = {
+      JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM};
 
+  private static KeyGenerator keyGenerator;
+  private static KeyPairGenerator generator;
+  private static AesKeyWrapAlgorithmProvider akwaProvider;
+  private static org.keycloak.crypto.elytron.AesKeyWrapAlgorithmProvider eakwaProvider;
+  private static FIPSAesKeyWrapAlgorithmProvider fakwaProvider;
+  private static DefaultRsaKeyEncryption256JWEAlgorithmProvider drkeaProvider;
+  private static ElytronRsaKeyEncryption256JWEAlgorithmProvider erkeaProvider;
+  private static FIPSRsaKeyEncryptionJWEAlgorithmProvider frkeaProvider;
+
+  public static void fuzzerInitialize() {
+    try {
       // Initialize the base object for key management and generation
       KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
       KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
       generator.initialize(2048);
 
+      // Initialize providers
+      akwaProvider = new AesKeyWrapAlgorithmProvider();
+      eakwaProvider = new org.keycloak.crypto.elytron.AesKeyWrapAlgorithmProvider();
+      fakwaProvider = new FIPSAesKeyWrapAlgorithmProvider();
+      drkeaProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+      erkeaProvider = new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+      frkeaProvider = new FIPSRsaKeyEncryptionJWEAlgorithmProvider(null);
+    } catch (NoSuchAlgorithmException e) {
+      // Known exception
+    }
+  }
+
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    try {
       JWEAlgorithmProvider algorithmProvider = null;
       KeyPair keyPair = null;
       Key encryptionKey = null;
@@ -58,42 +83,43 @@ public class JweAlgorithmProviderFuzzer {
           keyGenerator.init(256);
           encryptionKey = keyGenerator.generateKey();
           decryptionKey = encryptionKey;
-          algorithmProvider = new AesKeyWrapAlgorithmProvider();
+          algorithmProvider = akwaProvider;
           break;
         case 2:
           keyGenerator.init(256);
           encryptionKey = keyGenerator.generateKey();
           decryptionKey = encryptionKey;
-          algorithmProvider = new org.keycloak.crypto.elytron.AesKeyWrapAlgorithmProvider();
+          algorithmProvider = eakwaProvider;
         case 3:
           keyGenerator.init(256);
           encryptionKey = keyGenerator.generateKey();
           decryptionKey = encryptionKey;
-          algorithmProvider = new FIPSAesKeyWrapAlgorithmProvider();
+          algorithmProvider = fakwaProvider;
           break;
         case 4:
           keyPair = generator.generateKeyPair();
           encryptionKey = keyPair.getPublic();
           decryptionKey = keyPair.getPrivate();
-          algorithmProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+          algorithmProvider = drkeaProvider;
           break;
         case 5:
           keyPair = generator.generateKeyPair();
           encryptionKey = keyPair.getPublic();
           decryptionKey = keyPair.getPrivate();
-          algorithmProvider = new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+          algorithmProvider = erkeaProvider;
           break;
         case 6:
           keyPair = generator.generateKeyPair();
           encryptionKey = keyPair.getPublic();
           decryptionKey = keyPair.getPrivate();
-          algorithmProvider = new FIPSRsaKeyEncryptionJWEAlgorithmProvider(null);
+          algorithmProvider = frkeaProvider;
           break;
       }
 
-      // Randomly call method from the JWE algorithm provider instance
+      // Randomly choose to encode or decode with the JWE Algorithm provider instance
       if (data.consumeBoolean()) {
-        JWEEncryptionProvider provider = new AesGcmJWEEncryptionProvider(data.pickValue(enc));
+        JWEEncryptionProvider provider =
+            new AesGcmJWEEncryptionProvider(data.pickValue(JweAlgorithmProviderFuzzer.enc));
         JWEKeyStorage storage = new JWEKeyStorage();
         storage.setEncryptionProvider(provider);
         storage.setEncryptionKey(encryptionKey);
@@ -104,7 +130,7 @@ public class JweAlgorithmProviderFuzzer {
         algorithmProvider.decodeCek(data.consumeRemainingAsBytes(), decryptionKey);
       }
     } catch (Exception e) {
-      // Known exception
+      // Known exception thrown directly from the encode or decode method.
     }
   }
 }

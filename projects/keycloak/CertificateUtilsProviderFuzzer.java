@@ -16,6 +16,7 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
 import java.security.KeyPair;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Date;
@@ -31,6 +32,25 @@ import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
  * in the crypto package.
  */
 public class CertificateUtilsProviderFuzzer {
+  private static CertificateFactory cf;
+  private static BCCertificateUtilsProvider bcuPovider;
+  private static ElytronCertificateUtils ecuProvider;
+  private static BCFIPSCertificateUtilsProvider bfcuProvider;
+
+  public static void fuzzerInitialize() {
+    try {
+      // Initialize certificate factory
+      cf = CertificateFactory.getInstance("X.509");
+
+      // Initialize base provider
+      bcuPovider = new BCCertificateUtilsProvider();
+      ecuProvider = new ElytronCertificateUtils();
+      bfcuProvider = new BCFIPSCertificateUtilsProvider();
+    } catch (CertificateException e) {
+      // Known exception
+    }
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     // Initialise base certificate related object
     CertificateUtilsProvider provider = null;
@@ -41,17 +61,15 @@ public class CertificateUtilsProviderFuzzer {
       // Randomly create a certificate utils provider instance
       switch (data.consumeInt()) {
         case 1:
-          provider = new BCCertificateUtilsProvider();
+          provider = bcuPovider;
           break;
         case 2:
-          provider = new ElytronCertificateUtils();
+          provider = ecuProvider;
           break;
         case 3:
-          provider = new BCFIPSCertificateUtilsProvider();
+          provider = bfcuProvider;
           break;
       }
-
-      CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
       // Randomly choose which method to invoke
       Integer choice = data.consumeInt(1, 4);
@@ -86,7 +104,7 @@ public class CertificateUtilsProviderFuzzer {
           break;
       }
     } catch (Exception e) {
-      // Known exception
+      // Known exception directly thrown from the above methods
     }
   }
 }

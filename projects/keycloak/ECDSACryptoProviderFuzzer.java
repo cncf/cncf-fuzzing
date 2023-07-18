@@ -26,31 +26,41 @@ import org.keycloak.crypto.fips.BCFIPSECDSACryptoProvider;
  * in the crypto package.
  */
 public class ECDSACryptoProviderFuzzer {
+  private static BCECDSACryptoProvider becProvider;
+  private static ElytronECDSACryptoProvider eecProvider;
+  private static BCFIPSECDSACryptoProvider bfecProvider;
+
+  public static void fuzzerInitialize() {
+    // Initialize base providers
+    becProvider = new BCECDSACryptoProvider();
+    eecProvider = new ElytronECDSACryptoProvider();
+    bfecProvider = new BCFIPSECDSACryptoProvider();
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomly create an instance of ECDSACryptoProvider
       ECDSACryptoProvider provider = null;
       switch (data.consumeInt(1, 3)) {
         case 1:
-          provider = new BCECDSACryptoProvider();
+          provider = becProvider;
           break;
         case 2:
-          provider = new ElytronECDSACryptoProvider();
+          provider = eecProvider;
           break;
         case 3:
-          provider = new BCFIPSECDSACryptoProvider();
+          provider = bfecProvider;
           break;
       }
 
       // Randomly call method from the ECDSACryptoProvider instance
-      Integer length = data.consumeInt();
       byte[] bytes = data.consumeRemainingAsBytes();
       if (data.consumeBoolean()) {
-        provider.concatenatedRSToASN1DER(bytes, length);
+        provider.concatenatedRSToASN1DER(bytes, bytes.length);
       } else {
-        provider.asn1derToConcatenatedRS(bytes, length);
+        provider.asn1derToConcatenatedRS(bytes, bytes.length);
       }
-    } catch (IOException | NullPointerException | IllegalArgumentException e) {
+    } catch (IOException | IllegalArgumentException e) {
       // Known exception
     }
   }
