@@ -47,7 +47,8 @@ public class CertificateUtilsProviderFuzzer {
       generator.initialize(2048);
       keyPair = generator.generateKeyPair();
     } catch (CertificateException | NoSuchAlgorithmException e) {
-      // Known exception
+      // Directly exit if initialisation fails
+      throw new RuntimeException(e);
     }
   }
 
@@ -60,18 +61,18 @@ public class CertificateUtilsProviderFuzzer {
       // Randomly create a certificate utils provider instance
       switch (data.consumeInt(1, 3)) {
         case 1:
-            bcuPovider = new BCCertificateUtilsProvider();
+            provider = new BCCertificateUtilsProvider();
           break;
         case 2:
-            ecuProvider = new ElytronCertificateUtils();
+            provider = new ElytronCertificateUtils();
           break;
         case 3:
-            bfcuProvider = new BCFIPSCertificateUtilsProvider();
+            provider = new BCFIPSCertificateUtilsProvider();
           break;
       }
 
       // Randomly choose which method to invoke
-      Integer choice = data.consumeInt(1, 4);
+      Integer choice = data.consumeInt(1, 5);
       switch (choice) {
         case 1:
           cert = (X509Certificate) cf.generateCertificate(
@@ -99,10 +100,13 @@ public class CertificateUtilsProviderFuzzer {
               startDate, expiryDate, keyPair, data.consumeRemainingAsString());
           break;
       }
-    } catch (Exception | NoSuchMethodError | ExceptionInInitializerError e) {
+    } catch (Exception | NoSuchMethodError | ExceptionInInitializerError | NoClassDefFoundError e) {
       // Known exception and errors directly thrown from the above methods
       // Some methods above capture all exception and throw the general
       // Exception explicitly, thus it need to be catch.
+      // ExceptionInInitializerError and NoClassDefFoundError is caught to
+      // ensure BouncyIntegration fail because of missing providers won't stop
+      // the fuzzer.
     }
   }
 }
