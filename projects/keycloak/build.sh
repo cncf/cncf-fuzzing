@@ -76,13 +76,16 @@ sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 ## Execute maven build
 $MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
+# Dependency for PolicyEnforcerFuzzer
+wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar
+
 RUNTIME_CLASSPATH=
 
 for JARFILE in $(find ./ -name "*.jar")
 do
   if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
-  [[ "$JARFILE" == *"crypto/"* ]]
+  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"mockito"* ]]
   then
     # Exclude original jar as all build jars and dependency jars are shaded into a single jar
     if [[ "$JARFILE" != *"original"* ]]
