@@ -28,12 +28,14 @@ public class AuthzClientFuzzer {
   // Template string for the keycloak json
   // Temporary set to empty url, will point
   // to a mock server when it is implemented
-  private static final String keycloakJson = "{\"realm\":\"oss-fuzz\",\"realm-public-key\":\"TESTING_KEY\",\"auth-server-url\":\"\",\"ssl-required\":\"internal\",\"resource\":\"connect\",\"public-client\":false}";
+  private static final String keycloakJson =
+      "{\"realm\":\"oss-fuzz\",\"realm-public-key\":\"TESTING_KEY\",\"auth-server-url\":\"\",\"ssl-required\":\"internal\",\"resource\":\"connect\",\"public-client\":false}";
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Create the authz client object for fuzzing
-      AuthzClient client = AuthzClient.create(new ByteArrayInputStream(keycloakJson.getBytes(StandardCharsets.UTF_8)));
+      AuthzClient client = AuthzClient.create(
+          new ByteArrayInputStream(keycloakJson.getBytes(StandardCharsets.UTF_8)));
 
       // Randomly fuzz different version of the protection and authorization methods
       // with different parameter combinations
@@ -42,16 +44,19 @@ public class AuthzClientFuzzer {
           client.protection(data.consumeRemainingAsString());
           break;
         case 2:
-          client.protection(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          client.protection(
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 3:
           client.authorization(data.consumeRemainingAsString());
           break;
         case 4:
-          client.authorization(data.consumeString(data.remainingBytes() / 2), data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          client.authorization(data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 5:
-          client.obtainAccessToken(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          client.obtainAccessToken(
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
       }
     } catch (RuntimeException e) {
