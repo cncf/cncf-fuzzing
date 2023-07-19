@@ -51,13 +51,9 @@ public class AuthzClientFuzzer {
       // Mock web server url
       serverUrl = "http://" + serverHost + ":" + serverPort;
 
-      // Create BiPredicate to allow connection to the mock server
-      BiPredicate<String, Integer> urlFilter = (host, port) -> {
-        return host.equals(serverHost) && port.equals(serverPort);
-      };
-
       // Enable the fuzzer to connect only to the mock web server, deny any other connections
-      BugDetectors.allowNetworkConnections(urlFilter);
+      BugDetectors.allowNetworkConnections(
+          (host, port) -> host.equals(serverHost) && port.equals(serverPort));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
