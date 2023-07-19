@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 ///////////////////////////////////////////////////////////////////////////
+import com.code_intelligence.jazzer.api.BugDetectors;
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +21,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.function.BiPredicate;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.authorization.TokenPrincipal;
 import org.keycloak.adapters.authorization.integration.elytron.ServletHttpRequest;
@@ -39,19 +43,66 @@ import org.mockito.Mockito;
  * method of the PolicyEnforcer class of the authz package.
  */
 public class PolicyEnforcerFuzzer {
+  private static MockWebServer server;
+  private static String serverUrl;
+
+  public static void fuzzerInitialize() {
+    // Prepare MockWebServer
+    try {
+      // Start the mock web server
+      server = new MockWebServer();
+      server.start();
+
+      // Retrieve host name and port of the mock web server
+      String serverHost = server.getHostName();
+      Integer serverPort = server.getPort();
+
+      // Mock web server url
+      serverUrl = "http://" + serverHost + ":" + serverPort;
+
+      // Create BiPredicate to allow connection to the mock server
+      BiPredicate<String, Integer> urlFilter = (host, port) -> {
+        return host.equals(serverHost) && port.equals(serverPort);
+      };
+
+      // Enable the fuzzer to connect only to the mock web server, deny any other connections
+      BugDetectors.allowNetworkConnections(urlFilter);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void fuzzerTearDown() {
+    // Shutdown the mock web server
+    try {
+      if (server != null) {
+        server.shutdown();
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Create a random mock response for the mock web server
+      // Then enqueue to the server to serve possible request
+      MockResponse mockResponse = new MockResponse();
+      mockResponse.setBody(data.consumeString(data.remainingBytes() / 2));
+      mockResponse.addHeader("Content-Type", "application/json");
+      server.enqueue(mockResponse);
+
       // Initialize enforcer config instance with random set of request and response data
       PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
       // Randomly choose the enforcement mode
       enforcerConfig.setEnforcementMode(
           data.pickValue(EnumSet.allOf(PolicyEnforcerConfig.EnforcementMode.class)));
       // Randomly set the redirect string
-      enforcerConfig.setOnDenyRedirectTo("");
+      enforcerConfig.setOnDenyRedirectTo(serverUrl);
       // Randomly turn on and off for using http method as scope
       enforcerConfig.setHttpMethodAsScope(data.consumeBoolean());
       // Randomly config the string data for the config
-      enforcerConfig.setAuthServerUrl("");
+      enforcerConfig.setAuthServerUrl(serverUrl);
       enforcerConfig.setRealm("");
       enforcerConfig.setResource("");
 

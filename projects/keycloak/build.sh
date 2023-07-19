@@ -76,8 +76,16 @@ sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 ## Execute maven build
 $MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
-# Dependency for PolicyEnforcerFuzzer
+# Dependency for Mockito and MockWebService functionality
+# Used by PolicyEnforcerFuzzer and AuthzClientFuzzer
 wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar
+wget https://repo1.maven.org/maven2/com/squareup/okhttp3/mockwebserver/4.11.0/mockwebserver-4.11.0.jar
+wget https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.11.0/okhttp-4.11.0.jar
+wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar
+wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.10/kotlin-stdlib-common-1.6.10.jar
+wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/kotlin-stdlib-1.6.10.jar
+wget https://repo1.maven.org/maven2/com/squareup/okio/okio/3.2.0/okio-3.2.0.jar
+wget https://repo1.maven.org/maven2/com/squareup/okio/okio-jvm/3.2.0/okio-jvm-3.2.0.jar
 
 RUNTIME_CLASSPATH=
 
@@ -85,7 +93,10 @@ for JARFILE in $(find ./ -name "*.jar")
 do
   if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
-  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"mockito"* ]]
+  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"mockito"* ]] || \
+  [[ "$JARFILE" == *"mockwebserver"* ]] || [[ "$JARFILE" == *"okhttp"* ]] || \
+  [[ "$JARFILE" == *"junit"* ]] || [[ "$JARFILE" == *"kotlin"* ]] || \
+  [[ "$JARFILE" == *"okio"* ]]
   then
     # Exclude original jar as all build jars and dependency jars are shaded into a single jar
     if [[ "$JARFILE" != *"original"* ]]
