@@ -74,7 +74,7 @@ PLUGIN=$PLUGIN"</execution></executions></plugin></plugins><pluginManagement>"
 sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 
 ## Execute maven build
-#$MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
+$MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 RUNTIME_CLASSPATH=
 
