@@ -68,7 +68,7 @@ public class ServicesUtilsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomly choose which utils method to invoke
-      Integer choice = data.consumeInt(1, 21);
+      Integer choice = data.consumeInt(1, 7);
       switch (choice) {
         case 1:
           // Create certificate and crl from random data
