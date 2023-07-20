@@ -28,7 +28,7 @@ import org.keycloak.validation.ValidationContext;
 import org.mockito.Mockito;
 
 /**
- * This fuzzer targets the methods in ValidationProvider
+ * This fuzzer targets the validate method in ValidationProvider
  * class in the services validation package.
  */
 public class ServicesValidationFuzzer {
