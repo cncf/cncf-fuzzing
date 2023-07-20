@@ -31,9 +31,13 @@ import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
- * This fuzzer targets the methods in different
- * JweAlgorithm Provider implementation classes
- * in the crypto package.
+ * This fuzzer targets the encodeCek and decodeCek
+ * methods of different JweAlgorithm Provider 
+ * implementation classes in the crypto package.
+ * 
+ * The fuzzer randomly selects a provider in each
+ * iteration and either encodes or decodes a value
+ * specified by the fuzzer.
  */
 public class JweAlgorithmProviderFuzzer {
   // Set up a list of valid encryption algorithm for the JWE object
@@ -65,7 +69,6 @@ public class JweAlgorithmProviderFuzzer {
       Key decryptionKey = null;
 
       // Randomly create an JWE Algorithm Provider instance
-      // from different implementation
       switch (data.consumeInt(1, 5)) {
         case 1:
           encryptionKey = key;
@@ -82,11 +85,13 @@ public class JweAlgorithmProviderFuzzer {
           algorithmProvider = new FIPSAesKeyWrapAlgorithmProvider();
           break;
         case 4:
+          // TODO: make encryptionKey and decryptionKey global vars
           encryptionKey = keyPair.getPublic();
           decryptionKey = keyPair.getPrivate();
           algorithmProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
           break;
         case 5:
+          // TODO: make encryptionKey and decryptionKey global vars
           encryptionKey = keyPair.getPublic();
           decryptionKey = keyPair.getPrivate();
           algorithmProvider = new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA");
@@ -110,6 +115,8 @@ public class JweAlgorithmProviderFuzzer {
       // Known exception thrown directly from the encode or decode method.
       // Some methods above capture all exception and throw the general
       // Exception explicitly, thus it need to be catch.
+
+      // TODO: Specify specific exceptions to catch instead of Exception
     }
   }
 }
