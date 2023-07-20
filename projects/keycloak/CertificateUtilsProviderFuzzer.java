@@ -61,13 +61,13 @@ public class CertificateUtilsProviderFuzzer {
       // Randomly create a certificate utils provider instance
       switch (data.consumeInt(1, 3)) {
         case 1:
-            provider = new BCCertificateUtilsProvider();
+          provider = new BCCertificateUtilsProvider();
           break;
         case 2:
-            provider = new ElytronCertificateUtils();
+          provider = new ElytronCertificateUtils();
           break;
         case 3:
-            provider = new BCFIPSCertificateUtilsProvider();
+          provider = new BCFIPSCertificateUtilsProvider();
           break;
       }
 
