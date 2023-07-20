@@ -76,8 +76,7 @@ sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 ## Execute maven build
 $MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
-# Dependency for Mockito and MockWebService functionality
-# Used by PolicyEnforcerFuzzer / AuthzClientFuzzer / ServicesUtilsFuzzer
+# Dependency for Mockito and MockWebService functionality for mocking objects and web service
 wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar
 wget https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.5/byte-buddy-agent-1.14.5.jar
 wget https://repo1.maven.org/maven2/com/squareup/okhttp3/mockwebserver/4.11.0/mockwebserver-4.11.0.jar
