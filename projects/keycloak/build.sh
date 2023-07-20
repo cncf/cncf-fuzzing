@@ -47,8 +47,8 @@ EXCLUDE_JS="!js,!js/apps/account-ui,!js/apps/admin-ui,!js/libs/keycloak-admin-cl
 
 EXCLUDE_MISC="!misc,!misc/keycloak-test-helper,!misc/spring-boot-starter,!misc/spring-boot-starter/keycloak-spring-boot-starter"
 
-EXCLUDE_MODEL="!model,!model/legacy,!model/legacy-private,!model/legacy-services,!model/jpa,!model/map-jpa,!model/infinispan,"
-EXCLUDE_MODEL=$EXCLUDE_MODEL"!model/map,!model/build-processor,!model/map-hot-rod,!model/map-ldap,!model/map-file"
+EXCLUDE_MODEL="!model/legacy-services,!model/infinispan,!model/map-jpa,!model/map,!model/build-processor,"
+EXCLUDE_MODEL=$EXCLUDE_MODEL"!model/map-hot-rod,!model/map-ldap,!model/map-file"
 
 EXCLUDE_QUARKUS="!quarkus,!quarkus/config-api,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
@@ -77,8 +77,9 @@ sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 $MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 # Dependency for Mockito and MockWebService functionality
-# Used by PolicyEnforcerFuzzer and AuthzClientFuzzer
+# Used by PolicyEnforcerFuzzer / AuthzClientFuzzer / ServicesUtilsFuzzer
 wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar
+wget https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.5/byte-buddy-agent-1.14.5.jar
 wget https://repo1.maven.org/maven2/com/squareup/okhttp3/mockwebserver/4.11.0/mockwebserver-4.11.0.jar
 wget https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.11.0/okhttp-4.11.0.jar
 wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar
@@ -93,10 +94,11 @@ for JARFILE in $(find ./ -name "*.jar")
 do
   if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
-  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"mockito"* ]] || \
-  [[ "$JARFILE" == *"mockwebserver"* ]] || [[ "$JARFILE" == *"okhttp"* ]] || \
-  [[ "$JARFILE" == *"junit"* ]] || [[ "$JARFILE" == *"kotlin"* ]] || \
-  [[ "$JARFILE" == *"okio"* ]]
+  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
+  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"byte-buddy"* ]] || \
+  [[ "$JARFILE" == *"mockito"* ]] || [[ "$JARFILE" == *"mockwebserver"* ]] || \
+  [[ "$JARFILE" == *"okio"* ]] || [[ "$JARFILE" == *"okhttp"* ]] || \
+  [[ "$JARFILE" == *"junit"* ]] || [[ "$JARFILE" == *"kotlin"* ]]
   then
     # Exclude original jar as all build jars and dependency jars are shaded into a single jar
     if [[ "$JARFILE" != *"original"* ]]

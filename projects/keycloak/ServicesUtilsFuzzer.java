@@ -14,24 +14,25 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import jakarta.persistence.EntityManager;
 import java.io.ByteArrayInputStream;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Stream;
 import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
-import org.keycloak.models.jpa.GroupAdapter;
-import org.keycloak.models.jpa.RealmAdapter;
-import org.keycloak.models.jpa.UserAdapter;
-import org.keycloak.models.jpa.entities.GroupEntity;
-import org.keycloak.models.jpa.entities.RealmEntity;
-import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
@@ -49,8 +50,6 @@ import org.mockito.Mockito;
 public class ServicesUtilsFuzzer {
   private static CertificateFactory cf;
   private static DefaultKeycloakSession session;
-  private static EntityManager entityManager;
-  private static RealmAdapter realmModel;
 
   public static void fuzzerInitialize() {
     try {
@@ -60,12 +59,6 @@ public class ServicesUtilsFuzzer {
       // Initialize KeycloakSession
       DefaultKeycloakSessionFactory dksf = new DefaultKeycloakSessionFactory();
       session = new DefaultKeycloakSession(dksf);
-
-      // Initialize EntityManager
-      entityManager = Mockito.mock(EntityManager.class);
-
-      // Initialize RealmAdapter
-      realmModel = new RealmAdapter(session, entityManager, new RealmEntity());
     } catch (CertificateException e) {
       // Directly exit if initialisation fails
       throw new RuntimeException(e);
@@ -78,58 +71,104 @@ public class ServicesUtilsFuzzer {
       Integer choice = data.consumeInt(1, 21);
       switch (choice) {
         case 1:
+          // Create certificate and crl from random data
           X509Certificate[] certs = new X509Certificate[3];
-          for (int i=0; i<3; i++) {
+          for (int i = 0; i < 3; i++) {
             certs[i] = (X509Certificate) cf.generateCertificate(
                 new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           }
-          X509CRL crl = (X509CRL) cf.generateCRL(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+          X509CRL crl =
+              (X509CRL) cf.generateCRL(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+
+          // Call target method
           CRLUtils.check(certs, crl, session);
           break;
         case 2:
-          GroupAdapter group = new GroupAdapter(realmModel, entityManager, new GroupEntity());
+          // Create and mock GroupModel instance with random data
+          GroupModel group = Mockito.mock(GroupModel.class);
+          Mockito.when(group.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+          Mockito.when(group.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+          Mockito.when(group.getParent()).thenReturn(null);
 
+          Stream.Builder<GroupModel> builder = Stream.builder();
+          Mockito.when(group.getSubGroupsStream()).thenReturn(builder.build());
+
+          Map<String, List<String>> attributeMap = new HashMap<String, List<String>>();
+          attributeMap.put(data.consumeString(data.remainingBytes() / 2),
+              List.of(data.consumeString(data.remainingBytes() / 2)));
+          Mockito.when(group.getAttributes()).thenReturn(attributeMap);
+
+          // Create and mock GroupPermissionEvaluator instance with random data
           GroupPermissionEvaluator groupPermissions = Mockito.mock(GroupPermissionEvaluator.class);
           Mockito.when(groupPermissions.canList()).thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canManage(group)).thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canView(group)).thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canManage()).thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canView()).thenReturn(data.consumeBoolean());
-          Mockito.when(groupPermissions.getGroupsWithViewPermission(group)).thenReturn(data.consumeBoolean());
-          Mockito.when(groupPermissions.canManageMembership(group)).thenReturn(data.consumeBoolean());
+          Mockito.when(groupPermissions.getGroupsWithViewPermission(group))
+              .thenReturn(data.consumeBoolean());
+          Mockito.when(groupPermissions.canManageMembership(group))
+              .thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canViewMembers(group)).thenReturn(data.consumeBoolean());
 
-          Map<String, Boolean> map = new HashMap<String, Boolean>();
-          map.put(data.consumeString(data.remainingBytes() / 2), data.consumeBoolean());
-          Mockito.when(groupPermissions.getAccess(group)).thenReturn(map);
+          Map<String, Boolean> permissionMap = new HashMap<String, Boolean>();
+          permissionMap.put(data.consumeString(data.remainingBytes() / 2), data.consumeBoolean());
+          Mockito.when(groupPermissions.getAccess(group)).thenReturn(permissionMap);
 
           Set<String> set = new HashSet<String>();
           set.add(data.consumeString(data.remainingBytes() / 2));
           Mockito.when(groupPermissions.getGroupsWithViewPermission()).thenReturn(set);
 
+          // Retrieve random boolean data
           Boolean exact = data.consumeBoolean();
           Boolean full = data.consumeBoolean();
-          GroupUtils.toGroupHierarchy(groupPermissions, group, data.consumeRemainingAsString(), exact, full);
+
+          // Call target method
+          try {
+            GroupUtils.toGroupHierarchy(
+                groupPermissions, group, data.consumeRemainingAsString(), exact, full);
+          } catch (NullPointerException e) {
+            // Handle the case when the execution environment don't have any profile instance
+            if (!e.toString().contains(
+                    "the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
+              throw e;
+            }
+          }
           break;
         case 3:
-          RegexUtils.valueMatchesRegex(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          // Call target method
+          RegexUtils.valueMatchesRegex(Pattern.quote(data.consumeString(data.remainingBytes() / 2)),
+              data.consumeRemainingAsString());
           break;
         case 4:
+          // Call target method
           SearchQueryUtils.getFields(data.consumeRemainingAsString());
           break;
         case 5:
+          // Call target method
           SearchQueryUtils.unescape(data.consumeRemainingAsString());
           break;
         case 6:
+          // Call target method
           TotpUtils.encode(data.consumeRemainingAsString());
           break;
         case 7:
-          UserAdapter userModel = new UserAdapter(session, realmModel, entityManager, new UserEntity());
+          // Create and mock UserModel instance with random data
+          UserModel userModel = Mockito.mock(UserModel.class);
+          Mockito.when(userModel.getUsername())
+              .thenReturn(data.consumeString(data.remainingBytes() / 2));
 
+          // Create and mock RealmModel instance with default policy and random data
+          RealmModel realmModel = Mockito.mock(RealmModel.class);
+          Mockito.when(realmModel.getOTPPolicy()).thenReturn(OTPPolicy.DEFAULT_POLICY);
+          Mockito.when(realmModel.getName())
+              .thenReturn(data.consumeString(data.remainingBytes() / 2));
+
+          // Call target method
           TotpUtils.qrCode(data.consumeRemainingAsString(), realmModel, userModel);
           break;
       }
-    } catch (GeneralSecurityException e) {
+    } catch (GeneralSecurityException | PatternSyntaxException e) {
       // Known exception
     }
   }
