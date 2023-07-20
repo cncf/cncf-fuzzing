@@ -66,7 +66,7 @@ public class JweAlgorithmProviderFuzzer {
 
       // Randomly create an JWE Algorithm Provider instance
       // from different implementation
-      switch (data.consumeInt(1, 6)) {
+      switch (data.consumeInt(1, 5)) {
         case 1:
           encryptionKey = key;
           decryptionKey = key;
