@@ -16,8 +16,9 @@
 ################################################################################
 
 # Retrieve JDK-17
-wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz
-tar -zxf openjdk-17+35_linux-x64_bin.tar.gz
+wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz -O openjdk-17.tar.gz
+tar -zxf openjdk-17.tar.gz
+rm -f openjdk-17.tar.gz
 cp -r jdk-17 $OUT/
 JAVA_HOME=$OUT/jdk-17
 PATH=$JAVA_HOME/bin:$PATH
@@ -77,15 +78,16 @@ sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
 $MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 # Dependency for Mockito and MockWebService functionality for mocking objects and web service
-wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar
-wget https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.5/byte-buddy-agent-1.14.5.jar
-wget https://repo1.maven.org/maven2/com/squareup/okhttp3/mockwebserver/4.11.0/mockwebserver-4.11.0.jar
-wget https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.11.0/okhttp-4.11.0.jar
-wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar
-wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.10/kotlin-stdlib-common-1.6.10.jar
-wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/kotlin-stdlib-1.6.10.jar
-wget https://repo1.maven.org/maven2/com/squareup/okio/okio/3.2.0/okio-3.2.0.jar
-wget https://repo1.maven.org/maven2/com/squareup/okio/okio-jvm/3.2.0/okio-jvm-3.2.0.jar
+mkdir -p fuzzer-dependencies
+wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar -O fuzzer-dependencies/mockito-core.jar
+wget https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.5/byte-buddy-agent-1.14.5.jar -O fuzzer-dependencies/byte-buddy-agent.jar
+wget https://repo1.maven.org/maven2/com/squareup/okhttp3/mockwebserver/4.11.0/mockwebserver-4.11.0.jar -O fuzzer-dependencies/mockwebserver.jar
+wget https://repo1.maven.org/maven2/com/squareup/okio/okio/3.2.0/okio-3.2.0.jar -O fuzzer-dependencies/okio.jar
+wget https://repo1.maven.org/maven2/com/squareup/okio/okio-jvm/3.2.0/okio-jvm-3.2.0.jar -O fuzzer-dependencies/okio-jvm.jar
+wget https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.11.0/okhttp-4.11.0.jar -O fuzzer-dependencies/okhttp.jar
+wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar -O fuzzer-dependencies/junit.jar
+wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.10/kotlin-stdlib-common-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib-commin.jar
+wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/kotlin-stdlib-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib.jar
 
 RUNTIME_CLASSPATH=
 
@@ -94,10 +96,7 @@ do
   if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
   [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
-  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"byte-buddy"* ]] || \
-  [[ "$JARFILE" == *"mockito"* ]] || [[ "$JARFILE" == *"mockwebserver"* ]] || \
-  [[ "$JARFILE" == *"okio"* ]] || [[ "$JARFILE" == *"okhttp"* ]] || \
-  [[ "$JARFILE" == *"junit"* ]] || [[ "$JARFILE" == *"kotlin"* ]]
+  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
   then
     # Exclude original jar as all build jars and dependency jars are shaded into a single jar
     if [[ "$JARFILE" != *"original"* ]]
