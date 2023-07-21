@@ -48,8 +48,8 @@ import org.keycloak.services.resources.Cors;
 import org.mockito.Mockito;
 
 /**
- * This fuzzer targets the methods in DefaultTokenManager
- * class in the services jose jwe package.
+ * This fuzzer targets the authorize method in the AuthorizationTokenService
+ * class in the services authorization package.
  */
 public class AuthorizationTokenServiceFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
