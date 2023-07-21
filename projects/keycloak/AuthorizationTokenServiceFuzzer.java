@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -57,8 +58,9 @@ public class AuthorizationTokenServiceFuzzer {
       RealmModel realmModel = Mockito.mock(RealmModel.class);
       Mockito.when(realmModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
       Mockito.when(realmModel.isEventsEnabled()).thenReturn(data.consumeBoolean());
+      Mockito.when(realmModel.getName()).thenReturn("realm");
       Mockito.when(realmModel.getDefaultSignatureAlgorithm())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+          .thenReturn(data.consumeString(data.remainingBytes() / 2));
 
       // Retrieve mock client model instance
       ClientModel clientModel = mockClientModel(data, realmModel);
@@ -70,7 +72,8 @@ public class AuthorizationTokenServiceFuzzer {
       AuthorizationTokenService service = AuthorizationTokenService.instance();
 
       // Retrieve a mocked KeycloakAuthorizationRequest instance
-      AuthorizationTokenService.KeycloakAuthorizationRequest request = mockKeycloakAuthorizationRequest(data, session, realmModel);
+      AuthorizationTokenService.KeycloakAuthorizationRequest request =
+          mockKeycloakAuthorizationRequest(data, session, realmModel);
 
       // Invoke the authorize method
       service.authorize(request);
@@ -138,12 +141,16 @@ public class AuthorizationTokenServiceFuzzer {
     ClientConnection connection = mockClientConnection(data);
 
     MultivaluedMap<String, String> map = new MultivaluedHashMap<String, String>();
-    map.add(data.consumeString(data.remainingBytes() / 2), data.consumeString(data.remainingBytes() / 2));
+    map.add(data.consumeString(data.remainingBytes() / 2),
+        data.consumeString(data.remainingBytes() / 2));
 
     // Create and mock UriInfo instance
     KeycloakUriInfo uriInfo = Mockito.mock(KeycloakUriInfo.class);
-    URI uri = new URI(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(uriInfo.getBaseUri()).thenReturn(uri);
+    try {
+      Mockito.when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost"));
+    } catch (URISyntaxException e) {
+      // Known exception
+    }
     Mockito.when(uriInfo.getQueryParameters()).thenReturn(map);
 
     // Create and mock KeycloakContext
@@ -161,12 +168,15 @@ public class AuthorizationTokenServiceFuzzer {
 
     // Create and mock ClientProvider
     ClientProvider clientProvider = Mockito.mock(ClientProvider.class);
-    Mockito.when(clientProvider.getClientById(Mockito.any(), Mockito.any())).thenReturn(clientModel);
-    Mockito.when(clientProvider.getClientByClientId(Mockito.any(), Mockito.any())).thenReturn(clientModel);
+    Mockito.when(clientProvider.getClientById(Mockito.any(), Mockito.any()))
+        .thenReturn(clientModel);
+    Mockito.when(clientProvider.getClientByClientId(Mockito.any(), Mockito.any()))
+        .thenReturn(clientModel);
 
     // Create and mock TransactionManager
     KeycloakTransactionManager transactionManager = Mockito.mock(KeycloakTransactionManager.class);
-    Mockito.when(transactionManager.getJTAPolicy()).thenReturn(data.pickValue(EnumSet.allOf(KeycloakTransactionManager.JTAPolicy.class)));
+    Mockito.when(transactionManager.getJTAPolicy())
+        .thenReturn(data.pickValue(EnumSet.allOf(KeycloakTransactionManager.JTAPolicy.class)));
 
     // Create mock return for KeycloakSessionObject
     Mockito.when(session.getContext()).thenReturn(keycloakContext);
@@ -199,18 +209,24 @@ public class AuthorizationTokenServiceFuzzer {
   private static ClientConnection mockClientConnection(FuzzedDataProvider data) {
     // Mock ClientConnection instance
     ClientConnection clientConnection = Mockito.mock(ClientConnection.class);
-    Mockito.when(clientConnection.getRemoteAddr()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientConnection.getRemoteHost()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientConnection.getLocalAddr()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientConnection.getRemoteAddr())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientConnection.getRemoteHost())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientConnection.getLocalAddr())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientConnection.getRemotePort()).thenReturn(data.consumeInt(1, 65536));
     Mockito.when(clientConnection.getLocalPort()).thenReturn(data.consumeInt(1, 65536));
 
     return clientConnection;
   }
 
-  private static AuthorizationTokenService.KeycloakAuthorizationRequest mockKeycloakAuthorizationRequest(FuzzedDataProvider data, KeycloakSession session, RealmModel realmModel) {
+  private static AuthorizationTokenService.KeycloakAuthorizationRequest
+  mockKeycloakAuthorizationRequest(
+      FuzzedDataProvider data, KeycloakSession session, RealmModel realmModel) {
     // Create AuthorizationProvider instance
-    AuthorizationProvider authorizationProvider = new DefaultAuthorizationProviderFactory().create(session);
+    AuthorizationProvider authorizationProvider =
+        new DefaultAuthorizationProviderFactory().create(session);
 
     // Retrieve mock ClientConnection instance
     ClientConnection clientConnection = mockClientConnection(data);
@@ -228,6 +244,7 @@ public class AuthorizationTokenServiceFuzzer {
     // Create TokenManager instance
     TokenManager tokenManager = new TokenManager();
 
-    return new AuthorizationTokenService.KeycloakAuthorizationRequest(authorizationProvider, tokenManager, eventBuilder, httpRequest, cors, clientConnection);
+    return new AuthorizationTokenService.KeycloakAuthorizationRequest(
+        authorizationProvider, tokenManager, eventBuilder, httpRequest, cors, clientConnection);
   }
 }
