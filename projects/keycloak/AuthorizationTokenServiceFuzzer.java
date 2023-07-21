@@ -54,13 +54,8 @@ import org.mockito.Mockito;
 public class AuthorizationTokenServiceFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Create and mock RealmModel
-      RealmModel realmModel = Mockito.mock(RealmModel.class);
-      Mockito.when(realmModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(realmModel.isEventsEnabled()).thenReturn(data.consumeBoolean());
-      Mockito.when(realmModel.getName()).thenReturn("realm");
-      Mockito.when(realmModel.getDefaultSignatureAlgorithm())
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
+      // Retrieve mock realm model instance
+      RealmModel realmModel = mockRealmModel(data);
 
       // Retrieve mock client model instance
       ClientModel clientModel = mockClientModel(data, realmModel);
@@ -68,18 +63,27 @@ public class AuthorizationTokenServiceFuzzer {
       // Retrieve mock keycloak session instance
       KeycloakSession session = mockKeycloakSession(data, clientModel, realmModel);
 
-      // Retrieve AuthorizationTokenService instance
-      AuthorizationTokenService service = AuthorizationTokenService.instance();
-
       // Retrieve a mocked KeycloakAuthorizationRequest instance
       AuthorizationTokenService.KeycloakAuthorizationRequest request =
           mockKeycloakAuthorizationRequest(data, session, realmModel);
 
       // Invoke the authorize method
-      service.authorize(request);
+      AuthorizationTokenService.instance().authorize(request);
     } catch (CorsErrorResponseException e) {
       // Known exception
     }
+  }
+
+  private static RealmModel mockRealmModel(FuzzedDataProvider data) {
+    // Create and mock RealmModel
+    RealmModel realmModel = Mockito.mock(RealmModel.class);
+    Mockito.when(realmModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(realmModel.isEventsEnabled()).thenReturn(data.consumeBoolean());
+    Mockito.when(realmModel.getName()).thenReturn("realm");
+    Mockito.when(realmModel.getDefaultSignatureAlgorithm())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+
+    return realmModel;
   }
 
   private static ClientModel mockClientModel(FuzzedDataProvider data, RealmModel realmModel) {
@@ -123,6 +127,31 @@ public class AuthorizationTokenServiceFuzzer {
     Mockito.when(model.getRealm()).thenReturn(realmModel);
 
     return model;
+  }
+
+  private static HttpHeaders mockHttpHeaders(FuzzedDataProvider data) {
+    // Create and mock HttpHeaders
+    HttpHeaders headers = Mockito.mock(HttpHeaders.class);
+    MultivaluedMap<String, String> map = new MultivaluedHashMap<String, String>();
+    map.add("Origin", "Origin" + data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(headers.getRequestHeaders()).thenReturn(map);
+
+    return headers;
+  }
+
+  private static ClientConnection mockClientConnection(FuzzedDataProvider data) {
+    // Mock ClientConnection instance
+    ClientConnection clientConnection = Mockito.mock(ClientConnection.class);
+    Mockito.when(clientConnection.getRemoteAddr())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientConnection.getRemoteHost())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientConnection.getLocalAddr())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientConnection.getRemotePort()).thenReturn(data.consumeInt(1, 65536));
+    Mockito.when(clientConnection.getLocalPort()).thenReturn(data.consumeInt(1, 65536));
+
+    return clientConnection;
   }
 
   private static KeycloakSession mockKeycloakSession(
@@ -188,39 +217,6 @@ public class AuthorizationTokenServiceFuzzer {
     return session;
   }
 
-  private static HttpHeaders mockHttpHeaders(FuzzedDataProvider data) {
-    // Create and mock HttpHeaders
-    HttpHeaders headers = Mockito.mock(HttpHeaders.class);
-    MultivaluedMap<String, String> map = new MultivaluedHashMap<String, String>();
-    map.add("Origin", "Origin" + data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(headers.getRequestHeaders()).thenReturn(map);
-
-    return headers;
-  }
-
-  private static HttpRequest mockHttpRequest(FuzzedDataProvider data) {
-    // Prepare HttpRequest instance with the mocked object
-    HttpRequest request = Mockito.mock(HttpRequest.class);
-    Mockito.doReturn(mockHttpHeaders(data)).when(request).getHttpHeaders();
-
-    return request;
-  }
-
-  private static ClientConnection mockClientConnection(FuzzedDataProvider data) {
-    // Mock ClientConnection instance
-    ClientConnection clientConnection = Mockito.mock(ClientConnection.class);
-    Mockito.when(clientConnection.getRemoteAddr())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientConnection.getRemoteHost())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientConnection.getLocalAddr())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientConnection.getRemotePort()).thenReturn(data.consumeInt(1, 65536));
-    Mockito.when(clientConnection.getLocalPort()).thenReturn(data.consumeInt(1, 65536));
-
-    return clientConnection;
-  }
-
   private static AuthorizationTokenService.KeycloakAuthorizationRequest
   mockKeycloakAuthorizationRequest(
       FuzzedDataProvider data, KeycloakSession session, RealmModel realmModel) {
@@ -229,14 +225,15 @@ public class AuthorizationTokenServiceFuzzer {
         new DefaultAuthorizationProviderFactory().create(session);
 
     // Retrieve mock ClientConnection instance
-    ClientConnection clientConnection = mockClientConnection(data);
+    ClientConnection clientConnection = session.getContext().getConnection();
 
     // Create EventBuilder instance
     EventBuilder eventBuilder = new EventBuilder(realmModel, session, clientConnection);
     eventBuilder.event(data.pickValue(EnumSet.allOf(EventType.class)));
 
-    // Retrieve mock HttpRequest instance
-    HttpRequest httpRequest = mockHttpRequest(data);
+    // Prepare HttpRequest instance with the mocked object
+    HttpRequest httpRequest = Mockito.mock(HttpRequest.class);
+    Mockito.doReturn(session.getContext().getRequestHeaders()).when(httpRequest).getHttpHeaders();
 
     // Create Cors instance
     Cors cors = new Cors(httpRequest);

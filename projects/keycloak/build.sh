@@ -39,7 +39,8 @@ EXCLUDE_DEPENDENCY="!dependencies/server-all"
 
 EXCLUDE_FEDERATION="!federation,!federation/kerberos,!federation/ldap,!federation/sssd"
 
-EXCLUDE_INTEGRATION="!integration/admin-client,!integration/client-registration,!integration/client-cli,"
+EXCLUDE_INTEGRATION="!integration,!integration/admin-client-jee,!integration/admin-client,"
+EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integration/client-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/client-registration-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
