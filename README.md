@@ -109,3 +109,10 @@ The following list indicates some common software properties that means your cod
 - If a reliability or reliability issue occur then it can have significant consequences for systems
 - Is used as a library by other applications
 - Projects in memory unsafe languages should have a high prority for being fuzzed (but fuzzing is not exclusive to memory unsafe languages)
+
+## Fuzzing hours
+
+We have montly fuzzing hours on every second Friday of each month at 2PM GMT+1.
+
+URL: [https://us05web.zoom.us/j/86181802116](https://us05web.zoom.us/j/86181802116)
+Passcode: LBw6fY
