@@ -125,8 +125,19 @@ if [[ \"\$@\" =~ (^| )-runs=[0-9]+($| ) ]]; then
 else
   mem_settings='-Xmx2048m:-Xss1024k'
 fi
-LD_LIBRARY_PATH=\"$JVM_LD_LIBRARY_PATH\":\$this_dir JAVA_HOME=\$this_dir/jdk-17 \
-PATH=$JAVA_HOME/bin:$PATH
+
+export JAVA_HOME=\$this_dir/jdk-17
+export LD_LIBRARY_PATH=\"\$JAVA_HOME/lib/server\":\$this_dir
+export PATH=\$JAVA_HOME/bin:\$PATH
+
+CURRENT_JAVA_VERSION=\$(java --version | head -n1)
+
+if [[ \"\$CURRENT_JAVA_VERSION\" != \"openjdk 17\"* ]]
+then
+  echo Requires JDK-17+, found \$CURRENT_JAVA_VERSION
+  exit -1
+fi
+
 \$this_dir/jazzer_driver --agent_path=\$this_dir/jazzer_agent_deploy.jar \
 --cp=$RUNTIME_CLASSPATH \
 --target_class=$fuzzer_basename \
