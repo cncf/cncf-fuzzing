@@ -34,6 +34,7 @@ import (
 	enginecontext "github.com/kyverno/kyverno/pkg/engine/context"
 	"github.com/kyverno/kyverno/pkg/engine/factories"
 	"github.com/kyverno/kyverno/pkg/engine/jmespath"
+	"github.com/kyverno/kyverno/pkg/imageverifycache"
 	"github.com/kyverno/kyverno/pkg/engine/policycontext"
 	"github.com/kyverno/kyverno/pkg/registryclient"
 	kubeutils "github.com/kyverno/kyverno/pkg/utils/kube"
@@ -112,6 +113,7 @@ func testFuzzVerifyAndPatchImages(
 		fuzzJp,
 		nil,
 		factories.DefaultRegistryClientFactory(adapters.RegistryClient(rclient), nil),
+		imageverifycache.DisabledImageVerifyCache(),
 		factories.DefaultContextLoaderFactory(cmResolver),
 		nil,
 		"",
@@ -416,6 +418,7 @@ var validateEngine = NewEngine(
 		fuzzJp,
 		nil,
 		factories.DefaultRegistryClientFactory(adapters.RegistryClient(regClient), nil),
+		imageverifycache.DisabledImageVerifyCache(),
 		factories.DefaultContextLoaderFactory(nil),
 		nil,
 		"",
@@ -492,6 +495,7 @@ func testMutateFuzz(
 		fuzzJp,
 		adapters.Client(client),
 		factories.DefaultRegistryClientFactory(adapters.RegistryClient(rclient), nil),
+		imageverifycache.DisabledImageVerifyCache(),
 		contextLoader,
 		nil,
 		"",
