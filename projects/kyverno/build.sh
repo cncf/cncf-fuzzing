@@ -45,3 +45,6 @@ compile_native_go_fuzzer github.com/kyverno/kyverno/pkg/engine FuzzEngineValidat
 compile_native_go_fuzzer github.com/kyverno/kyverno/pkg/engine FuzzMutateTest FuzzMutateTest
 compile_native_go_fuzzer github.com/kyverno/kyverno/pkg/validation/policy FuzzValidatePolicy FuzzValidatePolicy
 compile_native_go_fuzzer github.com/kyverno/kyverno/pkg/engine/anchor FuzzAnchorParseTest FuzzAnchorParseTest
+
+cp $CNCFFuzzing/fuzz_engine_api_test.go $SRC/kyverno/pkg/engine/api/
+compile_native_go_fuzzer github.com/kyverno/kyverno/pkg/engine/api FuzzEngineResponse FuzzEngineResponse
