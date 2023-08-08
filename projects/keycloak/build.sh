@@ -15,14 +15,6 @@
 #
 ################################################################################
 
-# Retrieve JDK-17
-wget https://download.java.net/openjdk/jdk17/ri/openjdk-17+35_linux-x64_bin.tar.gz -O openjdk-17.tar.gz
-tar -zxf openjdk-17.tar.gz
-rm -f openjdk-17.tar.gz
-cp -r jdk-17 $OUT/
-JAVA_HOME=$OUT/jdk-17
-PATH=$JAVA_HOME/bin:$PATH
-
 # Build Keycloak
 
 ## Maven build arguments
