@@ -170,6 +170,11 @@ public class ServicesUtilsFuzzer {
       }
     } catch (GeneralSecurityException | PatternSyntaxException e) {
       // Known exception
+    } catch (RuntimeException e) {
+      if (!e.getMessage().contains("com.google.zxing.WriterException")) {
+        // Unknown internal exception
+        throw e;
+      }
     }
   }
 }
