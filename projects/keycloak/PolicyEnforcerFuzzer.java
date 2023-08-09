@@ -43,8 +43,14 @@ import org.mockito.Mockito;
  * method of the PolicyEnforcer class of the authz package.
  */
 public class PolicyEnforcerFuzzer {
+  private static HttpServletRequest servletRequest;
+  private static HttpServletResponse servletResponse;
+  private static HttpRequest request;
+  private static HttpResponse response;
   private static MockWebServer server;
-  private static String serverUrl;
+  private static MockResponse mockResponse;
+  private static PolicyEnforcerConfig enforcerConfig;
+  private static ClientCredentialsProvider provider;
 
   public static void fuzzerInitialize() {
     try {
@@ -52,12 +58,38 @@ public class PolicyEnforcerFuzzer {
       server = new MockWebServer();
       server.start();
 
-      // Retrieve host name and port of the mock web server
+      // Retrieve host name, port and url of the mock web server
       String serverHost = server.getHostName();
       Integer serverPort = server.getPort();
+      String serverUrl = "http://" + serverHost + ":" + serverPort;
 
-      // Mock web server url
-      serverUrl = "http://" + serverHost + ":" + serverPort;
+      // Mock HttpServletRequest, HttpServletResponse and TokenPrincipal
+      servletRequest = Mockito.mock(HttpServletRequest.class);
+      servletResponse = Mockito.mock(HttpServletResponse.class);
+      TokenPrincipal principal = Mockito.mock(TokenPrincipal.class);
+
+      // Mock key method of the TokenPrincipal instance
+      Mockito.when(principal.getToken()).thenReturn(new AccessToken());
+
+      // Prepare HttpRequest and HttpResponse instance with the mocked object
+      request = new ServletHttpRequest(servletRequest, principal);
+      response = new ServletHttpResponse(servletResponse);
+
+      // Prepare Mock Response instance
+      mockResponse = new MockResponse();
+      mockResponse.addHeader("Content-Type", "application/json");
+
+      // Initialize enforcer config instance with random set of request and response data
+      enforcerConfig = new PolicyEnforcerConfig();
+      // Set the redirect string
+      enforcerConfig.setOnDenyRedirectTo(serverUrl);
+      // Randomly config the string data for the config
+      enforcerConfig.setAuthServerUrl(serverUrl);
+      enforcerConfig.setRealm("");
+      enforcerConfig.setResource("");
+
+      // Prepare client credentials provider
+      provider = ClientCredentialsProviderUtils.bootstrapClientAuthenticator(new AdapterConfig());
 
       // Enable the fuzzer to connect only to the mock web server, deny any other connections
       BugDetectors.allowNetworkConnections(
@@ -82,34 +114,20 @@ public class PolicyEnforcerFuzzer {
     try {
       // Create a random mock response for the mock web server
       // Then enqueue to the server to serve possible request
-      MockResponse mockResponse = new MockResponse();
       mockResponse.setBody(data.consumeString(data.remainingBytes() / 2));
-      mockResponse.addHeader("Content-Type", "application/json");
       server.enqueue(mockResponse);
 
-      // Initialize enforcer config instance with random set of request and response data
-      PolicyEnforcerConfig enforcerConfig = new PolicyEnforcerConfig();
       // Randomly choose the enforcement mode
       enforcerConfig.setEnforcementMode(
           data.pickValue(EnumSet.allOf(PolicyEnforcerConfig.EnforcementMode.class)));
-      // Randomly set the redirect string
-      enforcerConfig.setOnDenyRedirectTo(serverUrl);
       // Randomly turn on and off for using http method as scope
       enforcerConfig.setHttpMethodAsScope(data.consumeBoolean());
-      // Randomly config the string data for the config
-      enforcerConfig.setAuthServerUrl(serverUrl);
-      enforcerConfig.setRealm("");
-      enforcerConfig.setResource("");
 
       // Prepare credential map with random data
       Map<String, Object> map = enforcerConfig.getCredentials();
       map.put(data.consumeString(data.remainingBytes() / 2),
           data.consumeString(data.remainingBytes() / 2));
       enforcerConfig.setCredentials(map);
-
-      // Prepare client credentials provider
-      ClientCredentialsProvider provider =
-          ClientCredentialsProviderUtils.bootstrapClientAuthenticator(new AdapterConfig());
 
       // Build the policy enforcer with random data and the config and provider object initialised
       // above
@@ -120,27 +138,20 @@ public class PolicyEnforcerFuzzer {
                                     .credentialProvider(provider)
                                     .build();
 
-      // Mock HttpServletRequest, HttpServletResponse and TokenPrincipal
-      HttpServletRequest servletRequest = Mockito.mock(HttpServletRequest.class);
-      HttpServletResponse servletResponse = Mockito.mock(HttpServletResponse.class);
-      TokenPrincipal principal = Mockito.mock(TokenPrincipal.class);
-
-      // Mock key metod of the HttpServletRequest, HttpServletResponse and TokenPrincipal instance
+      // Mock key method of the HttpServletRequest and HttpServletResponse with random data
       // Use the mock method to deny real HTTP request and simulate the response with random data
       Mockito.when(servletRequest.getParameter(data.consumeString(data.remainingBytes() / 2)))
           .thenReturn(data.consumeString(data.remainingBytes() / 2));
       Mockito.when(servletResponse.getWriter())
           .thenReturn(new PrintWriter(data.consumeRemainingAsString()));
-      Mockito.when(principal.getToken()).thenReturn(new AccessToken());
-
-      // Prepare HttpRequest and HttpResponse instance with the mocked object
-      HttpRequest request = new ServletHttpRequest(servletRequest, principal);
-      HttpResponse response = new ServletHttpResponse(servletResponse);
 
       // Fuzz the enforce method with the mocked object and random data
       enforcer.enforce(request, response);
     } catch (IOException | RuntimeException e) {
       // Known exception thrown directly from method above.
+    } finally {
+      // Suggest the java garbage collector to clean up unused memory
+      System.gc();
     }
   }
 }
