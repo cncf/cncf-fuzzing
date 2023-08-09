@@ -118,6 +118,8 @@ else
   mem_settings='-Xmx2048m:-Xss1024k'
 fi
 
+apt install openjdk-17-jdk -y
+
 export LD_LIBRARY_PATH=\"\$JAVA_HOME/lib/server\":\$this_dir
 
 CURRENT_JAVA_VERSION=\$(java --version | head -n1)
