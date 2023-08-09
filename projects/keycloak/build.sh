@@ -120,7 +120,9 @@ fi
 
 apt install openjdk-17-jdk -y
 
+export JAVA_HOME=\"/usr/lib/jvm/java-17-openjdk-amd64\"
 export LD_LIBRARY_PATH=\"\$JAVA_HOME/lib/server\":\$this_dir
+export PATH=\$JAVA_HOME/bin:\$PATH
 
 CURRENT_JAVA_VERSION=\$(java --version | head -n1)
 
