@@ -51,21 +51,19 @@ import org.mockito.Mockito;
  * class in the services jose jwe package.
  */
 public class ServicesJwsFuzzer {
+  private static ClientModel clientModel;
+  private static RealmModel realmModel;
+  private static KeycloakSession session;
+  private static DefaultTokenManager manager;
+  private static Token token;
+
+  public static void fuzzerInitialize() {
+    mockObjectInstance();
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Retrieve mock client model instance
-      ClientModel model = mockClientModel(data);
-
-      // Retrieve mock keycloak session instance
-      KeycloakSession session = mockKeycloakSession(data, model);
-
-      // Initialize DefaultTokenManager instance
-      DefaultTokenManager manager = new DefaultTokenManager(session);
-
-      // Create and mock a token with random TokenCategory
-      Token token = Mockito.mock(Token.class);
-      Mockito.when(token.getCategory())
-          .thenReturn(data.pickValue(EnumSet.allOf(TokenCategory.class)));
+      randomizeObjectInstance(data);
 
       // Randomly execute one of the method in DefaultTokenManager
       switch (data.consumeInt(1, 8)) {
@@ -80,7 +78,7 @@ public class ServicesJwsFuzzer {
         case 3:
           // Execute the target method
           manager.decodeClientJWT(
-              data.consumeRemainingAsString(), model, (joseToken, client) -> {}, Token.class);
+              data.consumeRemainingAsString(), clientModel, (joseToken, client) -> {}, Token.class);
           break;
         case 4:
           // Execute the target method
@@ -116,7 +114,7 @@ public class ServicesJwsFuzzer {
           Mockito.when(sessionModel.getUserSession()).thenReturn(userSessionModel);
 
           // Execute the target method
-          manager.initLogoutToken(model, userModel, sessionModel);
+          manager.initLogoutToken(clientModel, userModel, sessionModel);
           break;
       }
     } catch (NullPointerException e) {
@@ -127,57 +125,105 @@ public class ServicesJwsFuzzer {
       }
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      // Suggest the java garbage collector to clean up unused memory
+      System.gc();
     }
   }
 
-  private static ClientModel mockClientModel(FuzzedDataProvider data) {
-    // Create and mock ClientModel instance with random data
-    ClientModel model = Mockito.mock(ClientModel.class);
-    Mockito.when(model.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getClientId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getDescription()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.isEnabled()).thenReturn(data.consumeBoolean());
-    Mockito.when(model.isAlwaysDisplayInConsole()).thenReturn(data.consumeBoolean());
-    Mockito.when(model.isSurrogateAuthRequired()).thenReturn(data.consumeBoolean());
-    Mockito.when(model.getWebOrigins())
+  private static void mockObjectInstance() {
+    // Create and mock Client Model instance
+    clientModel = Mockito.mock(ClientModel.class);
+
+    // Create and mock Realm Model instance
+    realmModel = Mockito.mock(RealmModel.class);
+
+    // Create and mock Key Manager instance
+    KeyManager keyManager = Mockito.mock(KeyManager.class);
+    Stream.Builder<KeyWrapper> builder = Stream.builder();
+    Mockito.when(keyManager.getKeysStream(Mockito.any(RealmModel.class)))
+        .thenReturn(builder.add(new KeyWrapper()).build());
+    Mockito
+        .when(keyManager.getActiveKey(
+            Mockito.any(RealmModel.class), Mockito.any(KeyUse.class), Mockito.any(String.class)))
+        .thenReturn(new KeyWrapper());
+
+    // Create and mock KeycloakContext
+    KeycloakContext keycloakContext = Mockito.mock(KeycloakContext.class);
+    Mockito.when(keycloakContext.getClient()).thenReturn(clientModel);
+    Mockito.when(keycloakContext.getRealm()).thenReturn(realmModel);
+
+    // Create and mock Keycloak Session instance
+    session = Mockito.mock(KeycloakSession.class);
+    Mockito.when(session.keys()).thenReturn(keyManager);
+    Mockito.when(session.getContext()).thenReturn(keycloakContext);
+
+    // Initialize DefaultTokenManager instance
+    manager = new DefaultTokenManager(session);
+
+    // Create and mock Token instance
+    token = Mockito.mock(Token.class);
+  }
+
+  private static void randomizeObjectInstance(FuzzedDataProvider data) {
+    randomizeClientModel(data);
+    randomizeRealmModel(data);
+    randomizeKeycloakSession(data);
+    randomizeToken(data);
+  }
+
+  private static void randomizeClientModel(FuzzedDataProvider data) {
+    Mockito.when(clientModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getClientId())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getDescription())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.isEnabled()).thenReturn(data.consumeBoolean());
+    Mockito.when(clientModel.isAlwaysDisplayInConsole()).thenReturn(data.consumeBoolean());
+    Mockito.when(clientModel.getWebOrigins())
         .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
-    Mockito.when(model.getRedirectUris())
+    Mockito.when(clientModel.getRedirectUris())
         .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
-    Mockito.when(model.getManagementUrl())
+    Mockito.when(clientModel.getManagementUrl())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getRootUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getBaseUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getNodeReRegistrationTimeout()).thenReturn(data.consumeInt());
-    Mockito.when(model.getClientAuthenticatorType())
+    Mockito.when(clientModel.getRootUrl())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.validateSecret(Mockito.any(String.class))).thenReturn(data.consumeBoolean());
-    Mockito.when(model.getSecret()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getRegistrationToken())
+    Mockito.when(clientModel.getBaseUrl())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getProtocol()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getAttribute(Mockito.any(String.class)))
+    Mockito.when(clientModel.getNodeReRegistrationTimeout()).thenReturn(data.consumeInt());
+    Mockito.when(clientModel.getClientAuthenticatorType())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getAuthenticationFlowBindingOverride(Mockito.any(String.class)))
+    Mockito.when(clientModel.validateSecret(Mockito.any(String.class)))
+        .thenReturn(data.consumeBoolean());
+    Mockito.when(clientModel.getSecret()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getRegistrationToken())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.isFrontchannelLogout()).thenReturn(data.consumeBoolean());
-    Mockito.when(model.isFullScopeAllowed()).thenReturn(data.consumeBoolean());
+    Mockito.when(clientModel.getProtocol())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getAttribute(Mockito.any(String.class)))
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getAuthenticationFlowBindingOverride(Mockito.any(String.class)))
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.isFrontchannelLogout()).thenReturn(data.consumeBoolean());
+    Mockito.when(clientModel.isFullScopeAllowed()).thenReturn(data.consumeBoolean());
 
     Map<String, String> map = new HashMap<String, String>();
     map.put(data.consumeString(data.remainingBytes() / 2),
         data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(model.getAttributes()).thenReturn(map);
-    Mockito.when(model.getAuthenticationFlowBindingOverrides()).thenReturn(map);
-
-    return model;
+    Mockito.when(clientModel.getAttributes()).thenReturn(map);
+    Mockito.when(clientModel.getAuthenticationFlowBindingOverrides()).thenReturn(map);
   }
 
-  private static KeycloakSession mockKeycloakSession(
-      FuzzedDataProvider data, ClientModel clientModel) {
-    // Create and mock KeycloakSession
-    KeycloakSession session = Mockito.mock(KeycloakSession.class);
+  private static void randomizeRealmModel(FuzzedDataProvider data) {
+    Mockito.when(realmModel.getDefaultSignatureAlgorithm())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+  }
 
+  private static void randomizeKeycloakSession(FuzzedDataProvider data) {
     // Randomly choose a SignatureProvider
+    Mockito.when(token.getCategory())
+        .thenReturn(data.pickValue(EnumSet.allOf(TokenCategory.class)));
     SignatureProvider signatureProvider = null;
     if (data.consumeBoolean()) {
       signatureProvider =
@@ -211,27 +257,7 @@ public class ServicesJwsFuzzer {
           session, data.consumeString(data.remainingBytes() / 2));
     }
 
-    // Create and mock KeyManager
-    KeyManager keyManager = Mockito.mock(KeyManager.class);
-    Stream.Builder<KeyWrapper> builder = Stream.builder();
-    Mockito.when(keyManager.getKeysStream(Mockito.any(RealmModel.class)))
-        .thenReturn(builder.add(new KeyWrapper()).build());
-    Mockito
-        .when(keyManager.getActiveKey(
-            Mockito.any(RealmModel.class), Mockito.any(KeyUse.class), Mockito.any(String.class)))
-        .thenReturn(new KeyWrapper());
-
-    // Create and mock RealmModel
-    RealmModel realmModel = Mockito.mock(RealmModel.class);
-    Mockito.when(realmModel.getDefaultSignatureAlgorithm())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
-
-    // Create and mock KeycloakContext
-    KeycloakContext keycloakContext = Mockito.mock(KeycloakContext.class);
-    Mockito.when(keycloakContext.getClient()).thenReturn(clientModel);
-    Mockito.when(keycloakContext.getRealm()).thenReturn(realmModel);
-
-    // Create mock return for KeycloakSessionObject
+    // Create mock return for KeycloakSession Object
     Mockito
         .when(session.getProvider(Mockito.eq(SignatureProvider.class), Mockito.any(String.class)))
         .thenReturn(signatureProvider);
@@ -247,9 +273,10 @@ public class ServicesJwsFuzzer {
         .when(session.getProvider(
             Mockito.eq(ContentEncryptionProvider.class), Mockito.any(String.class)))
         .thenReturn(contentEncryptionProvider);
-    Mockito.when(session.keys()).thenReturn(keyManager);
-    Mockito.when(session.getContext()).thenReturn(keycloakContext);
+  }
 
-    return session;
+  private static void randomizeToken(FuzzedDataProvider data) {
+    Mockito.when(token.getCategory())
+        .thenReturn(data.pickValue(EnumSet.allOf(TokenCategory.class)));
   }
 }

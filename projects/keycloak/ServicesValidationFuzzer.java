@@ -32,58 +32,27 @@ import org.mockito.Mockito;
  * class in the services validation package.
  */
 public class ServicesValidationFuzzer {
+  private static ClientValidationProvider validationProvider;
+  private static DefaultKeycloakSession session;
+  private static ClientModel model;
+
+  public static void fuzzerInitialize() {
+    // Initialize KeycloakSession
+    DefaultKeycloakSessionFactory dksf = new DefaultKeycloakSessionFactory();
+    session = new DefaultKeycloakSession(dksf);
+
+    // Initialize the main validation provider instance
+    validationProvider = new DefaultClientValidationProviderFactory().create(session);
+
+    // Create and mock a random client model for validation
+    model = Mockito.mock(ClientModel.class);
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Initialize KeycloakSession
-      DefaultKeycloakSessionFactory dksf = new DefaultKeycloakSessionFactory();
-      DefaultKeycloakSession session = new DefaultKeycloakSession(dksf);
+      randomizeClientModel(data);
 
-      // Initialize the main validation provider instance
-      ClientValidationProvider validationProvider =
-          new DefaultClientValidationProviderFactory().create(session);
-
-      // Create and mock a random client model for validation
-      ClientModel model = Mockito.mock(ClientModel.class);
-      Mockito.when(model.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getClientId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getDescription())
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.isEnabled()).thenReturn(data.consumeBoolean());
-      Mockito.when(model.isAlwaysDisplayInConsole()).thenReturn(data.consumeBoolean());
-      Mockito.when(model.isSurrogateAuthRequired()).thenReturn(data.consumeBoolean());
-      Mockito.when(model.getWebOrigins())
-          .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
-      Mockito.when(model.getRedirectUris())
-          .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
-      Mockito.when(model.getManagementUrl())
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getRootUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getBaseUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getNodeReRegistrationTimeout()).thenReturn(data.consumeInt());
-      Mockito.when(model.getClientAuthenticatorType())
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.validateSecret(Mockito.any(String.class)))
-          .thenReturn(data.consumeBoolean());
-      Mockito.when(model.getSecret()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getRegistrationToken())
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getProtocol()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getAttribute(Mockito.any(String.class)))
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.getAuthenticationFlowBindingOverride(Mockito.any(String.class)))
-          .thenReturn(data.consumeString(data.remainingBytes() / 2));
-      Mockito.when(model.isFrontchannelLogout()).thenReturn(data.consumeBoolean());
-      Mockito.when(model.isFullScopeAllowed()).thenReturn(data.consumeBoolean());
-
-      Map<String, String> map = new HashMap<String, String>();
-      map.put(data.consumeString(data.remainingBytes() / 2),
-          data.consumeString(data.remainingBytes() / 2));
-
-      Mockito.when(model.getAttributes()).thenReturn(map);
-      Mockito.when(model.getAuthenticationFlowBindingOverrides()).thenReturn(map);
-
-      // Creat a client validation context object from the random client model
+      // Create a client validation context object from the random client model
       ClientValidationContext context = new ClientValidationContext(
           data.pickValue(EnumSet.allOf(ValidationContext.Event.class)), session, model);
 
@@ -95,6 +64,47 @@ public class ServicesValidationFuzzer {
               "the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
         throw e;
       }
+    } finally {
+      // Suggest the java garbage collector to clean up unused memory
+      System.gc();
     }
+  }
+
+  private static void randomizeClientModel(FuzzedDataProvider data) {
+    Mockito.when(model.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getClientId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getDescription()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.isEnabled()).thenReturn(data.consumeBoolean());
+    Mockito.when(model.isAlwaysDisplayInConsole()).thenReturn(data.consumeBoolean());
+    Mockito.when(model.getWebOrigins())
+        .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
+    Mockito.when(model.getRedirectUris())
+        .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
+    Mockito.when(model.getManagementUrl())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getRootUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getBaseUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getNodeReRegistrationTimeout()).thenReturn(data.consumeInt());
+    Mockito.when(model.getClientAuthenticatorType())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.validateSecret(Mockito.any(String.class))).thenReturn(data.consumeBoolean());
+    Mockito.when(model.getSecret()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getRegistrationToken())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getProtocol()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getAttribute(Mockito.any(String.class)))
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.getAuthenticationFlowBindingOverride(Mockito.any(String.class)))
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(model.isFrontchannelLogout()).thenReturn(data.consumeBoolean());
+    Mockito.when(model.isFullScopeAllowed()).thenReturn(data.consumeBoolean());
+
+    Map<String, String> map = new HashMap<String, String>();
+    map.put(data.consumeString(data.remainingBytes() / 2),
+        data.consumeString(data.remainingBytes() / 2));
+
+    Mockito.when(model.getAttributes()).thenReturn(map);
+    Mockito.when(model.getAuthenticationFlowBindingOverrides()).thenReturn(map);
   }
 }
