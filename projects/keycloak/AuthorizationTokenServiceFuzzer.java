@@ -56,6 +56,8 @@ public class AuthorizationTokenServiceFuzzer {
   private static ClientModel clientModel;
   private static HttpHeaders headers;
   private static ClientConnection clientConnection;
+  private static KeycloakUriInfo uriInfo;
+  private static KeycloakContext context;
   private static KeycloakSession session;
 
   public static void fuzzerInitialize() {
@@ -68,7 +70,8 @@ public class AuthorizationTokenServiceFuzzer {
       randomizeMockData(data);
 
       // Create KeycloakAuthorizationRequest instance
-      AuthorizationTokenService.KeycloakAuthorizationRequest request = createKeycloakAuthorizationRequest(data);
+      AuthorizationTokenService.KeycloakAuthorizationRequest request =
+          createKeycloakAuthorizationRequest(data);
 
       // Invoke the authorize method
       AuthorizationTokenService.instance().authorize(request);
@@ -85,6 +88,8 @@ public class AuthorizationTokenServiceFuzzer {
     mockClientModel();
     mockHttpHeaders();
     mockClientConnection();
+    mockKeycloakUriInfo();
+    mockKeycloakContext();
     mockKeycloakSession();
   }
 
@@ -93,6 +98,7 @@ public class AuthorizationTokenServiceFuzzer {
     randomizeClientModel(data);
     randomizeHttpHeaders(data);
     randomizeClientConnection(data);
+    randomizeKeycloakUriInfo(data);
     randomizeKeycloakSession(data);
   }
 
@@ -118,6 +124,25 @@ public class AuthorizationTokenServiceFuzzer {
     clientConnection = Mockito.mock(ClientConnection.class);
   }
 
+  private static void mockKeycloakUriInfo() {
+    uriInfo = Mockito.mock(KeycloakUriInfo.class);
+    try {
+      Mockito.when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost"));
+    } catch (URISyntaxException e) {
+      // Known exception
+    }
+  }
+
+  private static void mockKeycloakContext() {
+    // Create and mock KeycloakContext with static data
+    context = Mockito.mock(KeycloakContext.class);
+    Mockito.when(context.getClient()).thenReturn(clientModel);
+    Mockito.when(context.getRealm()).thenReturn(realmModel);
+    Mockito.when(context.getRequestHeaders()).thenReturn(headers);
+    Mockito.when(context.getConnection()).thenReturn(clientConnection);
+    Mockito.when(context.getUri()).thenReturn(uriInfo);
+  }
+
   private static void mockKeycloakSession() {
     // Create and mock KeycloakSession with static data
     session = Mockito.mock(KeycloakSession.class);
@@ -140,6 +165,7 @@ public class AuthorizationTokenServiceFuzzer {
 
     // Create mock return for KeycloakSessionObject
     Mockito.when(session.getKeycloakSessionFactory()).thenReturn(keycloakSessionFactory);
+    Mockito.when(session.getContext()).thenReturn(context);
     Mockito.doReturn(realmProvider).when(session).realms();
     Mockito.doReturn(clientProvider).when(session).clients();
   }
@@ -155,9 +181,11 @@ public class AuthorizationTokenServiceFuzzer {
   private static void randomizeClientModel(FuzzedDataProvider data) {
     // Randomize mock fields of Client Model instance
     Mockito.when(clientModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.getClientId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getClientId())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.getDescription()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getDescription())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.isEnabled()).thenReturn(data.consumeBoolean());
     Mockito.when(clientModel.isAlwaysDisplayInConsole()).thenReturn(data.consumeBoolean());
     Mockito.when(clientModel.getWebOrigins())
@@ -166,16 +194,20 @@ public class AuthorizationTokenServiceFuzzer {
         .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
     Mockito.when(clientModel.getManagementUrl())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.getRootUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.getBaseUrl()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getRootUrl())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getBaseUrl())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.getNodeReRegistrationTimeout()).thenReturn(data.consumeInt());
     Mockito.when(clientModel.getClientAuthenticatorType())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.validateSecret(Mockito.any(String.class))).thenReturn(data.consumeBoolean());
+    Mockito.when(clientModel.validateSecret(Mockito.any(String.class)))
+        .thenReturn(data.consumeBoolean());
     Mockito.when(clientModel.getSecret()).thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.getRegistrationToken())
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.getProtocol()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getProtocol())
+        .thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.getAttribute(Mockito.any(String.class)))
         .thenReturn(data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.getAuthenticationFlowBindingOverride(Mockito.any(String.class)))
@@ -210,28 +242,16 @@ public class AuthorizationTokenServiceFuzzer {
     Mockito.when(clientConnection.getLocalPort()).thenReturn(data.consumeInt(1, 65536));
   }
 
-  private static void randomizeKeycloakSession(FuzzedDataProvider data) {
-    // Randomize mock fields of Keycloak Session instance
-
-    // Create and mock UriInfo instance
+  private static void randomizeKeycloakUriInfo(FuzzedDataProvider data) {
+    // Randomize mock fields of Keycloak Uri Info instance
     MultivaluedMap<String, String> map = new MultivaluedHashMap<String, String>();
     map.add(data.consumeString(data.remainingBytes() / 2),
         data.consumeString(data.remainingBytes() / 2));
-    KeycloakUriInfo uriInfo = Mockito.mock(KeycloakUriInfo.class);
-    try {
-      Mockito.when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost"));
-    } catch (URISyntaxException e) {
-      // Known exception
-    }
     Mockito.when(uriInfo.getQueryParameters()).thenReturn(map);
+  }
 
-    // Create and mock KeycloakContext
-    KeycloakContext keycloakContext = Mockito.mock(KeycloakContext.class);
-    Mockito.when(keycloakContext.getClient()).thenReturn(clientModel);
-    Mockito.when(keycloakContext.getRealm()).thenReturn(realmModel);
-    Mockito.when(keycloakContext.getRequestHeaders()).thenReturn(headers);
-    Mockito.when(keycloakContext.getConnection()).thenReturn(clientConnection);
-    Mockito.when(keycloakContext.getUri()).thenReturn(uriInfo);
+  private static void randomizeKeycloakSession(FuzzedDataProvider data) {
+    // Randomize mock fields of Keycloak Session instance
 
     // Create and mock TransactionManager
     KeycloakTransactionManager transactionManager = Mockito.mock(KeycloakTransactionManager.class);
@@ -239,7 +259,6 @@ public class AuthorizationTokenServiceFuzzer {
         .thenReturn(data.pickValue(EnumSet.allOf(KeycloakTransactionManager.JTAPolicy.class)));
 
     // Create mock return for KeycloakSession instance
-    Mockito.when(session.getContext()).thenReturn(keycloakContext);
     Mockito.when(session.getTransactionManager()).thenReturn(transactionManager);
   }
 
