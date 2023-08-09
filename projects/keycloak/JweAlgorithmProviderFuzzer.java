@@ -17,9 +17,11 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.KeyGenerator;
 import org.bouncycastle.crypto.fips.FipsRSA;
+import org.bouncycastle.crypto.CryptoException;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
 import org.keycloak.crypto.def.DefaultRsaKeyEncryption256JWEAlgorithmProvider;
 import org.keycloak.crypto.elytron.ElytronRsaKeyEncryption256JWEAlgorithmProvider;
@@ -32,9 +34,9 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
  * This fuzzer targets the encodeCek and decodeCek
- * methods of different JweAlgorithm Provider 
+ * methods of different JweAlgorithm Provider
  * implementation classes in the crypto package.
- * 
+ *
  * The fuzzer randomly selects a provider in each
  * iteration and either encodes or decodes a value
  * specified by the fuzzer.
@@ -62,7 +64,7 @@ public class JweAlgorithmProviderFuzzer {
     }
   }
 
-  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     try {
       JWEAlgorithmProvider algorithmProvider = null;
       Key encryptionKey = null;
@@ -111,12 +113,10 @@ public class JweAlgorithmProviderFuzzer {
       } else {
         algorithmProvider.decodeCek(data.consumeRemainingAsBytes(), decryptionKey);
       }
-    } catch (Exception | NoSuchMethodError e) {
-      // Known exception thrown directly from the encode or decode method.
-      // Some methods above capture all exception and throw the general
-      // Exception explicitly, thus it need to be catch.
-
-      // TODO: Specify specific exceptions to catch instead of Exception
+    } catch (NoSuchMethodError | AssertionError e) {
+      // Known error
+    } catch (CryptoException | GeneralSecurityException | IllegalArgumentException e) {
+      // Known exception
     }
   }
 }
