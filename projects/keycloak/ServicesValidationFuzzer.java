@@ -64,6 +64,11 @@ public class ServicesValidationFuzzer {
               "the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
         throw e;
       }
+    } catch (RuntimeException e) {
+      // Handle the case when the URI builder throws RESTEASY type error from malformed URI
+      if (!e.toString().contains("RESTEASY")) {
+        throw e;
+      }
     } finally {
       // Suggest the java garbage collector to clean up unused memory
       System.gc();
