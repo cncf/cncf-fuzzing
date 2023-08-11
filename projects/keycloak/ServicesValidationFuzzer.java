@@ -43,13 +43,12 @@ public class ServicesValidationFuzzer {
 
     // Initialize the main validation provider instance
     validationProvider = new DefaultClientValidationProviderFactory().create(session);
-
-    // Create and mock a random client model for validation
-    model = Mockito.mock(ClientModel.class);
   }
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      // Create and mock a random client model for validation
+      model = Mockito.mock(ClientModel.class);
       randomizeClientModel(data);
 
       // Create a client validation context object from the random client model
@@ -70,8 +69,7 @@ public class ServicesValidationFuzzer {
         throw e;
       }
     } finally {
-      // Suggest the java garbage collector to clean up unused memory
-      System.gc();
+      cleanUpStaticMockObject();
     }
   }
 
@@ -111,5 +109,16 @@ public class ServicesValidationFuzzer {
 
     Mockito.when(model.getAttributes()).thenReturn(map);
     Mockito.when(model.getAuthenticationFlowBindingOverrides()).thenReturn(map);
+  }
+
+  private static void cleanUpStaticMockObject() {
+    // Deference the static object instance
+    model = null;
+
+    // Clean up inline mocks of the mock objects
+    Mockito.framework().clearInlineMocks();
+
+    // Suggest the java garbage collector to clean up unused memory
+    System.gc();
   }
 }

@@ -57,12 +57,9 @@ public class ServicesJwsFuzzer {
   private static DefaultTokenManager manager;
   private static Token token;
 
-  public static void fuzzerInitialize() {
-    mockObjectInstance();
-  }
-
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
+      mockObjectInstance();
       randomizeObjectInstance(data);
 
       // Randomly execute one of the method in DefaultTokenManager
@@ -126,8 +123,7 @@ public class ServicesJwsFuzzer {
     } catch (RuntimeException e) {
       // Known exception
     } finally {
-      // Suggest the java garbage collector to clean up unused memory
-      System.gc();
+      cleanUpStaticMockObject();
     }
   }
 
@@ -278,5 +274,20 @@ public class ServicesJwsFuzzer {
   private static void randomizeToken(FuzzedDataProvider data) {
     Mockito.when(token.getCategory())
         .thenReturn(data.pickValue(EnumSet.allOf(TokenCategory.class)));
+  }
+
+  private static void cleanUpStaticMockObject() {
+    // Deference the static object instance
+    clientModel = null;
+    realmModel = null;
+    session = null;
+    manager = null;
+    token = null;
+
+    // Clean up inline mocks of the mock objects
+    Mockito.framework().clearInlineMocks();
+
+    // Suggest the java garbage collector to clean up unused memory
+    System.gc();
   }
 }

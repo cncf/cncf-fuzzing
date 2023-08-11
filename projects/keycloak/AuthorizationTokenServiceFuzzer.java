@@ -52,18 +52,12 @@ import org.mockito.Mockito;
  * class in the services authorization package.
  */
 public class AuthorizationTokenServiceFuzzer {
-  private static RealmModel realmModel;
-  private static ClientModel clientModel;
-  private static HttpHeaders headers;
-  private static ClientConnection clientConnection;
-  private static KeycloakUriInfo uriInfo;
-  private static KeycloakContext context;
-  private static KeycloakSession session;
+  private static MockObject mockObject;
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Create mock object
-      MockObject mockObject = new MockObject();
+      mockObject = new MockObject();
 
       // Create and randomize mock fields of mocked object instance
       mockObject.mockInstance();
@@ -78,11 +72,7 @@ public class AuthorizationTokenServiceFuzzer {
     } catch (CorsErrorResponseException e) {
       // Known exception
     } finally {
-      // Clean up inline mocks of the mock objects
-      Mockito.framework().clearInlineMocks();
-
-      // Suggest the java garbage collector to clean up unused memory
-      System.gc();
+      cleanUpStaticMockObject();
     }
   }
 
@@ -267,5 +257,16 @@ public class AuthorizationTokenServiceFuzzer {
       return new AuthorizationTokenService.KeycloakAuthorizationRequest(
           authorizationProvider, tokenManager, eventBuilder, httpRequest, cors, clientConnection);
     }
+  }
+
+  private static void cleanUpStaticMockObject() {
+    // Deference static mock object instance
+    mockObject = null;
+
+    // Clean up inline mocks of the mock objects
+    Mockito.framework().clearInlineMocks();
+
+    // Suggest the java garbage collector to clean up unused memory
+    System.gc();
   }
 }
