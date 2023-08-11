@@ -14,14 +14,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.KeyGenerator;
-import org.bouncycastle.crypto.fips.FipsRSA;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.fips.FipsRSA;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
 import org.keycloak.crypto.def.DefaultRsaKeyEncryption256JWEAlgorithmProvider;
 import org.keycloak.crypto.elytron.ElytronRsaKeyEncryption256JWEAlgorithmProvider;
