@@ -90,11 +90,12 @@ do
   [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
   [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
   then
-    # Exclude original jar as all build jars and dependency jars are shaded into a single jar
     if [[ "$JARFILE" != *"original"* ]]
     then
       cp $JARFILE $OUT/
       RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
+    else
+      cp $JARFILE $SRC/
     fi
   fi
 done
@@ -145,3 +146,9 @@ zip $OUT/JwkParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/see
 zip $OUT/JoseParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/json.seed
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JwkParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JoseParserFuzzer.dict
+
+if [ "$SANITIZER" == "introspector" ]
+then
+  rm $OUT/*.jar
+  cp $SRC/*.jar $OUT
+fi
