@@ -18,16 +18,14 @@ import java.io.ByteArrayInputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.List;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.util.JWKSUtils;
 
 /**
@@ -46,7 +44,6 @@ public class JwksUtilsFuzzer {
           Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RSA1_5, Algorithm.RSA_OAEP,
           Algorithm.RSA_OAEP_256, Algorithm.AES};
       EnumSet<JWK.Use> jwkUse = EnumSet.allOf(JWK.Use.class);
-      EnumSet<KeyUse> keyUse = EnumSet.allOf(KeyUse.class);
 
       // Initialise the JWKBuilder and a JWK array with random size
       JWKBuilder builder = JWKBuilder.create();
@@ -58,27 +55,32 @@ public class JwksUtilsFuzzer {
       for (int i = 0; i < choices.length; i++) {
         builder.algorithm(data.pickValue(algorithm));
         if (choices[i]) {
-          // Generate random X509 certificate
-          CertificateFactory cf = CertificateFactory.getInstance("X.509");
-          X509Certificate cert =
-              (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(byteArray));
-          List<X509Certificate> certList = List.of(cert);
-
           // Generate random RSA keypair
           KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
           generator.initialize(2048);
           KeyPair keyPair = generator.generateKeyPair();
 
-          // Generate JWK key with the random RSA public key, random X509 certificate and random
-          // choice of key use
-          keys[i] = builder.rsa(keyPair.getPublic(), certList, data.pickValue(keyUse));
+          // Generate JWK key with the random RSA public key
+          JWK jwk = builder.rsa(keyPair.getPublic());
+
+          jwk.setOtherClaims(RSAPublicJWK.MODULUS, data.consumeString(data.remainingBytes() / 2));
+          jwk.setOtherClaims(RSAPublicJWK.PUBLIC_EXPONENT, data.consumeString(data.remainingBytes() / 2));
+
+          keys[i] = jwk;
         } else {
           // Generate random EC keypair
           KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
           KeyPair keyPair = generator.generateKeyPair();
 
-          // Generate JWK key with the random EC public key and random choice of key use
-          keys[i] = builder.ec(keyPair.getPublic(), data.pickValue(keyUse));
+          // Generate JWK key with the random EC public key
+          JWK jwk = builder.ec(keyPair.getPublic());
+
+          String[] crv = {"P-256", "P-384", "P-521"};
+          jwk.setOtherClaims(ECPublicJWK.CRV, data.pickValue(crv));
+          jwk.setOtherClaims(ECPublicJWK.X, data.consumeString(data.remainingBytes() / 2));
+          jwk.setOtherClaims(ECPublicJWK.Y, data.consumeString(data.remainingBytes() / 2));
+
+          keys[i] = jwk;
         }
       }
 
@@ -92,7 +94,7 @@ public class JwksUtilsFuzzer {
       } else {
         JWKSUtils.getKeyForUse(keySet, data.pickValue(jwkUse));
       }
-    } catch (CertificateException | NoSuchAlgorithmException e) {
+    } catch (NoSuchAlgorithmException e) {
       // Known exception
     }
   }
