@@ -15,14 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateException;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.util.EnumSet;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.DerUtils;
@@ -35,7 +33,7 @@ import org.keycloak.common.util.PemUtils;
  * util classes in the common package.
  */
 public class CommonCryptoUtilsFuzzer {
-  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     X509Certificate cert = null;
     KeyPair keyPair = null;
 
@@ -46,15 +44,11 @@ public class CommonCryptoUtilsFuzzer {
       Integer choice = data.consumeInt(1, 22);
       switch (choice) {
         case 1:
-          try {
-            cert = (X509Certificate) cf.generateCertificate(
-                new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
-            keyPair = KeyUtils.generateRsaKeyPair(2048);
-            CertificateUtils.generateV3Certificate(
-                keyPair, keyPair.getPrivate(), cert, data.consumeRemainingAsString());
-          } catch (Exception e) {
-            // Known exception
-          }
+          cert = (X509Certificate) cf.generateCertificate(
+              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          keyPair = KeyUtils.generateRsaKeyPair(2048);
+          CertificateUtils.generateV3Certificate(
+              keyPair, keyPair.getPrivate(), cert, data.consumeRemainingAsString());
           break;
         case 2:
           keyPair = KeyUtils.generateRsaKeyPair(2048);
@@ -68,11 +62,7 @@ public class CommonCryptoUtilsFuzzer {
               keyPair, data.consumeRemainingAsString(), serial);
           break;
         case 4:
-          try {
-            DerUtils.decodePrivateKey(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-          } catch (Exception e) {
-            // Known exception
-          }
+          DerUtils.decodePrivateKey(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
           break;
         case 5:
           DerUtils.decodePrivateKey(data.consumeRemainingAsBytes());
@@ -82,23 +72,15 @@ public class CommonCryptoUtilsFuzzer {
               data.consumeBytes(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 7:
-          try {
-            DerUtils.decodeCertificate(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-          } catch (Exception e) {
-            // Known exception
-          }
+          DerUtils.decodeCertificate(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
           break;
         case 8:
           keyPair = KeyUtils.generateRsaKeyPair(2048);
           KeyUtils.createKeyId(keyPair.getPrivate());
           break;
         case 9:
-          try {
-            KeystoreUtil.loadKeyStore(
-                data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
-          } catch (Exception e) {
-            // Known exception
-          }
+          KeystoreUtil.loadKeyStore(
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 10:
           KeystoreUtil.loadKeyPairFromKeystore(data.consumeString(data.remainingBytes() / 2),
@@ -151,8 +133,7 @@ public class CommonCryptoUtilsFuzzer {
           PemUtils.generateThumbprint(chain, encoding);
           break;
       }
-    } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchProviderException
-        | CertificateException | RuntimeException e) {
+    } catch (GeneralSecurityException | RuntimeException | IOException e) {
       // Known exception
     }
   }
