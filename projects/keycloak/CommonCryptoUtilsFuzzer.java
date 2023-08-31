@@ -15,14 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.cert.CertificateException;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.util.EnumSet;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.DerUtils;
@@ -135,8 +133,7 @@ public class CommonCryptoUtilsFuzzer {
           PemUtils.generateThumbprint(chain, encoding);
           break;
       }
-    } catch (NoSuchAlgorithmException | InvalidKeySpecException | NoSuchProviderException
-        | CertificateException | RuntimeException e) {
+    } catch (GeneralSecurityException | RuntimeException | IOException e) {
       // Known exception
     }
   }
