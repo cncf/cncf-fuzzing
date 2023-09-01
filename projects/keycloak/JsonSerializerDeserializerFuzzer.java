@@ -49,13 +49,13 @@ public class JsonSerializerDeserializerFuzzer {
           break;
         case 4:
           TestStringObject testStringObject =
-              new JsonSerializerDeserializationFuzzer.TestStringObject(
+              new JsonSerializerDeserializerFuzzer.TestStringObject(
                   data.consumeRemainingAsString());
           mapper.writeValueAsString(testStringObject);
           break;
         case 5:
           TestArrayObject testArrayObject =
-              new JsonSerializerDeserializationFuzzer.TestArrayObject(data);
+              new JsonSerializerDeserializerFuzzer.TestArrayObject(data);
           mapper.writeValueAsString(testArrayObject);
           break;
       }
