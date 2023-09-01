@@ -105,7 +105,7 @@ RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   fuzzer_basename=$(basename -s .java $fuzzer)
   $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH -d $SRC/ $fuzzer
-  cp $SRC/$fuzzer_basename.class* $OUT/
+  cp $SRC/$fuzzer_basename*.class $OUT/
 
   # Create an execution wrapper that executes Jazzer with the correct arguments.
   echo "#!/bin/bash
