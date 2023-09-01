@@ -48,8 +48,6 @@ EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!q
 
 EXCLUDE_REST="!rest,!rest/admin-ui-ext"
 
-EXCLUDE_SERVICE="!services"
-
 EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_INTEGRATION,$EXCLUDE_JS
 EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_MODEL,$EXCLUDE_QUARKUS,$EXCLUDE_REST
 
@@ -88,7 +86,8 @@ do
   if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
   [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
-  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
+  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"server-spi-private/"* ]] || \
+  [[ "$JARFILE" == *"server-spi/"* ]] || [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
   then
     if [[ "$JARFILE" != *"original"* ]]
     then
@@ -107,7 +106,6 @@ for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   fuzzer_basename=$(basename -s .java $fuzzer)
   $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH -d $SRC/ $fuzzer
   cp $SRC/$fuzzer_basename.class* $OUT/
-
 
   # Create an execution wrapper that executes Jazzer with the correct arguments.
   echo "#!/bin/bash
