@@ -33,14 +33,19 @@ import org.keycloak.crypto.def.DefaultCryptoProvider;
 
 /** This fuzzer targets the methods in different crypto provider. */
 public class CryptoProviderFuzzer {
+  private static CertificateFactory cf;
+  private static DefaultCryptoProvider cryptoProvider;
+
+  public static void fuzzerInitialize() throws GeneralSecurityException {
+      cf = CertificateFactory.getInstance("X.509");
+      cryptoProvider = new DefaultCryptoProvider();
+  }
+
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     X509Certificate cert = null;
     KeyPair keyPair = null;
 
     try {
-      CertificateFactory cf = CertificateFactory.getInstance("X.509");
-      DefaultCryptoProvider cryptoProvider = new DefaultCryptoProvider();
-
       // Randomly choose a crypto provider instance
       Integer choice = data.consumeInt(1, 4);
       switch (choice) {
