@@ -43,4 +43,5 @@ compile_go_fuzzer $RUNC_PATH/libcontainer/intelrdt FuzzParseMonFeatures parse_mo
 mv $RUNC_FUZZERS/libcontainer_fuzzer.go $SRC/runc/libcontainer/
 mv $SRC/runc/libcontainer/container_linux_test.go \
    $SRC/runc/libcontainer/container_linux_test_fuzz.go
+CFLAGS=-O1 make -B runc-dmz || echo -n >runc-dmz
 compile_go_fuzzer $RUNC_PATH/libcontainer FuzzStateApi state_api_fuzzer
