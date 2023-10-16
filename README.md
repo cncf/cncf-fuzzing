@@ -30,6 +30,8 @@ Talks on CNCF fuzzing:
 - [Finding Bugs and Vulnerabilities Automatically](https://www.youtube.com/watch?v=DSJePjhBN5E)
 - [Fuzzing the CNCF Landscape, Cloud Native SecurityCon, 2022](https://www.youtube.com/watch?v=zIyIZxAZLzo)
 - [Securing Fluent Bit by Way of Fuzzing, FluentCon, 2022](https://www.youtube.com/watch?v=Yp6IClswWQE)
+- [Fuzz Testing of Envoy - Adi Peleg & Teju Nareddy](https://www.youtube.com/watch?v=s-wXKdSIKZo)
+- [Lightning Talk: Securing Envoy: Catching Vulnerabilities With Continuous Fuzz Testing - Teju Nareddy](https://www.youtube.com/watch?v=2wM1Ks23DZU)
 
 Dedicated fuzzing audit reports:
 - [Fluent Bit](https://github.com/fluent/fluent-bit/blob/master/doc-reports/cncf-fuzzing-audit.pdf)
