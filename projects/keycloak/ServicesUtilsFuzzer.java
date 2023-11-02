@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Stream;
-import org.keycloak.authorization.policy.evaluation.DefaultPolicyEvaluator;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
@@ -43,10 +42,7 @@ import org.keycloak.utils.SearchQueryUtils;
 import org.keycloak.utils.TotpUtils;
 import org.mockito.Mockito;
 
-/**
- * This fuzzer targets the methods in different util
- * classes in the services utils package.
- */
+/** This fuzzer targets the methods in different util classes in the services utils package. */
 public class ServicesUtilsFuzzer {
   private static CertificateFactory cf;
   private static DefaultKeycloakSession session;
@@ -74,8 +70,10 @@ public class ServicesUtilsFuzzer {
           // Create certificate and crl from random data
           X509Certificate[] certs = new X509Certificate[3];
           for (int i = 0; i < 3; i++) {
-            certs[i] = (X509Certificate) cf.generateCertificate(
-                new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+            certs[i] =
+                (X509Certificate)
+                    cf.generateCertificate(
+                        new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           }
           X509CRL crl =
               (X509CRL) cf.generateCRL(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
@@ -94,7 +92,8 @@ public class ServicesUtilsFuzzer {
           Mockito.when(group.getSubGroupsStream()).thenReturn(builder.build());
 
           Map<String, List<String>> attributeMap = new HashMap<String, List<String>>();
-          attributeMap.put(data.consumeString(data.remainingBytes() / 2),
+          attributeMap.put(
+              data.consumeString(data.remainingBytes() / 2),
               List.of(data.consumeString(data.remainingBytes() / 2)));
           Mockito.when(group.getAttributes()).thenReturn(attributeMap);
 
@@ -119,17 +118,20 @@ public class ServicesUtilsFuzzer {
           set.add(data.consumeString(data.remainingBytes() / 2));
           Mockito.when(groupPermissions.getGroupsWithViewPermission()).thenReturn(set);
 
+          // Create and mock RealmModel instance with default policy and random data
+          RealmModel realm = Mockito.mock(RealmModel.class);
+
           // Retrieve random boolean data
-          Boolean exact = data.consumeBoolean();
           Boolean full = data.consumeBoolean();
 
           // Call target method
           try {
-            GroupUtils.toGroupHierarchy(
-                groupPermissions, group, data.consumeRemainingAsString(), exact, full);
+            GroupUtils.populateGroupHierarchyFromSubGroups(
+                session, realm, Stream.of(group), full, groupPermissions);
           } catch (NullPointerException e) {
             // Handle the case when the execution environment don't have any profile instance
-            if (!e.toString().contains(
+            if (!e.toString()
+                .contains(
                     "the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
               throw e;
             }
@@ -137,7 +139,8 @@ public class ServicesUtilsFuzzer {
           break;
         case 3:
           // Call target method
-          RegexUtils.valueMatchesRegex(Pattern.quote(data.consumeString(data.remainingBytes() / 2)),
+          RegexUtils.valueMatchesRegex(
+              Pattern.quote(data.consumeString(data.remainingBytes() / 2)),
               data.consumeRemainingAsString());
           break;
         case 4:
