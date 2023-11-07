@@ -14,10 +14,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.webauthn4j.converter.util.ObjectConverter;
 import java.util.List;
+import java.util.stream.Stream;
 import org.keycloak.credential.CredentialInput;
-import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.credential.RecoveryAuthnCodesCredentialProvider;
@@ -35,11 +37,12 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.mockito.Mockito;
-import com.webauthn4j.converter.util.ObjectConverter;
 
 public class CredentialValidatorFuzzer {
   private static CredentialInputValidator validator;
   private static MockObject mockObject;
+
+  public static void fuzzerInitialize() {}
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
@@ -59,12 +62,14 @@ public class CredentialValidatorFuzzer {
           validator = new RecoveryAuthnCodesCredentialProvider(mockObject.getSession());
           break;
         case 4:
-          validator = new WebAuthnCredentialProvider(mockObject.getSession(), new ObjectConverter());
+          validator =
+              new WebAuthnCredentialProvider(mockObject.getSession(), new ObjectConverter());
           break;
       }
 
       // Call to validate credential
-      validator.isValid(mockObject.getRealmModel(), mockObject.getUserModel(), mockObject.getCredentialInput());
+      validator.isValid(
+          mockObject.getRealmModel(), mockObject.getUserModel(), mockObject.getCredentialInput());
     } catch (IllegalArgumentException e) {
       // Known exception
     } finally {
@@ -122,16 +127,24 @@ public class CredentialValidatorFuzzer {
 
       // Mock SingleUseObjectProvider
       SingleUseObjectProvider singleUseObjectProvider = Mockito.mock(SingleUseObjectProvider.class);
-      Mockito.doReturn(true).when(singleUseObjectProvider).putIfAbsent(Mockito.any(), Mockito.any());
+      Mockito.doReturn(true)
+          .when(singleUseObjectProvider)
+          .putIfAbsent(Mockito.any(String.class), Mockito.any(Long.class));
 
-      Mockito.doReturn(passwordHashProvider).when(session).getProvider(Mockito.any(), Mockito.any(String.class));
+      Mockito.doReturn(passwordHashProvider)
+          .when(session)
+          .getProvider(Mockito.any(), Mockito.any(String.class));
       Mockito.doReturn(singleUseObjectProvider).when(session).singleUseObjects();
     }
 
     private void randomizePasswordHashProvider(FuzzedDataProvider data) {
       // Randomize mock fields of PasswordHashProvider instance
-      Mockito.doReturn(data.consumeBoolean()).when(passwordHashProvider).verify(Mockito.any(), Mockito.any());
-      Mockito.doReturn(data.consumeBoolean()).when(passwordHashProvider).policyCheck(Mockito.any(), Mockito.any());
+      Mockito.doReturn(data.consumeBoolean())
+          .when(passwordHashProvider)
+          .verify(Mockito.any(), Mockito.any());
+      Mockito.doReturn(data.consumeBoolean())
+          .when(passwordHashProvider)
+          .policyCheck(Mockito.any(), Mockito.any());
     }
 
     private void randomizeUserModel(FuzzedDataProvider data) {
@@ -142,23 +155,47 @@ public class CredentialValidatorFuzzer {
 
       switch (data.consumeInt(1, 4)) {
         case 1:
-          model = OTPCredentialModel.createTOTP(data.consumeString(1024), data.consumeInt(), data.consumeInt(), data.consumeString(1024));
+          model =
+              OTPCredentialModel.createTOTP(
+                  data.consumeString(1024),
+                  data.consumeInt(),
+                  data.consumeInt(),
+                  data.consumeString(1024));
           break;
         case 2:
-          model = PasswordCredentialModel.createFromValues(data.consumeString(1024), data.consumeBytes(1024), data.consumeInt(), data.consumeString(1024));
+          model =
+              PasswordCredentialModel.createFromValues(
+                  data.consumeString(1024),
+                  data.consumeBytes(1024),
+                  data.consumeInt(),
+                  data.consumeString(1024));
           break;
         case 3:
-          model = RecoveryAuthnCodesCredentialModel.createFromValues(List.of(data.consumeString(1024)), data.consumeLong(), data.consumeString(1024));
+          model =
+              RecoveryAuthnCodesCredentialModel.createFromValues(
+                  List.of(data.consumeString(1024)), data.consumeLong(), data.consumeString(1024));
           break;
         case 4:
-          model = WebAuthnCredentialModel.create(data.consumeString(1024), data.consumeString(1024), data.consumeString(1024), data.consumeString(1024), data.consumeString(1024), data.consumeString(1024), data.consumeLong(), data.consumeString(1024));
+          model =
+              WebAuthnCredentialModel.create(
+                  data.consumeString(1024),
+                  data.consumeString(1024),
+                  data.consumeString(1024),
+                  data.consumeString(1024),
+                  data.consumeString(1024),
+                  data.consumeString(1024),
+                  data.consumeLong(),
+                  data.consumeString(1024));
           break;
       }
 
       // Mock SubjectCredentialManager instance
       SubjectCredentialManager manager = Mockito.mock(SubjectCredentialManager.class);
       Mockito.doReturn(model).when(manager).getStoredCredentialById(Mockito.any(String.class));
-      Mockito.doReturn(List.of(model)).when(manager).getStoredCredentialsByTypeStream(Mockito.any(String.class));
+      Stream.Builder<CredentialModel> builder = Stream.builder();
+      Mockito.doReturn(builder.add(model).build())
+          .when(manager)
+          .getStoredCredentialsByTypeStream(Mockito.any(String.class));
 
       Mockito.doReturn(manager).when(userModel).credentialManager();
     }
