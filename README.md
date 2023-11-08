@@ -6,6 +6,12 @@ See the blog post [Improving security by fuzzing the cncf landscape](https://www
 Are you a CNCF project and would like to have it fuzzed? Please create an issue on this repository requesting to be fuzzed and we will assist.
 
 
+## Fuzzing handbook
+CNCF has a Fuzzing Handbook which introdues fuzzing in a pragmatic manner, and also has a chapter that goes into details with how to use OSS-Fuzz to establish a continuous fuzzing set up.
+
+The handbook is available [here](https://github.com/cncf/tag-security/blob/main/security-fuzzing-handbook/handbook-fuzzing.pdf) 
+
+
 ## CNCF projects and fuzzing
 Fuzzing is a technique for automating stress testing of applications
 and it can be used to find reliability and security issues. The technique
