@@ -36,12 +36,11 @@ EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integ
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/client-registration-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
-EXCLUDE_JS="!js,!js/apps/account-ui,!js/apps/admin-ui,!js/libs/keycloak-admin-client,!js/libs/keycloak-js"
+EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js"
 
 EXCLUDE_MISC="!misc,!misc/keycloak-test-helper,!misc/spring-boot-starter,!misc/spring-boot-starter/keycloak-spring-boot-starter"
 
-EXCLUDE_MODEL="!model/legacy-services,!model/infinispan,!model/map-jpa,"
-EXCLUDE_MODEL=$EXCLUDE_MODEL"!model/map-hot-rod,!model/map-ldap,!model/map-file"
+EXCLUDE_MODEL="!model/legacy-services,!model/infinispan"
 
 EXCLUDE_QUARKUS="!quarkus,!quarkus/config-api,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
