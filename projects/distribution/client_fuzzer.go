@@ -29,8 +29,8 @@ import (
 	"github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/manifest"
 	"github.com/distribution/distribution/v3/manifest/schema1"
-	"github.com/distribution/distribution/v3/reference"
 	"github.com/distribution/distribution/v3/testutil"
+	"github.com/distribution/reference"
 )
 
 func FuzzBlobServeBlob(data []byte) int {
@@ -162,7 +162,6 @@ func testServerForFuzz(rrm testutil.RequestResponseMap) (string, func()) {
 	return s.URL, s.Close
 }
 
-
 func FuzzRegistryClient(data []byte) int {
 	var m testutil.RequestResponseMap
 
@@ -172,7 +171,7 @@ func FuzzRegistryClient(data []byte) int {
 		return 0
 	}
 
-	for i:=0;i<noOfRRMappings%10;i++ {
+	for i := 0; i < noOfRRMappings%10; i++ {
 		newRRMapping := testutil.RequestResponseMapping{}
 		err := f.GenerateStruct(&newRRMapping)
 		if err != nil {
@@ -195,12 +194,12 @@ func FuzzRegistryClient(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	for i:=0;i<noOfOps%10;i++ {
+	for i := 0; i < noOfOps%10; i++ {
 		opType, err := f.GetInt()
 		if err != nil {
 			return 0
 		}
-		switch opType%9 {
+		switch opType % 9 {
 		case 0:
 			tagServiceAll(r)
 		case 1:
@@ -273,7 +272,7 @@ func uploadBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 
 	_, _ = upload.Commit(context.Background(), distribution.Descriptor{
 		Digest: dgst,
-		Size: int64(len(blob)),
+		Size:   int64(len(blob)),
 	})
 
 	return nil

@@ -34,9 +34,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/distribution/distribution/v3/configuration"
-	_ "github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
-	"github.com/distribution/distribution/v3/reference"
 	v2 "github.com/distribution/distribution/v3/registry/api/v2"
+	_ "github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
+	"github.com/distribution/reference"
 	"github.com/docker/libtrust"
 )
 
