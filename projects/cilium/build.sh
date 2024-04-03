@@ -8,8 +8,6 @@ cp $CILIUM/bpf_fuzzer.go $SRC/cilium/pkg/bpf/
 cp $CILIUM/matchpattern_fuzzer.go $SRC/cilium/pkg/fqdn/matchpattern/
 cp $CILIUM/hubble_parser_fuzzer.go $SRC/cilium/pkg/hubble/parser/
 cp $CILIUM/labels_fuzzer.go $SRC/cilium/pkg/k8s/slim/k8s/apis/labels/
-mv $CILIUM/payload_fuzzer.go $SRC/cilium/pkg/monitor/payload
-mv $CILIUM/monitor_fuzzer.go $SRC/cilium/pkg/monitor/
 mv $CILIUM/format_fuzzer.go $SRC/cilium/pkg/monitor/format
 mv $CILIUM/labelsfilter_fuzzer.go $SRC/cilium/pkg/labelsfilter/
 mv $CILIUM/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
