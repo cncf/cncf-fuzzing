@@ -31,7 +31,10 @@ type NewDiskParam struct {
 
 func FuzzNewDisk(data []byte) int {
 	f := fuzz.NewConsumer(data)
-	param := NewDiskParam{}
+	param := NewDiskParam{
+		Space: &SpaceManager{},
+	}
+	param.Space.dataNode = &DataNode{}
 
 	err := f.GenerateStruct(&param)
 	if err != nil {
