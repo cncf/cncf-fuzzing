@@ -29,18 +29,17 @@ EXCLUDE_DOCS="!docs,!docs/maven-plugin,!docs/guides"
 
 EXCLUDE_DEPENDENCY="!dependencies/server-all"
 
-EXCLUDE_FEDERATION="!federation,!federation/kerberos,!federation/ldap,!federation/sssd"
+EXCLUDE_FEDERATION="!federation,!federation/sssd"
 
 EXCLUDE_INTEGRATION="!integration,!integration/admin-client-jee,!integration/admin-client,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integration/client-cli,"
-EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/client-registration-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
 EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js"
 
-EXCLUDE_MISC="!misc,!misc/keycloak-test-helper,!misc/spring-boot-starter,!misc/spring-boot-starter/keycloak-spring-boot-starter"
+EXCLUDE_MISC="!misc,!misc/keycloak-test-helper"
 
-EXCLUDE_MODEL="!model/legacy-services,!model/infinispan"
+EXCLUDE_MODEL="!model/infinispan"
 
 EXCLUDE_QUARKUS="!quarkus,!quarkus/config-api,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
@@ -82,11 +81,12 @@ RUNTIME_CLASSPATH=
 
 for JARFILE in $(find ./ -name "*.jar")
 do
-  if [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
-  [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
-  [[ "$JARFILE" == *"crypto/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
-  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"server-spi-private/"* ]] || \
-  [[ "$JARFILE" == *"server-spi/"* ]] || [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
+  if [[ "$JARFILE" == *"authz/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
+  [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"crypto/"* ]] || \
+  [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
+  [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
+  [[ "$JARFILE" == *"server-spi-private/"* ]] || [[ "$JARFILE" == *"server-spi/"* ]] || \
+  [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
   then
     if [[ "$JARFILE" != *"original"* ]]
     then
