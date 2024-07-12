@@ -24,7 +24,7 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.crypto.def.BCCertificateUtilsProvider;
-import org.keycloak.crypto.elytron.ElytronCertificateUtils;
+import org.keycloak.crypto.elytron.ElytronCertificateUtilsProvider;
 import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
 
 /**
@@ -64,7 +64,7 @@ public class CertificateUtilsProviderFuzzer {
           provider = new BCCertificateUtilsProvider();
           break;
         case 2:
-          provider = new ElytronCertificateUtils();
+          provider = new ElytronCertificateUtilsProvider();
           break;
         case 3:
           provider = new BCFIPSCertificateUtilsProvider();

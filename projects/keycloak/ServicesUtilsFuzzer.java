@@ -32,8 +32,8 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.resteasy.ResteasyKeycloakSession;
+import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.utils.CRLUtils;
 import org.keycloak.utils.GroupUtils;
@@ -45,7 +45,7 @@ import org.mockito.Mockito;
 /** This fuzzer targets the methods in different util classes in the services utils package. */
 public class ServicesUtilsFuzzer {
   private static CertificateFactory cf;
-  private static DefaultKeycloakSession session;
+  private static ResteasyKeycloakSession session;
 
   public static void fuzzerInitialize() {
     try {
@@ -53,8 +53,8 @@ public class ServicesUtilsFuzzer {
       cf = CertificateFactory.getInstance("X.509");
 
       // Initialize KeycloakSession
-      DefaultKeycloakSessionFactory dksf = new DefaultKeycloakSessionFactory();
-      session = new DefaultKeycloakSession(dksf);
+      ResteasyKeycloakSessionFactory rksf = new ResteasyKeycloakSessionFactory();
+      session = new ResteasyKeycloakSession(rksf);
     } catch (CertificateException e) {
       // Directly exit if initialisation fails
       throw new RuntimeException(e);
