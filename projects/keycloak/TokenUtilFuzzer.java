@@ -50,7 +50,7 @@ public class TokenUtilFuzzer {
       Key hmacKey = null;
 
       // Randomly choose which method to invoke
-      Integer choice = data.consumeInt(1, 6);
+      Integer choice = data.consumeInt(1, 11);
       switch (choice) {
         case 1:
           // Call isOfflineToken method with random string
@@ -130,6 +130,21 @@ public class TokenUtilFuzzer {
             TokenUtil.jweKeyEncryptionVerifyAndDecode(aesKey, data.consumeRemainingAsString(),
                 jweAlgorithmProvider, jweEncryptionProvider);
           }
+          break;
+        case 7:
+          TokenUtil.attachOIDCScope(data.consumeRemainingAsString());
+          break;
+        case 8:
+          TokenUtil.isOIDCRequest(data.consumeRemainingAsString());
+          break;
+        case 9:
+          TokenUtil.isOfflineTokenRequested(data.consumeRemainingAsString());
+          break;
+        case 10:
+          TokenUtil.hasScope(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          break;
+        case 11:
+          TokenUtil.hasPrompt(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
       }
     } catch (JWSInputException | JWEException | NoSuchAlgorithmException e) {
