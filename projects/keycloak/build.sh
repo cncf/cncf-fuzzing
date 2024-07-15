@@ -49,21 +49,8 @@ EXCLUDE_REST="!rest,!rest/admin-ui-ext"
 EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_INTEGRATION,$EXCLUDE_JS
 EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_MODEL,$EXCLUDE_QUARKUS,$EXCLUDE_REST
 
-## Activate shade plugin
-## This is needed to activate the shade plugin to combine all needed dependencies and build classes
-## for each module into a single jar. This limit the maximum number of jars and exempt the need
-## to handle separate module dependencies. The limiting action of the maximum number of jars is needed
-## to avoid "Arguments too long" error in bash execution of oss-fuzz.
-PLUGIN="<plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId>"
-PLUGIN=$PLUGIN"<version>\${shade.plugin.version}</version><executions><execution><phase>package</phase>"
-PLUGIN=$PLUGIN"<goals><goal>shade</goal></goals><configuration><filters><filter><artifact>*:*</artifact>"
-PLUGIN=$PLUGIN"<excludes><exclude>META-INF/*.SF</exclude><exclude>META-INF/*.DSA</exclude>"
-PLUGIN=$PLUGIN"<exclude>META-INF/*.RSA</exclude></excludes></filter></filters></configuration>"
-PLUGIN=$PLUGIN"</execution></executions></plugin></plugins><pluginManagement>"
-sed -i "s#<pluginManagement>#$PLUGIN#g" ./pom.xml
-
 ## Execute maven build
-$MVN clean package -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
+$MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 # Dependency for Mockito and MockWebService functionality for mocking objects and web service
 mkdir -p fuzzer-dependencies
@@ -79,27 +66,29 @@ wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/ko
 
 RUNTIME_CLASSPATH=
 
-for JARFILE in $(find ./ -name "*.jar")
+for JARFILE in $(find . -wholename "*/target/keycloak*.jar")
 do
   if [[ "$JARFILE" == *"authz/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
   [[ "$JARFILE" == *"core/"* ]] || [[ "$JARFILE" == *"crypto/"* ]] || \
   [[ "$JARFILE" == *"model/"* ]] || [[ "$JARFILE" == *"saml-core/"* ]] || \
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
-  [[ "$JARFILE" == *"server-spi-private/"* ]] || [[ "$JARFILE" == *"server-spi/"* ]] || \
-  [[ "$JARFILE" == *"fuzzer-dependencies/"* ]]
+  [[ "$JARFILE" == *"server-spi-private/"* ]] || [[ "$JARFILE" == *"server-spi/"* ]]
   then
-    if [[ "$JARFILE" != *"original"* ]]
-    then
-      cp $JARFILE $OUT/
-      RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
-    else
-      cp $JARFILE $SRC/
-    fi
+    cp $JARFILE $OUT/
+    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
   fi
 done
 
-BUILD_CLASSPATH=$OUT/*:$JAZZER_API_PATH
-RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir
+# Copy keycloak dependencies
+for JARFILE in $(find . -wholename "*/target/dependency/*.jar" ! -name keycloak*.jar)
+do
+  cp $JARFILE $SRC/keycloak/fuzzer-dependencies/
+done
+mkdir -p $OUT/fuzzer-dependencies
+unzip -o $SRC/keycloak/fuzzer-dependencies/\*.jar -d $OUT/fuzzer-dependencies/
+
+BUILD_CLASSPATH=$OUT/*:$SRC/keycloak/fuzzer-dependencies/*:$JAZZER_API_PATH
+RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir:\$this_dir/fuzzer-dependencies
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   fuzzer_basename=$(basename -s .java $fuzzer)
@@ -144,9 +133,3 @@ zip $OUT/JoseParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/se
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SAMLParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JwkParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JoseParserFuzzer.dict
-
-if [ "$SANITIZER" == "introspector" ]
-then
-  rm $OUT/*.jar
-  cp $SRC/*.jar $OUT
-fi
