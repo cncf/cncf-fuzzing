@@ -50,7 +50,7 @@ EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_IN
 EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_MODEL,$EXCLUDE_QUARKUS,$EXCLUDE_REST
 
 ## Execute maven build
-$MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
+#$MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 # Dependency for Mockito and MockWebService functionality for mocking objects and web service
 mkdir -p fuzzer-dependencies
@@ -82,10 +82,10 @@ done
 # Copy keycloak dependencies
 for JARFILE in $(find . -wholename "*/target/dependency/*.jar" ! -name keycloak*.jar)
 do
-  cp $JARFILE $SRC/keycloak/fuzzer-dependencies/
+  cp $JARFILE fuzzer-dependencies/
 done
 mkdir -p $OUT/fuzzer-dependencies
-unzip -o $SRC/keycloak/fuzzer-dependencies/\*.jar -d $OUT/fuzzer-dependencies/
+unzip -o fuzzer-dependencies/\*.jar -d $OUT/fuzzer-dependencies/
 
 BUILD_CLASSPATH=$OUT/*:$SRC/keycloak/fuzzer-dependencies/*:$JAZZER_API_PATH
 RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir:\$this_dir/fuzzer-dependencies
@@ -130,6 +130,11 @@ done
 zip $OUT/SamlParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/SamlParserFuzzer_seed_*
 zip $OUT/JwkParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/JwkParserFuzzer_seed_1
 zip $OUT/JoseParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/json.seed
-cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SAMLParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlAssertionParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlConfigParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlMetadataParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlProtocolParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlXmlUtilFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JwkParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JoseParserFuzzer.dict
