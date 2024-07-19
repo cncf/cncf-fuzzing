@@ -22,11 +22,10 @@ import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
-import java.util.ArrayList;
 import java.util.function.Consumer;
 import javax.crypto.SecretKey;
 import javax.xml.crypto.MarshalException;
@@ -41,14 +40,14 @@ import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
-  This fuzzer targets methods in XMLEncryptionUtil and XmlSignatureUtil
-  classes of the org.keycloak.saml.processing.core.util package. It passes
-  random data to fuzz all those static utils methods.
-  */
+ * This fuzzer targets methods in XMLEncryptionUtil and XmlSignatureUtil classes of the
+ * org.keycloak.saml.processing.core.util package. It passes random data to fuzz all those static
+ * utils methods.
+ */
 public class SamlXmlUtilFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
@@ -61,7 +60,7 @@ public class SamlXmlUtilFuzzer {
       // Generate a keypair
       KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
 
-      switch(data.consumeInt(1, 10)) {
+      switch (data.consumeInt(1, 10)) {
         case 1:
           // Initialise qname arguments
           QName elementName = new QName(data.consumeString(data.consumeInt(1, 32)));
@@ -82,7 +81,8 @@ public class SamlXmlUtilFuzzer {
           doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
 
           // Initialise DecryptionKeyLocator
-          DefaultDecryptionKeyLocator locator = new DefaultDecryptionKeyLocator(keyPair.getPrivate());
+          DefaultDecryptionKeyLocator locator =
+              new DefaultDecryptionKeyLocator(keyPair.getPrivate());
 
           // Fuzz
           XMLEncryptionUtil.decryptElementInDocument(doc, locator);
@@ -99,7 +99,8 @@ public class SamlXmlUtilFuzzer {
           break;
         case 4:
           // Initialise DefaultKeyLocator
-          DefaultKeyLocator keyLocator = new DefaultKeyLocator(KeyUtils.loadSecretKey(data.consumeBytes(32), "HmacSHA256"));
+          DefaultKeyLocator keyLocator =
+              new DefaultKeyLocator(KeyUtils.loadSecretKey(data.consumeBytes(32), "HmacSHA256"));
 
           // Initialise document
           doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
@@ -111,14 +112,19 @@ public class SamlXmlUtilFuzzer {
           XMLSignatureUtil.createKeyValue(keyPair.getPublic());
           break;
       }
-    } catch (ProcessingException | RuntimeException | IOException | ParserConfigurationException | SAXException e) {
+    } catch (ProcessingException
+        | RuntimeException
+        | IOException
+        | ParserConfigurationException
+        | SAXException e) {
       // Known exception
-    } catch (GeneralSecurityException | MarshalException | XMLSignatureException e){
+    } catch (GeneralSecurityException | MarshalException | XMLSignatureException e) {
       // Known exception
     }
   }
 
-  private static class DefaultDecryptionKeyLocator implements XMLEncryptionUtil.DecryptionKeyLocator {
+  private static class DefaultDecryptionKeyLocator
+      implements XMLEncryptionUtil.DecryptionKeyLocator {
     private List<PrivateKey> keys;
 
     public DefaultDecryptionKeyLocator(PrivateKey key) {
