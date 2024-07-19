@@ -15,14 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
-import java.lang.RuntimeException;
 import java.nio.charset.StandardCharsets;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAssertionParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeParser;
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLAttributeStatementParser;
@@ -38,11 +36,11 @@ import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLSubjectConfi
 import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLSubjectParser;
 
 /**
-  This fuzzer targets the parse method of all instances and implementation of
-  StaxParser in org.keycloak.saml.processing.core.parsers.saml.assertion package.
-  It creates a XMLEventReader with random bytes in UTF-8 encoding and pass it as
-  a source for the a random SAML parser to parse it.
-  */
+ * This fuzzer targets the parse method of all instances and implementation of StaxParser in
+ * org.keycloak.saml.processing.core.parsers.saml.assertion package. It creates a XMLEventReader
+ * with random bytes in UTF-8 encoding and pass it as a source for the a random SAML parser to parse
+ * it.
+ */
 public class SamlAssertionParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
@@ -54,45 +52,45 @@ public class SamlAssertionParserFuzzer {
       // random data provided by the XMLEventReader
       // object created above
       switch (data.consumeInt(1, 13)) {
-         case 1:
-           parser = SAMLAssertionParser.getInstance();
-           break;
-         case 2:
-           parser = SAMLAttributeParser.getInstance();
-           break;
-         case 3:
-           parser = SAMLAttributeStatementParser.getInstance();
-           break;
-         case 4:
-           parser = SAMLAttributeValueParser.getInstance();
-           break;
-         case 5:
-           parser = SAMLAudienceRestrictionParser.getInstance();
-           break;
-         case 6:
-           parser = SAMLAuthnContextParser.getInstance();
-           break;
-         case 7:
-           parser = SAMLAuthnStatementParser.getInstance();
-           break;
-         case 8:
-           parser = SAMLConditionsParser.getInstance();
-           break;
-         case 9:
-           parser = SAMLEncryptedAssertionParser.getInstance();
-           break;
-         case 10:
-           parser = SAMLProxyRestrictionParser.getInstance();
-           break;
-         case 11:
-           parser = SAMLSubjectConfirmationDataParser.INSTANCE;
-           break;
-         case 12:
-           parser = SAMLSubjectConfirmationParser.INSTANCE;
-           break;
-         case 13:
-           parser = SAMLSubjectParser.getInstance();
-           break;
+        case 1:
+          parser = SAMLAssertionParser.getInstance();
+          break;
+        case 2:
+          parser = SAMLAttributeParser.getInstance();
+          break;
+        case 3:
+          parser = SAMLAttributeStatementParser.getInstance();
+          break;
+        case 4:
+          parser = SAMLAttributeValueParser.getInstance();
+          break;
+        case 5:
+          parser = SAMLAudienceRestrictionParser.getInstance();
+          break;
+        case 6:
+          parser = SAMLAuthnContextParser.getInstance();
+          break;
+        case 7:
+          parser = SAMLAuthnStatementParser.getInstance();
+          break;
+        case 8:
+          parser = SAMLConditionsParser.getInstance();
+          break;
+        case 9:
+          parser = SAMLEncryptedAssertionParser.getInstance();
+          break;
+        case 10:
+          parser = SAMLProxyRestrictionParser.getInstance();
+          break;
+        case 11:
+          parser = SAMLSubjectConfirmationDataParser.INSTANCE;
+          break;
+        case 12:
+          parser = SAMLSubjectConfirmationParser.INSTANCE;
+          break;
+        case 13:
+          parser = SAMLSubjectParser.getInstance();
+          break;
       }
 
       // Initialize a XMLEventReader with InputStream source pointing

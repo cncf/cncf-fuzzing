@@ -135,6 +135,8 @@ cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlConfigParserFuzz
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlMetadataParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlProtocolParserFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlProcessingUtilFuzzer.dict
+cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlValidationUtilFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/saml.dict $OUT/SamlXmlUtilFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JwkParserFuzzer.dict
 cp $SRC/cncf-fuzzing/projects/keycloak/seeds/json.dict $OUT/JoseParserFuzzer.dict

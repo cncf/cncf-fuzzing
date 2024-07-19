@@ -15,14 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
-import java.lang.RuntimeException;
 import java.nio.charset.StandardCharsets;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.processing.core.parsers.saml.mdattr.SAMLEntityAttributesParser;
 import org.keycloak.saml.processing.core.parsers.saml.mdui.SAMLUIInfoParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLArtifactResolutionServiceParser;
@@ -46,16 +44,15 @@ import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLNameIDMapping
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLOrganizationParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLPDPDescriptorParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLRequestedAttributeParser;
+import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLSPSSODescriptorParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLSingleLogoutServiceParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLSingleSignOnServiceParser;
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLSPSSODescriptorParser;
 
 /**
-  This fuzzer targets the parse method of all instances and implementation of
-  StaxParser in org.keycloak.saml.processing.core.parsers.saml.metadata package.
-  It creates a XMLEventReader with random bytes in UTF-8 encoding and pass it as
-  a source for the a random SAML parser to parse it.
-  */
+ * This fuzzer targets the parse method of all instances and implementation of StaxParser in
+ * org.keycloak.saml.processing.core.parsers.saml.metadata package. It creates a XMLEventReader with
+ * random bytes in UTF-8 encoding and pass it as a source for the a random SAML parser to parse it.
+ */
 public class SamlMetadataParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {

@@ -15,34 +15,31 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
-import java.lang.RuntimeException;
 import java.nio.charset.StandardCharsets;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import org.keycloak.adapters.saml.config.parsers.HttpClientParser;
 import org.keycloak.adapters.saml.config.parsers.IdpParser;
+import org.keycloak.adapters.saml.config.parsers.KeyParser;
+import org.keycloak.adapters.saml.config.parsers.KeyStoreParser;
 import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterParser;
 import org.keycloak.adapters.saml.config.parsers.KeycloakSamlAdapterV1Parser;
 import org.keycloak.adapters.saml.config.parsers.KeysParser;
-import org.keycloak.adapters.saml.config.parsers.KeyParser;
-import org.keycloak.adapters.saml.config.parsers.KeyStoreParser;
 import org.keycloak.adapters.saml.config.parsers.PrincipalNameMappingParser;
-import org.keycloak.adapters.saml.config.parsers.RoleMappingsProviderParser;
 import org.keycloak.adapters.saml.config.parsers.RoleMappingParser;
+import org.keycloak.adapters.saml.config.parsers.RoleMappingsProviderParser;
 import org.keycloak.adapters.saml.config.parsers.SingleLogoutServiceParser;
 import org.keycloak.adapters.saml.config.parsers.SingleSignOnServiceParser;
 import org.keycloak.adapters.saml.config.parsers.SpParser;
-import org.keycloak.saml.common.parsers.StaxParser;
 import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.parsers.StaxParser;
 
 /**
-  This fuzzer targets the parse method of all instances and implementation of
-  StaxParser in org.keycloak.adapters.saml.config.parsers package. It creates
-  a XMLEventReader with random bytes in UTF-8 encoding and pass it as a source
-  for the a random SAML parser to parse it.
-  */
+ * This fuzzer targets the parse method of all instances and implementation of StaxParser in
+ * org.keycloak.adapters.saml.config.parsers package. It creates a XMLEventReader with random bytes
+ * in UTF-8 encoding and pass it as a source for the a random SAML parser to parse it.
+ */
 public class SamlConfigParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {

@@ -15,15 +15,14 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
-import java.lang.RuntimeException;
 import java.nio.charset.StandardCharsets;
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.namespace.QName;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.parsers.AnyDomParser;
 import org.keycloak.saml.common.parsers.StaxParser;
-import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAML11AssertionParser;
 import org.keycloak.saml.processing.core.parsers.saml.SAML11RequestParser;
 import org.keycloak.saml.processing.core.parsers.saml.SAML11ResponseParser;
@@ -35,10 +34,10 @@ import org.keycloak.saml.processing.core.parsers.saml.xmldsig.RsaKeyValueParser;
 import org.keycloak.saml.processing.core.parsers.saml.xmldsig.X509DataParser;
 
 /**
-  This fuzzer targets the parse method of all StaxParser implementations. It
-  creates a XMLEventReader with random bytes in UTF-8 encoding and pass it
-  as a source for the a random SAML parser to parse it.
-  */
+ * This fuzzer targets the parse method of all StaxParser implementations. It creates a
+ * XMLEventReader with random bytes in UTF-8 encoding and pass it as a source for the a random SAML
+ * parser to parse it.
+ */
 public class SamlParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
