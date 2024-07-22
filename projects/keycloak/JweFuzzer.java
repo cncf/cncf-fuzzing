@@ -14,10 +14,17 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
+import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 
 /**
   This fuzzer targets the encodeJwe method of the JWE class.
@@ -26,26 +33,36 @@ import org.keycloak.jose.jwe.JWEHeader;
   the stored JWEHeader object.
   */
 public class JweFuzzer {
-  public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+  // Throw other unexpected exceptions that are not caught.
+  public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     try {
       // Determine how to create and initialize the JWE object
       Boolean choice = data.consumeBoolean();
 
       // Set up a list of valid algorithm for the JWE object
-      String[] alg = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
+      String[] algs = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
           JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256};
 
       // Set up a list of valid encryption / compression
       // algorithm for the JWE object
-      String[] enc = {JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
+      String[] encs = {JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
           JWEConstants.A256CBC_HS512, JWEConstants.A128GCM, JWEConstants.A192GCM,
           JWEConstants.A256GCM};
 
+      // Pick JWE object algorithms and encryption algorithms
+      String alg = data.pickValue(algs);
+      String enc = data.pickValue(encs);
+
+      // Create JweKeyStorage
+      Key key = KeyUtils.loadSecretKey(data.consumeBytes(32), "HmacSHA256");
+      JWEKeyStorage keyStorage = new JWEKeyStorage();
+      keyStorage.setEncryptionKey(key);
+      keyStorage.setDecryptionKey(key);
+
       // Creates and initializes a JWEHeader object with random
       // pick of algorithms and encryption / compression algorithms
-      JWEHeader header =
-          new JWEHeader(data.pickValue(alg), data.pickValue(enc), data.pickValue(enc));
-      JWE jwe;
+      JWEHeader header = new JWEHeader(alg, enc, enc);
+      JWE jwe = null;
 
       if (choice) {
         // Creates and initializes a JWE object with random
@@ -61,7 +78,27 @@ public class JweFuzzer {
       // Call the encodeJwe method which performs some
       // operations depennding on its JWEHeader configurations
       jwe.encodeJwe();
-    } catch (RuntimeException | JWEException e) {
+
+      // Creates and initializes JWEEncrpytionProvider objects
+      AesCbcHmacShaJWEEncryptionProvider achsjeProvider = new AesCbcHmacShaJWEEncryptionProvider(enc);
+      AesGcmJWEEncryptionProvider agjeProvider = new AesGcmJWEEncryptionProvider(enc);
+
+      // Call the encodeJwe methods from JWEEncryptionProvider objects
+      achsjeProvider.encodeJwe(jwe);
+      agjeProvider.encodeJwe(jwe);
+
+      // Call the verifyAndDecodeJwe methods from JWEEncryptionProvider objects
+      achsjeProvider.verifyAndDecodeJwe(jwe);
+      agjeProvider.verifyAndDecodeJwe(jwe);
+
+      // Call the serializeCEK methods from JWEEncryptionProvider objects
+      achsjeProvider.serializeCEK(keyStorage);
+      agjeProvider.serializeCEK(keyStorage);
+
+      // Call the deserializeCEK methods from JWEEncryptionProvider objects
+      achsjeProvider.deserializeCEK(keyStorage);
+      agjeProvider.deserializeCEK(keyStorage);
+    } catch (RuntimeException | JWEException | IOException | GeneralSecurityException e) {
       // Known exception
     }
   }
