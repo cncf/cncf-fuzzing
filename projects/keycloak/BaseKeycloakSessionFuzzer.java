@@ -21,6 +21,7 @@ import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 
 /**
   This is a helper class for creating default KeycloakSession
+  Currently used by DefaultAuthenticationFlowFuzzer
   */
 public abstract class BaseKeycloakSessionFuzzer {
   public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
