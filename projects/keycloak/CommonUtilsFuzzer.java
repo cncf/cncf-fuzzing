@@ -27,7 +27,7 @@ import org.keycloak.common.util.StackUtil;
  * This fuzzer targets the methods in different util
  * classes in the common package.
  */
-public class CommonUtilsFuzzer {
+public class CommonUtilsFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomly choose which utils method to invoke

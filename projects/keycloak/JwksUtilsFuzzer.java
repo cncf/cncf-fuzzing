@@ -35,7 +35,7 @@ import org.keycloak.util.JWKSUtils;
   in JWKSUtils on that random JWK key set with random
   JWK use choice.
   */
-public class JwksUtilsFuzzer {
+public class JwksUtilsFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Prepare the set of algorithm and key use for random choice

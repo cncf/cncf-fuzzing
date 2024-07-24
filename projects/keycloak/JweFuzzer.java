@@ -32,7 +32,7 @@ import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
   or JWEHeader instance for further encoding process using
   the stored JWEHeader object.
   */
-public class JweFuzzer {
+public class JweFuzzer extends BaseFuzzer {
   // Throw other unexpected exceptions that are not caught.
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     try {

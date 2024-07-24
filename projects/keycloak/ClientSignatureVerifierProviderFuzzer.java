@@ -51,7 +51,7 @@ import org.keycloak.models.RealmProvider;
 import org.mockito.Mockito;
 
 /** This fuzzer targets the methods in different client signature verifier provider. */
-public class ClientSignatureVerifierProviderFuzzer {
+public class ClientSignatureVerifierProviderFuzzer extends BaseFuzzer {
   private static MockObject mockObject;
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {

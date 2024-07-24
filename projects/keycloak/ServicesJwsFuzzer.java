@@ -50,7 +50,7 @@ import org.mockito.Mockito;
  * This fuzzer targets the methods in DefaultTokenManager
  * class in the services jose jwe package.
  */
-public class ServicesJwsFuzzer {
+public class ServicesJwsFuzzer extends BaseFuzzer {
   private static ClientModel clientModel;
   private static RealmModel realmModel;
   private static KeycloakSession session;

@@ -48,7 +48,7 @@ import org.xml.sax.SAXException;
  * org.keycloak.saml.processing.core.util package. It passes random data to fuzz all those static
  * utils methods.
  */
-public class SamlXmlUtilFuzzer {
+public class SamlXmlUtilFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Create document object

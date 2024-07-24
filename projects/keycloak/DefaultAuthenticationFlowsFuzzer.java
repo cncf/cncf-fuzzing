@@ -21,7 +21,7 @@ import org.keycloak.services.managers.RealmManager;
 /**
   This fuzzer targets different methods in DefaultAuthenticationFlows
   */
-public class DefaultAuthenticationFlowsFuzzer extends BaseKeycloakSessionFuzzer {
+public class DefaultAuthenticationFlowsFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomise choice
@@ -31,8 +31,7 @@ public class DefaultAuthenticationFlowsFuzzer extends BaseKeycloakSessionFuzzer 
       String string = data.consumeString(64);
 
       // Initialise a random RealmModel
-      RealmManager manager = new RealmManager(createKeycloakSession(data));
-      RealmModel realm = manager.createRealm(data.consumeRemainingAsString());
+      RealmModel realm = createRealmModel(data);
 
       switch(choice) {
         case 1:

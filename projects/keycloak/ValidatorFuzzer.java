@@ -17,7 +17,6 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.util.Map;
 import java.util.HashMap;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
@@ -39,11 +38,11 @@ import org.keycloak.validate.validators.ValidatorConfigValidator;
   This fuzzer targets different validator instances
   of the keycloak project.
   */
-public class ValidatorFuzzer {
+public class ValidatorFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       SimpleValidator validator = null;
-      KeycloakSession session = new ResteasyKeycloakSessionFactory().create();
+      KeycloakSession session = createKeycloakSession(data);
       ValidationContext context = new ValidationContext(session);
 
       // Generate random map for ValidatorConfig
