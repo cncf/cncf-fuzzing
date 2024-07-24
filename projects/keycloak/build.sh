@@ -92,7 +92,7 @@ RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir:\$this_dir/fuzzer-dependencies
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   fuzzer_basename=$(basename -s .java $fuzzer)
-  $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH -d $SRC/ $fuzzer
+  $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH:$SRC -d $SRC/ $fuzzer
   cp $SRC/$fuzzer_basename*.class $OUT/
 
   # Create an execution wrapper that executes Jazzer with the correct arguments.
@@ -126,6 +126,9 @@ fi
 \$@" > $OUT/$fuzzer_basename
   chmod u+x $OUT/$fuzzer_basename
 done
+
+# Remove executable for abstract BaseKeycloakSessionFuzzer
+rm $OUT/BaseKeycloakSessionFuzzer
 
 zip $OUT/SamlParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/SamlParserFuzzer_seed_*
 zip $OUT/JwkParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/JwkParserFuzzer_seed_1
