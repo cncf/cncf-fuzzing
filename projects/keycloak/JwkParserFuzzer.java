@@ -22,7 +22,7 @@ import org.keycloak.jose.jwk.JWKParser;
   and call other methods that rely on the parsing
   result randomly.
   */
-public class JwkParserFuzzer {
+public class JwkParserFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Retrieves choice and data for randomly

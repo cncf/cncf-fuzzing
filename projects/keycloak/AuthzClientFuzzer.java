@@ -28,7 +28,7 @@ import org.keycloak.authorization.client.AuthzClient;
  * settings and fuzz the protection and authorization
  * methods in the AuthzClient
  */
-public class AuthzClientFuzzer {
+public class AuthzClientFuzzer extends BaseFuzzer {
   // Template string for the keycloak json
   // Temporary set to empty url, will point
   // to a mock server when it is implemented
@@ -75,7 +75,7 @@ public class AuthzClientFuzzer {
       // Create a random mock response for the mock web server
       // Then enqueue to the server to serve possible request
       MockResponse mockResponse = new MockResponse();
-      mockResponse.setBody(data.consumeString(data.remainingBytes() / 2));
+      mockResponse.setBody(generateServerConfigurationJson());
       mockResponse.addHeader("Content-Type", "application/json");
       server.enqueue(mockResponse);
 

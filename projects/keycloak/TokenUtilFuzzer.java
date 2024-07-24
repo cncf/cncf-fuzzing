@@ -32,7 +32,7 @@ import org.keycloak.util.TokenUtil;
   It passes random string for choosing algorithm,
   key creation and method call.
   */
-public class TokenUtilFuzzer {
+public class TokenUtilFuzzer extends BaseFuzzer {
   // Set up a list of valid algorithm for the JWE object
   private static String[] alg = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
       JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256};

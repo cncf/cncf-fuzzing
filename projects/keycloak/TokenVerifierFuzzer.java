@@ -18,7 +18,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.representations.JsonWebToken;
 
-public class TokenVerifierFuzzer {
+public class TokenVerifierFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       TokenVerifier.create(data.consumeRemainingAsString(), JsonWebToken.class).verify();

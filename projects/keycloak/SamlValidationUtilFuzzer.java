@@ -42,7 +42,7 @@ import org.xml.sax.SAXException;
  * of the org.keycloak.saml.processing.core.util package. It passes random data to fuzz all those
  * static utils methods.
  */
-public class SamlValidationUtilFuzzer {
+public class SamlValidationUtilFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Retrieve all saml signature algorithm

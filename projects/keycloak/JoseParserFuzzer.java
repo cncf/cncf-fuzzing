@@ -21,7 +21,7 @@ import org.keycloak.jose.JOSEParser;
   It calls the JOSEParser.parse method with random string
   to fuzz its parsing ability.
   */
-public class JoseParserFuzzer {
+public class JoseParserFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Call the JOSEParser.parse method with random

@@ -32,7 +32,7 @@ import org.keycloak.common.util.PemUtils;
  * This fuzzer targets the methods in different crypto related
  * util classes in the common package.
  */
-public class CommonCryptoUtilsFuzzer {
+public class CommonCryptoUtilsFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     X509Certificate cert = null;
     KeyPair keyPair = null;

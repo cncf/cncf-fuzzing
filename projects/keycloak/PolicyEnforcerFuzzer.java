@@ -42,7 +42,7 @@ import org.mockito.Mockito;
  * HttpRequest and HttpResponse to fuzz the enforce
  * method of the PolicyEnforcer class of the authz package.
  */
-public class PolicyEnforcerFuzzer {
+public class PolicyEnforcerFuzzer extends BaseFuzzer {
   private static HttpServletRequest servletRequest;
   private static HttpServletResponse servletResponse;
   private static HttpRequest request;

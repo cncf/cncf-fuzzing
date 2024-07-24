@@ -41,7 +41,7 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
  * iteration and either encodes or decodes a value
  * specified by the fuzzer.
  */
-public class JweAlgorithmProviderFuzzer {
+public class JweAlgorithmProviderFuzzer extends BaseFuzzer {
   // Set up a list of valid encryption algorithm for the JWE object
   private static final String[] enc = {
       JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM};

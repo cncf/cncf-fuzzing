@@ -32,7 +32,7 @@ import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
  * Certificate Utils Provider implementation classes
  * in the crypto package.
  */
-public class CertificateUtilsProviderFuzzer {
+public class CertificateUtilsProviderFuzzer extends BaseFuzzer {
   private static Boolean initSuccess;
   private static CertificateFactory cf;
   private static KeyPair keyPair;

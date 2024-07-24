@@ -43,7 +43,7 @@ import org.keycloak.utils.TotpUtils;
 import org.mockito.Mockito;
 
 /** This fuzzer targets the methods in different util classes in the services utils package. */
-public class ServicesUtilsFuzzer {
+public class ServicesUtilsFuzzer extends BaseFuzzer {
   private static CertificateFactory cf;
   private static ResteasyKeycloakSession session;
 
