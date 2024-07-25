@@ -16,37 +16,34 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.authentication.authenticators.AttemptedAuthenticator;
-import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
+import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
+import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
+import org.keycloak.credential.CredentialProvider;
 
 /**
   This fuzzer targets authenticate methods of different Authenticator
   implementations.
   */
-public class AuthenticatorFuzzer extends BaseFuzzer {
+public class DirectGrantAuthenticatorFuzzer extends BaseFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       Authenticator authenticator = null;
       AuthenticatorFactory factory = null;
       DefaultAuthenticationFlowContext context = createAuthenticationFlowContext(data);
+      context.randomizeUserModel();
+      context.randomizeExecutionModel();
+      context.randomizeHttpRequest();
 
-      switch(data.consumeInt(1, 4)) {
+      switch(data.consumeInt(1, 3)) {
         case 1:
-          authenticator = AttemptedAuthenticator.SINGLETON;
+          authenticator = new ValidateOTP();
           break;
         case 2:
-          authenticator = new AllowAccessAuthenticatorFactory().create(context.getSession());
+          authenticator = new ValidatePassword();
           break;
         case 3:
-          authenticator = new DenyAccessAuthenticatorFactory().create(context.getSession());
-          break;
-        case 4:
-          factory = new UserSessionLimitsAuthenticatorFactory();
-          context.randomizeConfig(factory.getConfigProperties());
-          context.randomizeRequirement(factory.getRequirementChoices());
-          authenticator = factory.create(context.getSession());
+          authenticator = new ValidateUsername();
           break;
       }
 

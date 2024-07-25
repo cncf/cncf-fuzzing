@@ -16,12 +16,15 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +32,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationSelectionOption;
 import org.keycloak.authentication.FlowStatus;
+import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -40,13 +44,21 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserProfileMetadata;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.mockito.Mockito;
 
 /**
   This is a base fuzzer class that provides base methods for fuzzing
@@ -100,11 +112,11 @@ public abstract class BaseFuzzer {
     }
   }
 
-  public static AuthenticationFlowContext createAuthenticationFlowContext(FuzzedDataProvider data) {
-    return new DefaultAuthenticationFlowContext();
+  public static DefaultAuthenticationFlowContext createAuthenticationFlowContext(FuzzedDataProvider data) {
+    return new DefaultAuthenticationFlowContext(data);
   }
 
-  private static class DefaultAuthenticationFlowContext implements AuthenticationFlowContext {
+  protected static class DefaultAuthenticationFlowContext implements AuthenticationFlowContext {
     private UserModel user;
     private List<AuthenticationSelectionOption> options;
     private UserSessionModel userSession;
@@ -131,18 +143,21 @@ public abstract class BaseFuzzer {
     private String eventDetails;
     private String userErrorMessage;
     private String accessCode;
+    private FuzzedDataProvider data;
 
     private DefaultAuthenticationFlowContext() {
     }
 
     public DefaultAuthenticationFlowContext(FuzzedDataProvider data) {
+      this.data = data;
+
       session = createKeycloakSession(data);
       realm = createRealmModel(data);
+      sessionModel = new AuthenticationSessionAdapter(session, null, null, null);
+
       this.newEvent();
-      user = null;
       options = new ArrayList<>();
       userSession = null;
-      sessionModel = null;
       flowPath = "";
       form = null;
       baseUri = null;
@@ -163,6 +178,80 @@ public abstract class BaseFuzzer {
       userErrorMessage = "";
       accessCode = "";
     }
+
+    // Object randomize methods
+    public void randomizeConfig(List<ProviderConfigProperty> properties) {
+      this.config = new AuthenticatorConfigModel();
+      this.config.setId("ID");
+      this.config.setAlias("ALIAS");
+
+      Map<String, String> map = new HashMap<String, String>();
+      for (ProviderConfigProperty property : properties) {
+        if (property.getType().equals(ProviderConfigProperty.STRING_TYPE)) {
+          map.put(property.getName(), data.consumeString(64));
+        }
+      }
+
+      this.config.setConfig(map);
+    }
+
+    public void randomizeRequirement(AuthenticationExecutionModel.Requirement[] requirements) {
+      this.requirement = data.pickValue(requirements);
+    }
+
+    public void randomizeUserModel() {
+      UserRepresentation rep = new UserRepresentation();
+
+      rep.setAttributes(new HashMap<String, List<String>>());
+      rep.setUserProfileMetadata(new UserProfileMetadata());
+
+      rep.setId(data.consumeString(32));
+      rep.setUsername(data.consumeString(32));
+      rep.setFirstName(data.consumeString(32));
+      rep.setLastName(data.consumeString(32));
+      rep.setEmail(data.consumeString(32));
+      rep.setEmailVerified(data.consumeBoolean());
+      rep.setSelf(data.consumeString(32));
+      rep.setOrigin(data.consumeString(32));
+      rep.setCreatedTimestamp(data.consumeLong());
+      rep.setEnabled(data.consumeBoolean());
+      rep.setTotp(data.consumeBoolean());
+      rep.setFederationLink(data.consumeString(32));
+      rep.setServiceAccountClientId(data.consumeString(32));
+      rep.setNotBefore(data.consumeInt());
+
+      this.user = RepresentationToModel.createUser(session, realm, rep);
+
+    }
+
+    public void randomizeExecutionModel() {
+      this.execution = new AuthenticationExecutionModel();
+
+      this.execution.setId(data.consumeString(32));
+      this.execution.setAuthenticatorConfig(data.consumeString(32));
+      this.execution.setAuthenticator(data.consumeString(32));
+      this.execution.setFlowId(data.consumeString(32));
+      this.execution.setAuthenticatorFlow(data.consumeBoolean());
+      this.execution.setPriority(data.consumeInt());
+      this.execution.setParentFlow(data.consumeString(32));
+      this.execution.setRequirement(
+          data.pickValue(EnumSet.allOf(AuthenticationExecutionModel.Requirement.class)));
+    }
+
+    public void randomizeHttpRequest() {
+      MultivaluedMap<String, String> valueMap = new MultivaluedHashMap<String, String>();
+      valueMap.add(CredentialRepresentation.SECRET, data.consumeString(32));
+      valueMap.add(CredentialRepresentation.PASSWORD, data.consumeString(32));
+      valueMap.add(CredentialRepresentation.TOTP, data.consumeString(32));
+      valueMap.add(CredentialRepresentation.HOTP, data.consumeString(32));
+      valueMap.add(CredentialRepresentation.KERBEROS, data.consumeString(32));
+      valueMap.add(AuthenticationManager.FORM_USERNAME, data.consumeString(32));
+
+      this.request = Mockito.mock(HttpRequest.class);
+      Mockito.doReturn(valueMap).when(this.request).getDecodedFormParameters();
+    }
+
+    // End of object randomize methods
 
     @Override
     public UserModel getUser() {
@@ -192,10 +281,6 @@ public abstract class BaseFuzzer {
     @Override
     public void attachUserSession(UserSessionModel userSession) {
       this.userSession = userSession;
-    }
-
-    public void setAuthenticationSession(AuthenticationSessionModel sessionModel) {
-      this.sessionModel = sessionModel;
     }
 
     @Override
@@ -302,10 +387,6 @@ public abstract class BaseFuzzer {
       return this.event;
     }
 
-    public void setExecution(AuthenticationExecutionModel execution) {
-      this.execution = execution;
-    }
-
     @Override
     public AuthenticationExecutionModel getExecution() {
       return this.execution;
@@ -348,10 +429,6 @@ public abstract class BaseFuzzer {
       return this.session;
     }
 
-    public void setRequest(HttpRequest request) {
-      this.request = request;
-    }
-
     @Override
     public HttpRequest getHttpRequest() {
       return this.request;
@@ -364,10 +441,6 @@ public abstract class BaseFuzzer {
     @Override
     public BruteForceProtector getProtector() {
       return this.protector;
-    }
-
-    public void setAuthenticatorConfig(AuthenticatorConfigModel config) {
-      this.config = config;
     }
 
     @Override
