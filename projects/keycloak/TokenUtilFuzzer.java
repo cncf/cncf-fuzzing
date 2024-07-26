@@ -28,19 +28,29 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.util.TokenUtil;
 
 /**
-  This fuzzer targets the methods in TokenUtil class.
-  It passes random string for choosing algorithm,
-  key creation and method call.
-  */
-public class TokenUtilFuzzer extends BaseFuzzer {
+ * This fuzzer targets the methods in TokenUtil class. It passes random string for choosing
+ * algorithm, key creation and method call.
+ */
+public class TokenUtilFuzzer {
   // Set up a list of valid algorithm for the JWE object
-  private static String[] alg = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
-      JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256};
+  private static String[] alg = {
+    JWEConstants.DIRECT,
+    JWEConstants.A128KW,
+    JWEConstants.RSA1_5,
+    JWEConstants.RSA_OAEP,
+    JWEConstants.RSA_OAEP_256
+  };
 
   // Set up a list of valid encryption / compression
   // algorithm for the JWE object
-  private static String[] enc = {JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
-      JWEConstants.A256CBC_HS512, JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM};
+  private static String[] enc = {
+    JWEConstants.A128CBC_HS256,
+    JWEConstants.A192CBC_HS384,
+    JWEConstants.A256CBC_HS512,
+    JWEConstants.A128GCM,
+    JWEConstants.A192GCM,
+    JWEConstants.A256GCM
+  };
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
@@ -123,12 +133,21 @@ public class TokenUtilFuzzer extends BaseFuzzer {
             String kid = data.consumeString(data.remainingBytes() / 2);
 
             // Call jweKeyEncryptionEncode method with created object and random byte array
-            TokenUtil.jweKeyEncryptionEncode(aesKey, data.consumeRemainingAsBytes(), algAlgorithm,
-                encAlgorithm, kid, jweAlgorithmProvider, jweEncryptionProvider);
+            TokenUtil.jweKeyEncryptionEncode(
+                aesKey,
+                data.consumeRemainingAsBytes(),
+                algAlgorithm,
+                encAlgorithm,
+                kid,
+                jweAlgorithmProvider,
+                jweEncryptionProvider);
           } else {
             // Call jweKeyEncryptionVerifyAndDecode method with created object and random byte array
-            TokenUtil.jweKeyEncryptionVerifyAndDecode(aesKey, data.consumeRemainingAsString(),
-                jweAlgorithmProvider, jweEncryptionProvider);
+            TokenUtil.jweKeyEncryptionVerifyAndDecode(
+                aesKey,
+                data.consumeRemainingAsString(),
+                jweAlgorithmProvider,
+                jweEncryptionProvider);
           }
           break;
         case 7:
@@ -141,10 +160,12 @@ public class TokenUtilFuzzer extends BaseFuzzer {
           TokenUtil.isOfflineTokenRequested(data.consumeRemainingAsString());
           break;
         case 10:
-          TokenUtil.hasScope(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          TokenUtil.hasScope(
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 11:
-          TokenUtil.hasPrompt(data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          TokenUtil.hasPrompt(
+              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
       }
     } catch (JWSInputException | JWEException | NoSuchAlgorithmException e) {

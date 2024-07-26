@@ -18,10 +18,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 
-/**
-  This fuzzer targets the methods in the KeycloakUriBuilder class.
-  */
-public class KeycloakUriBuilderFuzzer extends BaseFuzzer {
+/** This fuzzer targets the methods in the KeycloakUriBuilder class. */
+public class KeycloakUriBuilderFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Generate random data

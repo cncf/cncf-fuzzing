@@ -16,12 +16,9 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
-import org.keycloak.services.managers.RealmManager;
 
-/**
-  This fuzzer targets different methods in DefaultAuthenticationFlows
-  */
-public class DefaultAuthenticationFlowsFuzzer extends BaseFuzzer {
+/** This fuzzer targets different methods in DefaultAuthenticationFlows */
+public class DefaultAuthenticationFlowsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomise choice
@@ -31,9 +28,9 @@ public class DefaultAuthenticationFlowsFuzzer extends BaseFuzzer {
       String string = data.consumeString(64);
 
       // Initialise a random RealmModel
-      RealmModel realm = createRealmModel(data);
+      RealmModel realm = BaseHelper.createRealmModel(data);
 
-      switch(choice) {
+      switch (choice) {
         case 1:
           DefaultAuthenticationFlows.addFlows(realm);
           break;
@@ -70,4 +67,3 @@ public class DefaultAuthenticationFlowsFuzzer extends BaseFuzzer {
     }
   }
 }
-

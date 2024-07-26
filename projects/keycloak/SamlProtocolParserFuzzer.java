@@ -38,7 +38,7 @@ import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLStatusParser;
  * org.keycloak.saml.processing.core.parsers.saml.protocol package. It creates a XMLEventReader with
  * random bytes in UTF-8 encoding and pass it as a source for the a random SAML parser to parse it.
  */
-public class SamlProtocolParserFuzzer extends BaseFuzzer {
+public class SamlProtocolParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Initialise a StaxParser object

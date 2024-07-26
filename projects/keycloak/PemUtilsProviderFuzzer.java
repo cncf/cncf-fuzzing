@@ -25,7 +25,7 @@ import org.keycloak.crypto.elytron.ElytronPEMUtilsProvider;
 import org.keycloak.crypto.fips.BCFIPSPemUtilsProvider;
 
 /** This fuzzer targets the methods in different pem utils provider. */
-public class PemUtilsProviderFuzzer extends BaseFuzzer {
+public class PemUtilsProviderFuzzer {
   private static CertificateFactory cf;
 
   public static void fuzzerInitialize() throws GeneralSecurityException {

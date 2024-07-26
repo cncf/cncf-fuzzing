@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.function.BiPredicate;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
@@ -38,11 +37,10 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.mockito.Mockito;
 
 /**
- * This fuzzer creates configuration objects and mock
- * HttpRequest and HttpResponse to fuzz the enforce
- * method of the PolicyEnforcer class of the authz package.
+ * This fuzzer creates configuration objects and mock HttpRequest and HttpResponse to fuzz the
+ * enforce method of the PolicyEnforcer class of the authz package.
  */
-public class PolicyEnforcerFuzzer extends BaseFuzzer {
+public class PolicyEnforcerFuzzer {
   private static HttpServletRequest servletRequest;
   private static HttpServletResponse servletResponse;
   private static HttpRequest request;
@@ -125,18 +123,20 @@ public class PolicyEnforcerFuzzer extends BaseFuzzer {
 
       // Prepare credential map with random data
       Map<String, Object> map = enforcerConfig.getCredentials();
-      map.put(data.consumeString(data.remainingBytes() / 2),
+      map.put(
+          data.consumeString(data.remainingBytes() / 2),
           data.consumeString(data.remainingBytes() / 2));
       enforcerConfig.setCredentials(map);
 
       // Build the policy enforcer with random data and the config and provider object initialised
       // above
-      PolicyEnforcer enforcer = PolicyEnforcer.builder()
-                                    .clientId(data.consumeString(data.remainingBytes() / 2))
-                                    .bearerOnly(data.consumeBoolean())
-                                    .enforcerConfig(enforcerConfig)
-                                    .credentialProvider(provider)
-                                    .build();
+      PolicyEnforcer enforcer =
+          PolicyEnforcer.builder()
+              .clientId(data.consumeString(data.remainingBytes() / 2))
+              .bearerOnly(data.consumeBoolean())
+              .enforcerConfig(enforcerConfig)
+              .credentialProvider(provider)
+              .build();
 
       // Mock key method of the HttpServletRequest and HttpServletResponse with random data
       // Use the mock method to deny real HTTP request and simulate the response with random data

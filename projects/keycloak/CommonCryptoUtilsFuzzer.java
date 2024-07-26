@@ -17,8 +17,8 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.KeyPair;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
@@ -29,10 +29,9 @@ import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.PemUtils;
 
 /**
- * This fuzzer targets the methods in different crypto related
- * util classes in the common package.
+ * This fuzzer targets the methods in different crypto related util classes in the common package.
  */
-public class CommonCryptoUtilsFuzzer extends BaseFuzzer {
+public class CommonCryptoUtilsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     X509Certificate cert = null;
     KeyPair keyPair = null;
@@ -44,8 +43,10 @@ public class CommonCryptoUtilsFuzzer extends BaseFuzzer {
       Integer choice = data.consumeInt(1, 22);
       switch (choice) {
         case 1:
-          cert = (X509Certificate) cf.generateCertificate(
-              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          cert =
+              (X509Certificate)
+                  cf.generateCertificate(
+                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           keyPair = KeyUtils.generateRsaKeyPair(2048);
           CertificateUtils.generateV3Certificate(
               keyPair, keyPair.getPrivate(), cert, data.consumeRemainingAsString());
@@ -83,15 +84,18 @@ public class CommonCryptoUtilsFuzzer extends BaseFuzzer {
               data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
           break;
         case 10:
-          KeystoreUtil.loadKeyPairFromKeystore(data.consumeString(data.remainingBytes() / 2),
+          KeystoreUtil.loadKeyPairFromKeystore(
+              data.consumeString(data.remainingBytes() / 2),
               data.consumeString(data.remainingBytes() / 2),
               data.consumeString(data.remainingBytes() / 2),
               data.consumeString(data.remainingBytes() / 2),
               data.pickValue(EnumSet.allOf(KeystoreUtil.KeystoreFormat.class)));
           break;
         case 11:
-          KeystoreUtil.getKeystoreType(data.consumeString(data.remainingBytes() / 2),
-              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          KeystoreUtil.getKeystoreType(
+              data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2),
+              data.consumeRemainingAsString());
           break;
         case 12:
           PemUtils.decodeCertificate(data.consumeRemainingAsString());
@@ -111,8 +115,10 @@ public class CommonCryptoUtilsFuzzer extends BaseFuzzer {
           PemUtils.encodeKey(keyPair.getPrivate());
           break;
         case 17:
-          cert = (X509Certificate) cf.generateCertificate(
-              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          cert =
+              (X509Certificate)
+                  cf.generateCertificate(
+                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           PemUtils.encodeCertificate(cert);
           break;
         case 18:

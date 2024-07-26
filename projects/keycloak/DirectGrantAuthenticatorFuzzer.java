@@ -14,28 +14,23 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
-import org.keycloak.credential.CredentialProvider;
 
-/**
-  This fuzzer targets authenticate methods of different Authenticator
-  implementations.
-  */
-public class DirectGrantAuthenticatorFuzzer extends BaseFuzzer {
+/** This fuzzer targets authenticate methods of different Authenticator implementations. */
+public class DirectGrantAuthenticatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       Authenticator authenticator = null;
       AuthenticatorFactory factory = null;
-      DefaultAuthenticationFlowContext context = createAuthenticationFlowContext(data);
-      context.randomizeUserModel();
-      context.randomizeExecutionModel();
-      context.randomizeHttpRequest();
+      AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
+      BaseHelper.randomizeContext(context, null, null);
 
-      switch(data.consumeInt(1, 3)) {
+      switch (data.consumeInt(1, 3)) {
         case 1:
           authenticator = new ValidateOTP();
           break;
@@ -56,4 +51,3 @@ public class DirectGrantAuthenticatorFuzzer extends BaseFuzzer {
     }
   }
 }
-

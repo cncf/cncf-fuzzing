@@ -40,7 +40,7 @@ import org.keycloak.saml.common.parsers.StaxParser;
  * org.keycloak.adapters.saml.config.parsers package. It creates a XMLEventReader with random bytes
  * in UTF-8 encoding and pass it as a source for the a random SAML parser to parse it.
  */
-public class SamlConfigParserFuzzer extends BaseFuzzer {
+public class SamlConfigParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Initialise a StaxParser object

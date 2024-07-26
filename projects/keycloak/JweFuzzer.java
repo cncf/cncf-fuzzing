@@ -27,12 +27,11 @@ import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 
 /**
-  This fuzzer targets the encodeJwe method of the JWE class.
-  It creates and initialize a JWE object with random string
-  or JWEHeader instance for further encoding process using
-  the stored JWEHeader object.
-  */
-public class JweFuzzer extends BaseFuzzer {
+ * This fuzzer targets the encodeJwe method of the JWE class. It creates and initialize a JWE object
+ * with random string or JWEHeader instance for further encoding process using the stored JWEHeader
+ * object.
+ */
+public class JweFuzzer {
   // Throw other unexpected exceptions that are not caught.
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     try {
@@ -40,14 +39,24 @@ public class JweFuzzer extends BaseFuzzer {
       Boolean choice = data.consumeBoolean();
 
       // Set up a list of valid algorithm for the JWE object
-      String[] algs = {JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
-          JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256};
+      String[] algs = {
+        JWEConstants.DIRECT,
+        JWEConstants.A128KW,
+        JWEConstants.RSA1_5,
+        JWEConstants.RSA_OAEP,
+        JWEConstants.RSA_OAEP_256
+      };
 
       // Set up a list of valid encryption / compression
       // algorithm for the JWE object
-      String[] encs = {JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
-          JWEConstants.A256CBC_HS512, JWEConstants.A128GCM, JWEConstants.A192GCM,
-          JWEConstants.A256GCM};
+      String[] encs = {
+        JWEConstants.A128CBC_HS256,
+        JWEConstants.A192CBC_HS384,
+        JWEConstants.A256CBC_HS512,
+        JWEConstants.A128GCM,
+        JWEConstants.A192GCM,
+        JWEConstants.A256GCM
+      };
 
       // Pick JWE object algorithms and encryption algorithms
       String alg = data.pickValue(algs);
@@ -80,7 +89,8 @@ public class JweFuzzer extends BaseFuzzer {
       jwe.encodeJwe();
 
       // Creates and initializes JWEEncrpytionProvider objects
-      AesCbcHmacShaJWEEncryptionProvider achsjeProvider = new AesCbcHmacShaJWEEncryptionProvider(enc);
+      AesCbcHmacShaJWEEncryptionProvider achsjeProvider =
+          new AesCbcHmacShaJWEEncryptionProvider(enc);
       AesGcmJWEEncryptionProvider agjeProvider = new AesGcmJWEEncryptionProvider(enc);
 
       // Call the encodeJwe methods from JWEEncryptionProvider objects
