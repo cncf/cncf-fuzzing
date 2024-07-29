@@ -27,15 +27,21 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.keycloak.Config.Scope;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationSelectionOption;
 import org.keycloak.authentication.FlowStatus;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.profile.PropertiesProfileConfigResolver;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialProviderFactory;
+import org.keycloak.credential.OTPCredentialProviderFactory;
+import org.keycloak.credential.PasswordCredentialProviderFactory;
+import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
+import org.keycloak.credential.UserCredentialManager;
+import org.keycloak.credential.WebAuthnCredentialProviderFactory;
+import org.keycloak.credential.WebAuthnPasswordlessCredentialProviderFactory;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
@@ -44,72 +50,42 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.models.utils.PostMigrationEvent;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderManager;
 import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserProfileMetadata;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.mockito.Mockito;
 
 /**
  * This is a base helper class that provides base methods for some fuzzing in the keycloak project.
  */
 public class BaseHelper {
-  public static KeycloakSession createKeycloakSession(final FuzzedDataProvider data) {
-    CryptoIntegration.init(BaseFuzzer.class.getClassLoader());
+  public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
+    // Initialise crypto providers
+    CryptoIntegration.init(BaseHelper.class.getClassLoader());
 
-    DefaultKeycloakSessionFactory res =
-        new ResteasyKeycloakSessionFactory() {
-          @Override
-          public void init() {
-            Profile.configure(new PropertiesProfileConfigResolver(System.getProperties()));
-            super.init();
-          }
+    // Initialise a keycloak session object
+    MockKeycloakSession session = Mockito.mock(MockKeycloakSession.class);
+    session.init(data);
 
-          @Override
-          protected boolean isEnabled(ProviderFactory factory, Scope scope) {
-            return data.consumeBoolean();
-          }
-
-          @Override
-          protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> loadFactories(
-              ProviderManager pm) {
-            return super.loadFactories(pm);
-          }
-
-          @Override
-          public String toString() {
-            return "DefaultKeycloakSessionFactory";
-          }
-        };
-
-    try {
-      res.init();
-      res.publish(new PostMigrationEvent(res));
-      return res.create();
-    } catch (RuntimeException ex) {
-      res.close();
-      throw ex;
-    }
+    return session;
   }
 
   public static RealmModel createRealmModel(FuzzedDataProvider data) {
-    RealmManager manager = new RealmManager(createKeycloakSession(data));
-    return manager.createRealm("Realm");
+    // Initialise KeycloakSession
+    KeycloakSession session = createKeycloakSession(data);
+
+    RealmModel realm = Mockito.mock(RealmModel.class);
+
+    return realm;
   }
 
   public static String generateServerConfigurationJson() {
@@ -157,6 +133,88 @@ public class BaseHelper {
     }
 
     return context;
+  }
+
+  protected abstract static class MockKeycloakSession implements KeycloakSession {
+    private Map<String, Map<String, Provider>> providerMap;
+    private FuzzedDataProvider data;
+
+    public void init(FuzzedDataProvider data) {
+      this.data = data;
+      this.providerMap = new HashMap<>();
+      this.initCredentialProvider();
+    }
+
+    private void initCredentialProvider() {
+      // Initialise all crendetial provider factories
+      List<CredentialProviderFactory> factories = new ArrayList<>();
+      factories.add(new OTPCredentialProviderFactory());
+      factories.add(new WebAuthnCredentialProviderFactory());
+      factories.add(new RecoveryAuthnCodesCredentialProviderFactory());
+      factories.add(new WebAuthnPasswordlessCredentialProviderFactory());
+      factories.add(new PasswordCredentialProviderFactory());
+
+      // Initialise all credential providers
+      Map<String, Provider> providers = new HashMap<>();
+      for (CredentialProviderFactory factory : factories) {
+        providers.put(factory.getId(), factory.create(this));
+      }
+
+      this.providerMap.put(CredentialProvider.class.getName(), providers);
+    }
+
+    @Override
+    public <T extends Provider> T getProvider(Class<T> clazz) {
+      String className = clazz.getName();
+      if (providerMap.containsKey(className)) {
+        Provider[] providers = (Provider[]) providerMap.get(className).values().toArray();
+        try {
+          return clazz.cast(providers[data.consumeInt(0, providers.length - 1)]);
+        } catch (ClassCastException e) {
+          // Known exception
+        }
+      }
+      return null;
+    }
+
+    @Override
+    public <T extends Provider> T getProvider(Class<T> clazz, String id) {
+      String className = clazz.getName();
+      if (providerMap.containsKey(className)) {
+        Map<String, Provider> providerIdMap = providerMap.get(className);
+        try {
+          Provider provider = providerIdMap.get(id);
+          if (provider != null) {
+            return clazz.cast(provider);
+          }
+        } catch (ClassCastException e) {
+          // Known exception
+        }
+      }
+      return null;
+    }
+  }
+
+  protected static class DefaultUserModel extends AbstractUserAdapter.Streams {
+    private String username;
+
+    public DefaultUserModel(KeycloakSession session, RealmModel realm, ComponentModel component) {
+      super(session, realm, component);
+    }
+
+    public void setUsername(String username) {
+      this.username = username;
+    }
+
+    @Override
+    public String getUsername() {
+      return this.username;
+    }
+
+    @Override
+    public SubjectCredentialManager credentialManager() {
+      return new UserCredentialManager(session, realm, this);
+    }
   }
 
   protected static class DefaultAuthenticationFlowContext implements AuthenticationFlowContext {
@@ -242,27 +300,8 @@ public class BaseHelper {
     }
 
     public void randomizeUserModel() {
-      UserRepresentation rep = new UserRepresentation();
-
-      rep.setAttributes(new HashMap<String, List<String>>());
-      rep.setUserProfileMetadata(new UserProfileMetadata());
-
-      rep.setId(data.consumeString(32));
-      rep.setUsername(data.consumeString(32));
-      rep.setFirstName(data.consumeString(32));
-      rep.setLastName(data.consumeString(32));
-      rep.setEmail(data.consumeString(32));
-      rep.setEmailVerified(data.consumeBoolean());
-      rep.setSelf(data.consumeString(32));
-      rep.setOrigin(data.consumeString(32));
-      rep.setCreatedTimestamp(data.consumeLong());
-      rep.setEnabled(data.consumeBoolean());
-      rep.setTotp(data.consumeBoolean());
-      rep.setFederationLink(data.consumeString(32));
-      rep.setServiceAccountClientId(data.consumeString(32));
-      rep.setNotBefore(data.consumeInt());
-
-      this.user = RepresentationToModel.createUser(session, realm, rep);
+      this.user = new DefaultUserModel(session, realm, new ComponentModel());
+      ((DefaultUserModel) this.user).setUsername(data.consumeString(32));
     }
 
     public void randomizeExecutionModel() {
