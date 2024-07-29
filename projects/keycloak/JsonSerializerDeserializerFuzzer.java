@@ -32,7 +32,7 @@ import org.keycloak.json.StringOrArraySerializer;
  * Deserializer in the keycloak json package. The specification is done by using the Jackson
  * databind annotation classes.
  */
-public class JsonSerializerDeserializerFuzzer extends BaseFuzzer {
+public class JsonSerializerDeserializerFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -106,4 +106,3 @@ public class JsonSerializerDeserializerFuzzer extends BaseFuzzer {
     }
   }
 }
-

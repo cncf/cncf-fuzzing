@@ -38,7 +38,7 @@ import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.mockito.Mockito;
 
-public class CredentialValidatorFuzzer extends BaseFuzzer {
+public class CredentialValidatorFuzzer {
   private static CredentialInputValidator validator;
   private static MockObject mockObject;
 

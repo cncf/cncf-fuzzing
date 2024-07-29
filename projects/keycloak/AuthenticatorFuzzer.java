@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.AttemptedAuthenticator;
@@ -21,18 +22,15 @@ import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticato
 import org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 
-/**
-  This fuzzer targets authenticate methods of different Authenticator
-  implementations.
-  */
-public class AuthenticatorFuzzer extends BaseFuzzer {
+/** This fuzzer targets authenticate methods of different Authenticator implementations. */
+public class AuthenticatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       Authenticator authenticator = null;
       AuthenticatorFactory factory = null;
-      DefaultAuthenticationFlowContext context = createAuthenticationFlowContext(data);
+      AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
 
-      switch(data.consumeInt(1, 4)) {
+      switch (data.consumeInt(1, 4)) {
         case 1:
           authenticator = AttemptedAuthenticator.SINGLETON;
           break;
@@ -44,8 +42,9 @@ public class AuthenticatorFuzzer extends BaseFuzzer {
           break;
         case 4:
           factory = new UserSessionLimitsAuthenticatorFactory();
-          context.randomizeConfig(factory.getConfigProperties());
-          context.randomizeRequirement(factory.getRequirementChoices());
+          context =
+              BaseHelper.randomizeContext(
+                  context, factory.getConfigProperties(), factory.getRequirementChoices());
           authenticator = factory.create(context.getSession());
           break;
       }
@@ -59,4 +58,3 @@ public class AuthenticatorFuzzer extends BaseFuzzer {
     }
   }
 }
-

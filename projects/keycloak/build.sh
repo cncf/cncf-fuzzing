@@ -39,15 +39,13 @@ EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js"
 
 EXCLUDE_MISC="!misc,!misc/keycloak-test-helper"
 
-EXCLUDE_MODEL="!model/infinispan"
-
 EXCLUDE_QUARKUS="!quarkus,!quarkus/config-api,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
 
 EXCLUDE_REST="!rest,!rest/admin-ui-ext"
 
 EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_INTEGRATION,$EXCLUDE_JS
-EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_MODEL,$EXCLUDE_QUARKUS,$EXCLUDE_REST
+EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_QUARKUS,$EXCLUDE_REST
 
 ## Execute maven build
 $MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
@@ -64,8 +62,10 @@ wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar -O fuzzer-de
 wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.10/kotlin-stdlib-common-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib-commin.jar
 wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/kotlin-stdlib-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib.jar
 
-RUNTIME_CLASSPATH=
+RUNTIME_CLASSPATH_FULL=
+RUNTIME_CLASSPATH_DEFAULT_CRYPTO=
 
+mkdir -p $OUT/crypto-jar
 for JARFILE in $(find . -wholename "*/target/keycloak*.jar")
 do
   if [[ "$JARFILE" == *"authz/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
@@ -74,8 +74,15 @@ do
   [[ "$JARFILE" == *"saml-core-api/"* ]] || [[ "$JARFILE" == *"services/"* ]] || \
   [[ "$JARFILE" == *"server-spi-private/"* ]] || [[ "$JARFILE" == *"server-spi/"* ]]
   then
-    cp $JARFILE $OUT/
-    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH\$this_dir/$(basename $JARFILE):
+    if [[ "$JARFILE" != *"fips1402"* ]] && [[ "$JARFILE" != *"elytron"* ]]
+    then
+      cp $JARFILE $OUT
+      RUNTIME_CLASSPATH_FULL=$RUNTIME_CLASSPATH_FULL\$this_dir/$(basename $JARFILE):
+      RUNTIME_CLASSPATH_DEFAULT_CRYPTO=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO\$this_dir/$(basename $JARFILE):
+    else
+      cp $JARFILE $OUT/crypto-jar
+      RUNTIME_CLASSPATH_FULL=$RUNTIME_CLASSPATH_FULL\$this_dir/crypto-jar/$(basename $JARFILE):
+    fi
   fi
 done
 
@@ -87,10 +94,22 @@ done
 mkdir -p $OUT/fuzzer-dependencies
 unzip -o fuzzer-dependencies/\*.jar -d $OUT/fuzzer-dependencies/
 
-BUILD_CLASSPATH=$OUT/*:$SRC/keycloak/fuzzer-dependencies/*:$JAZZER_API_PATH
-RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH:\$this_dir:\$this_dir/fuzzer-dependencies
+BUILD_CLASSPATH=$OUT/*:$SRC/keycloak/fuzzer-dependencies/*:$OUT/crypto-jar/*:$JAZZER_API_PATH
+RUNTIME_CLASSPATH_FULL=$RUNTIME_CLASSPATH_FULL:\$this_dir:\$this_dir/fuzzer-dependencies
+RUNTIME_CLASSPATH_DEFAULT_CRYPTO=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO:\$this_dir:\$this_dir/fuzzer-dependencies
+
+$JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH:$SRC -d $SRC/ $SRC/BaseHelper.java
+cp $SRC/BaseHelper*.class $OUT/
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
+  if [[ "$fuzzer" == *"AuthenticatorFuzzer"* ]] || [[ "$fuzzer" == *"ValidatorFuzzer"* ]] || \
+  [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]]
+  then
+    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO
+  else
+    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_FULL
+  fi
+
   fuzzer_basename=$(basename -s .java $fuzzer)
   $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH:$SRC -d $SRC/ $fuzzer
   cp $SRC/$fuzzer_basename*.class $OUT/
@@ -126,9 +145,6 @@ fi
 \$@" > $OUT/$fuzzer_basename
   chmod u+x $OUT/$fuzzer_basename
 done
-
-# Remove executable for abstract BaseFuzzer
-rm $OUT/BaseFuzzer
 
 zip $OUT/SamlParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/SamlParserFuzzer_seed_*
 zip $OUT/JwkParserFuzzer_seed_corpus.zip $SRC/cncf-fuzzing/projects/keycloak/seeds/JwkParserFuzzer_seed_1

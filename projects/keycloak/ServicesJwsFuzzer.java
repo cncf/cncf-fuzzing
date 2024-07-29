@@ -35,7 +35,6 @@ import org.keycloak.crypto.MacSecretSignatureProvider;
 import org.keycloak.crypto.RsaCekManagementProvider;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.DefaultTokenManager;
-import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeyManager;
@@ -47,10 +46,9 @@ import org.keycloak.models.UserSessionModel;
 import org.mockito.Mockito;
 
 /**
- * This fuzzer targets the methods in DefaultTokenManager
- * class in the services jose jwe package.
+ * This fuzzer targets the methods in DefaultTokenManager class in the services jose jwe package.
  */
-public class ServicesJwsFuzzer extends BaseFuzzer {
+public class ServicesJwsFuzzer {
   private static ClientModel clientModel;
   private static RealmModel realmModel;
   private static KeycloakSession session;
@@ -116,8 +114,8 @@ public class ServicesJwsFuzzer extends BaseFuzzer {
       }
     } catch (NullPointerException e) {
       // Handle the case when the execution environment don't have any profile instance
-      if (!e.toString().contains(
-              "the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
+      if (!e.toString()
+          .contains("the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
         throw e;
       }
     } catch (RuntimeException e) {
@@ -139,9 +137,11 @@ public class ServicesJwsFuzzer extends BaseFuzzer {
     Stream.Builder<KeyWrapper> builder = Stream.builder();
     Mockito.when(keyManager.getKeysStream(Mockito.any(RealmModel.class)))
         .thenReturn(builder.add(new KeyWrapper()).build());
-    Mockito
-        .when(keyManager.getActiveKey(
-            Mockito.any(RealmModel.class), Mockito.any(KeyUse.class), Mockito.any(String.class)))
+    Mockito.when(
+            keyManager.getActiveKey(
+                Mockito.any(RealmModel.class),
+                Mockito.any(KeyUse.class),
+                Mockito.any(String.class)))
         .thenReturn(new KeyWrapper());
 
     // Create and mock KeycloakContext
@@ -205,7 +205,8 @@ public class ServicesJwsFuzzer extends BaseFuzzer {
     Mockito.when(clientModel.isFullScopeAllowed()).thenReturn(data.consumeBoolean());
 
     Map<String, String> map = new HashMap<String, String>();
-    map.put(data.consumeString(data.remainingBytes() / 2),
+    map.put(
+        data.consumeString(data.remainingBytes() / 2),
         data.consumeString(data.remainingBytes() / 2));
     Mockito.when(clientModel.getAttributes()).thenReturn(map);
     Mockito.when(clientModel.getAuthenticationFlowBindingOverrides()).thenReturn(map);
@@ -232,11 +233,13 @@ public class ServicesJwsFuzzer extends BaseFuzzer {
     // Randomly choose a ClientSignatureVerifierProvider
     ClientSignatureVerifierProvider clientSignatureVerifierProvider = null;
     if (data.consumeBoolean()) {
-      clientSignatureVerifierProvider = new MacSecretClientSignatureVerifierProvider(
-          session, data.consumeString(data.remainingBytes() / 2));
+      clientSignatureVerifierProvider =
+          new MacSecretClientSignatureVerifierProvider(
+              session, data.consumeString(data.remainingBytes() / 2));
     } else {
-      clientSignatureVerifierProvider = new ECDSAClientSignatureVerifierProvider(
-          session, data.consumeString(data.remainingBytes() / 2));
+      clientSignatureVerifierProvider =
+          new ECDSAClientSignatureVerifierProvider(
+              session, data.consumeString(data.remainingBytes() / 2));
     }
 
     // Create RsaCekManagementProvider instance
@@ -246,28 +249,29 @@ public class ServicesJwsFuzzer extends BaseFuzzer {
     // Randomly choose a ContentEncryptionProvider
     ContentEncryptionProvider contentEncryptionProvider = null;
     if (data.consumeBoolean()) {
-      contentEncryptionProvider = new AesGcmContentEncryptionProvider(
-          session, data.consumeString(data.remainingBytes() / 2));
+      contentEncryptionProvider =
+          new AesGcmContentEncryptionProvider(
+              session, data.consumeString(data.remainingBytes() / 2));
     } else {
-      contentEncryptionProvider = new AesCbcHmacShaContentEncryptionProvider(
-          session, data.consumeString(data.remainingBytes() / 2));
+      contentEncryptionProvider =
+          new AesCbcHmacShaContentEncryptionProvider(
+              session, data.consumeString(data.remainingBytes() / 2));
     }
 
     // Create mock return for KeycloakSession Object
-    Mockito
-        .when(session.getProvider(Mockito.eq(SignatureProvider.class), Mockito.any(String.class)))
+    Mockito.when(
+            session.getProvider(Mockito.eq(SignatureProvider.class), Mockito.any(String.class)))
         .thenReturn(signatureProvider);
-    Mockito
-        .when(session.getProvider(
-            Mockito.eq(ClientSignatureVerifierProvider.class), Mockito.any(String.class)))
+    Mockito.when(
+            session.getProvider(
+                Mockito.eq(ClientSignatureVerifierProvider.class), Mockito.any(String.class)))
         .thenReturn(clientSignatureVerifierProvider);
-    Mockito
-        .when(
+    Mockito.when(
             session.getProvider(Mockito.eq(CekManagementProvider.class), Mockito.any(String.class)))
         .thenReturn(cekManagementProvider);
-    Mockito
-        .when(session.getProvider(
-            Mockito.eq(ContentEncryptionProvider.class), Mockito.any(String.class)))
+    Mockito.when(
+            session.getProvider(
+                Mockito.eq(ContentEncryptionProvider.class), Mockito.any(String.class)))
         .thenReturn(contentEncryptionProvider);
   }
 

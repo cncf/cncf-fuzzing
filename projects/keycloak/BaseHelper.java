@@ -22,18 +22,20 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.keycloak.Config.Scope;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationSelectionOption;
 import org.keycloak.authentication.FlowStatus;
-import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
@@ -48,7 +50,10 @@ import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ProviderManager;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -61,17 +66,36 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.mockito.Mockito;
 
 /**
-  This is a base fuzzer class that provides base methods for fuzzing
-  the keycloak project.
-  */
-public abstract class BaseFuzzer {
-  public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
-    DefaultKeycloakSessionFactory res = new ResteasyKeycloakSessionFactory() {
-      @Override
-      public void init() {
-        super.init();
-      }
-    };
+ * This is a base helper class that provides base methods for some fuzzing in the keycloak project.
+ */
+public class BaseHelper {
+  public static KeycloakSession createKeycloakSession(final FuzzedDataProvider data) {
+    CryptoIntegration.init(BaseFuzzer.class.getClassLoader());
+
+    DefaultKeycloakSessionFactory res =
+        new ResteasyKeycloakSessionFactory() {
+          @Override
+          public void init() {
+            Profile.configure(new PropertiesProfileConfigResolver(System.getProperties()));
+            super.init();
+          }
+
+          @Override
+          protected boolean isEnabled(ProviderFactory factory, Scope scope) {
+            return data.consumeBoolean();
+          }
+
+          @Override
+          protected Map<Class<? extends Provider>, Map<String, ProviderFactory>> loadFactories(
+              ProviderManager pm) {
+            return super.loadFactories(pm);
+          }
+
+          @Override
+          public String toString() {
+            return "DefaultKeycloakSessionFactory";
+          }
+        };
 
     try {
       res.init();
@@ -112,8 +136,27 @@ public abstract class BaseFuzzer {
     }
   }
 
-  public static DefaultAuthenticationFlowContext createAuthenticationFlowContext(FuzzedDataProvider data) {
+  public static AuthenticationFlowContext createAuthenticationFlowContext(FuzzedDataProvider data) {
     return new DefaultAuthenticationFlowContext(data);
+  }
+
+  public static AuthenticationFlowContext randomizeContext(
+      AuthenticationFlowContext context,
+      List<ProviderConfigProperty> properties,
+      AuthenticationExecutionModel.Requirement[] requirements) {
+    if (context instanceof DefaultAuthenticationFlowContext) {
+      if (properties != null) {
+        ((DefaultAuthenticationFlowContext) context).randomizeConfig(properties);
+      }
+      if (requirements != null) {
+        ((DefaultAuthenticationFlowContext) context).randomizeRequirement(requirements);
+      }
+      ((DefaultAuthenticationFlowContext) context).randomizeUserModel();
+      ((DefaultAuthenticationFlowContext) context).randomizeExecutionModel();
+      ((DefaultAuthenticationFlowContext) context).randomizeHttpRequest();
+    }
+
+    return context;
   }
 
   protected static class DefaultAuthenticationFlowContext implements AuthenticationFlowContext {
@@ -145,8 +188,7 @@ public abstract class BaseFuzzer {
     private String accessCode;
     private FuzzedDataProvider data;
 
-    private DefaultAuthenticationFlowContext() {
-    }
+    private DefaultAuthenticationFlowContext() {}
 
     public DefaultAuthenticationFlowContext(FuzzedDataProvider data) {
       this.data = data;
@@ -173,7 +215,7 @@ public abstract class BaseFuzzer {
       infoMessage = null;
       requirement = AuthenticationExecutionModel.Requirement.REQUIRED;
       status = null;
-      error =null;
+      error = null;
       eventDetails = "";
       userErrorMessage = "";
       accessCode = "";
@@ -221,7 +263,6 @@ public abstract class BaseFuzzer {
       rep.setNotBefore(data.consumeInt());
 
       this.user = RepresentationToModel.createUser(session, realm, rep);
-
     }
 
     public void randomizeExecutionModel() {
@@ -338,7 +379,7 @@ public abstract class BaseFuzzer {
     }
 
     @Override
-    public URI getRefreshUrl(boolean authSessionIdParam){
+    public URI getRefreshUrl(boolean authSessionIdParam) {
       try {
         return new URI(this.baseUri);
       } catch (URISyntaxException e) {
@@ -486,7 +527,8 @@ public abstract class BaseFuzzer {
     }
 
     @Override
-    public AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(String authenticatorCategory) {
+    public AuthenticationExecutionModel.Requirement getCategoryRequirementFromCurrentFlow(
+        String authenticatorCategory) {
       return this.requirement;
     }
 
@@ -506,7 +548,11 @@ public abstract class BaseFuzzer {
     }
 
     @Override
-    public void failure(AuthenticationFlowError error, Response response, String eventDetails, String userErrorMessage) {
+    public void failure(
+        AuthenticationFlowError error,
+        Response response,
+        String eventDetails,
+        String userErrorMessage) {
       // Do nothing
     }
 
@@ -567,4 +613,3 @@ public abstract class BaseFuzzer {
     }
   }
 }
-

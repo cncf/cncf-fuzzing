@@ -21,7 +21,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.KeyGenerator;
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.fips.FipsRSA;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
 import org.keycloak.crypto.def.DefaultRsaKeyEncryption256JWEAlgorithmProvider;
 import org.keycloak.crypto.elytron.ElytronRsaKeyEncryption256JWEAlgorithmProvider;
@@ -33,18 +32,17 @@ import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**
- * This fuzzer targets the encodeCek and decodeCek
- * methods of different JweAlgorithm Provider
+ * This fuzzer targets the encodeCek and decodeCek methods of different JweAlgorithm Provider
  * implementation classes in the crypto package.
  *
- * The fuzzer randomly selects a provider in each
- * iteration and either encodes or decodes a value
+ * <p>The fuzzer randomly selects a provider in each iteration and either encodes or decodes a value
  * specified by the fuzzer.
  */
-public class JweAlgorithmProviderFuzzer extends BaseFuzzer {
+public class JweAlgorithmProviderFuzzer {
   // Set up a list of valid encryption algorithm for the JWE object
   private static final String[] enc = {
-      JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM};
+    JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM
+  };
 
   private static KeyPair keyPair;
   private static Key key;

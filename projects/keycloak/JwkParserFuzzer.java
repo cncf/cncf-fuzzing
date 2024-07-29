@@ -17,12 +17,10 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.keycloak.jose.jwk.JWKParser;
 
 /**
-  This fuzzer targets the methods in JWKParser.
-  It passes random string to the JWKParser object
-  and call other methods that rely on the parsing
-  result randomly.
-  */
-public class JwkParserFuzzer extends BaseFuzzer {
+ * This fuzzer targets the methods in JWKParser. It passes random string to the JWKParser object and
+ * call other methods that rely on the parsing result randomly.
+ */
+public class JwkParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Retrieves choice and data for randomly

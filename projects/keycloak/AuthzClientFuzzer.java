@@ -18,17 +18,15 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.function.BiPredicate;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.keycloak.authorization.client.AuthzClient;
 
 /**
- * This fuzzer creates the keycloakJson configuration
- * settings and fuzz the protection and authorization
- * methods in the AuthzClient
+ * This fuzzer creates the keycloakJson configuration settings and fuzz the protection and
+ * authorization methods in the AuthzClient
  */
-public class AuthzClientFuzzer extends BaseFuzzer {
+public class AuthzClientFuzzer {
   // Template string for the keycloak json
   // Temporary set to empty url, will point
   // to a mock server when it is implemented
@@ -75,7 +73,7 @@ public class AuthzClientFuzzer extends BaseFuzzer {
       // Create a random mock response for the mock web server
       // Then enqueue to the server to serve possible request
       MockResponse mockResponse = new MockResponse();
-      mockResponse.setBody(generateServerConfigurationJson());
+      mockResponse.setBody(BaseHelper.generateServerConfigurationJson());
       mockResponse.addHeader("Content-Type", "application/json");
       server.enqueue(mockResponse);
 
@@ -100,8 +98,10 @@ public class AuthzClientFuzzer extends BaseFuzzer {
           client.authorization(data.consumeRemainingAsString());
           break;
         case 4:
-          client.authorization(data.consumeString(data.remainingBytes() / 2),
-              data.consumeString(data.remainingBytes() / 2), data.consumeRemainingAsString());
+          client.authorization(
+              data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.remainingBytes() / 2),
+              data.consumeRemainingAsString());
           break;
         case 5:
           client.obtainAccessToken(

@@ -14,12 +14,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import java.io.ByteArrayInputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.EnumSet;
-import java.util.List;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -29,20 +27,32 @@ import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.util.JWKSUtils;
 
 /**
-  This fuzzer targets the JWKBuilder and JWKSUtils class.
-  It generate a random set of JWK keys for creating
-  a JSONWebKeySet object. It then call random methods
-  in JWKSUtils on that random JWK key set with random
-  JWK use choice.
-  */
-public class JwksUtilsFuzzer extends BaseFuzzer {
+ * This fuzzer targets the JWKBuilder and JWKSUtils class. It generate a random set of JWK keys for
+ * creating a JSONWebKeySet object. It then call random methods in JWKSUtils on that random JWK key
+ * set with random JWK use choice.
+ */
+public class JwksUtilsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Prepare the set of algorithm and key use for random choice
-      String[] algorithm = {Algorithm.HS256, Algorithm.HS384, Algorithm.HS512, Algorithm.RS256,
-          Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
-          Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RSA1_5, Algorithm.RSA_OAEP,
-          Algorithm.RSA_OAEP_256, Algorithm.AES};
+      String[] algorithm = {
+        Algorithm.HS256,
+        Algorithm.HS384,
+        Algorithm.HS512,
+        Algorithm.RS256,
+        Algorithm.RS384,
+        Algorithm.RS512,
+        Algorithm.ES256,
+        Algorithm.ES384,
+        Algorithm.ES512,
+        Algorithm.PS256,
+        Algorithm.PS384,
+        Algorithm.PS512,
+        Algorithm.RSA1_5,
+        Algorithm.RSA_OAEP,
+        Algorithm.RSA_OAEP_256,
+        Algorithm.AES
+      };
       EnumSet<JWK.Use> jwkUse = EnumSet.allOf(JWK.Use.class);
 
       // Initialise the JWKBuilder and a JWK array with random size
@@ -64,7 +74,8 @@ public class JwksUtilsFuzzer extends BaseFuzzer {
           JWK jwk = builder.rsa(keyPair.getPublic());
 
           jwk.setOtherClaims(RSAPublicJWK.MODULUS, data.consumeString(data.remainingBytes() / 2));
-          jwk.setOtherClaims(RSAPublicJWK.PUBLIC_EXPONENT, data.consumeString(data.remainingBytes() / 2));
+          jwk.setOtherClaims(
+              RSAPublicJWK.PUBLIC_EXPONENT, data.consumeString(data.remainingBytes() / 2));
 
           keys[i] = jwk;
         } else {

@@ -32,9 +32,9 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
-import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.utils.CRLUtils;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.RegexUtils;
@@ -43,7 +43,7 @@ import org.keycloak.utils.TotpUtils;
 import org.mockito.Mockito;
 
 /** This fuzzer targets the methods in different util classes in the services utils package. */
-public class ServicesUtilsFuzzer extends BaseFuzzer {
+public class ServicesUtilsFuzzer {
   private static CertificateFactory cf;
   private static ResteasyKeycloakSession session;
 

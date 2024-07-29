@@ -14,40 +14,25 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.validate.BuiltinValidators;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.validators.DoubleValidator;
-import org.keycloak.validate.validators.EmailValidator;
-import org.keycloak.validate.validators.IntegerValidator;
-import org.keycloak.validate.validators.IsoDateValidator;
-import org.keycloak.validate.validators.LengthValidator;
-import org.keycloak.validate.validators.LocalDateValidator;
-import org.keycloak.validate.validators.NotBlankValidator;
-import org.keycloak.validate.validators.NotEmptyValidator;
-import org.keycloak.validate.validators.OptionsValidator;
-import org.keycloak.validate.validators.PatternValidator;
-import org.keycloak.validate.validators.UriValidator;
-import org.keycloak.validate.validators.ValidatorConfigValidator;
 
-/**
-  This fuzzer targets different validator instances
-  of the keycloak project.
-  */
-public class ValidatorFuzzer extends BaseFuzzer {
+/** This fuzzer targets different validator instances of the keycloak project. */
+public class ValidatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       SimpleValidator validator = null;
-      KeycloakSession session = createKeycloakSession(data);
+      KeycloakSession session = BaseHelper.createKeycloakSession(data);
       ValidationContext context = new ValidationContext(session);
 
       // Generate random map for ValidatorConfig
       Map<String, Object> configMap = new HashMap<String, Object>();
-      for (int i=0; i<data.consumeInt(0, 5); i++) {
+      for (int i = 0; i < data.consumeInt(0, 5); i++) {
         configMap.put(data.consumeString(10), data.consumeString(10));
       }
       ValidatorConfig config = new ValidatorConfig(configMap);
@@ -101,4 +86,3 @@ public class ValidatorFuzzer extends BaseFuzzer {
     }
   }
 }
-

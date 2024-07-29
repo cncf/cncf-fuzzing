@@ -28,11 +28,10 @@ import org.keycloak.crypto.elytron.ElytronCertificateUtilsProvider;
 import org.keycloak.crypto.fips.BCFIPSCertificateUtilsProvider;
 
 /**
- * This fuzzer targets the methods in different
- * Certificate Utils Provider implementation classes
- * in the crypto package.
+ * This fuzzer targets the methods in different Certificate Utils Provider implementation classes in
+ * the crypto package.
  */
-public class CertificateUtilsProviderFuzzer extends BaseFuzzer {
+public class CertificateUtilsProviderFuzzer {
   private static Boolean initSuccess;
   private static CertificateFactory cf;
   private static KeyPair keyPair;
@@ -75,8 +74,10 @@ public class CertificateUtilsProviderFuzzer extends BaseFuzzer {
       Integer choice = data.consumeInt(1, 5);
       switch (choice) {
         case 1:
-          cert = (X509Certificate) cf.generateCertificate(
-              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          cert =
+              (X509Certificate)
+                  cf.generateCertificate(
+                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           provider.generateV3Certificate(
               keyPair, keyPair.getPrivate(), cert, data.consumeRemainingAsString());
           break;
@@ -84,20 +85,28 @@ public class CertificateUtilsProviderFuzzer extends BaseFuzzer {
           provider.generateV1SelfSignedCertificate(keyPair, data.consumeRemainingAsString());
           break;
         case 3:
-          cert = (X509Certificate) cf.generateCertificate(
-              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          cert =
+              (X509Certificate)
+                  cf.generateCertificate(
+                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           provider.getCertificatePolicyList(cert);
           break;
         case 4:
-          cert = (X509Certificate) cf.generateCertificate(
-              new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+          cert =
+              (X509Certificate)
+                  cf.generateCertificate(
+                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
           provider.getCRLDistributionPoints(cert);
           break;
         case 5:
           Date startDate = new Date(data.consumeLong());
           Date expiryDate = new Date(data.consumeLong());
-          provider.createServicesTestCertificate(data.consumeString(data.remainingBytes() / 2),
-              startDate, expiryDate, keyPair, data.consumeRemainingAsString());
+          provider.createServicesTestCertificate(
+              data.consumeString(data.remainingBytes() / 2),
+              startDate,
+              expiryDate,
+              keyPair,
+              data.consumeRemainingAsString());
           break;
       }
     } catch (Exception | NoSuchMethodError | ExceptionInInitializerError | NoClassDefFoundError e) {

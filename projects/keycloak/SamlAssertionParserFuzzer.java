@@ -41,7 +41,7 @@ import org.keycloak.saml.processing.core.parsers.saml.assertion.SAMLSubjectParse
  * with random bytes in UTF-8 encoding and pass it as a source for the a random SAML parser to parse
  * it.
  */
-public class SamlAssertionParserFuzzer extends BaseFuzzer {
+public class SamlAssertionParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Initialise a StaxParser object
