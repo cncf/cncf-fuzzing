@@ -34,6 +34,9 @@ import org.keycloak.authentication.FlowStatus;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.credential.OTPCredentialProviderFactory;
@@ -52,9 +55,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.jpa.JpaUserProvider;
+import org.keycloak.models.jpa.JpaUserProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -62,7 +68,12 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.adapter.AbstractUserAdapter;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.DatastoreProviderFactory;
+import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  * This is a base helper class that provides base methods for some fuzzing in the keycloak project.
@@ -73,10 +84,10 @@ public class BaseHelper {
     CryptoIntegration.init(BaseHelper.class.getClassLoader());
 
     // Initialise a keycloak session object
-    MockKeycloakSession session = Mockito.mock(MockKeycloakSession.class);
+    MockKeycloakSession session = new MockKeycloakSession();
     session.init(data);
 
-    return session;
+    return session.getSession();
   }
 
   public static RealmModel createRealmModel(FuzzedDataProvider data) {
@@ -135,14 +146,34 @@ public class BaseHelper {
     return context;
   }
 
-  protected abstract static class MockKeycloakSession implements KeycloakSession {
-    private Map<String, Map<String, Provider>> providerMap;
+  protected static class MockKeycloakSession {
+    private Map<String, Map<String, Object>> providerMap;
+    private KeycloakSession session;
     private FuzzedDataProvider data;
 
     public void init(FuzzedDataProvider data) {
+      this.session = Mockito.mock(KeycloakSession.class);
+
       this.data = data;
       this.providerMap = new HashMap<>();
       this.initCredentialProvider();
+      this.initDatastoreProivder();
+      this.initUserProvider();
+      this.initJpaConnectionProvider();
+
+      Mockito.doAnswer(invocation -> {
+        Class clazz = (Class)invocation.getArgument(0);
+        return MockKeycloakSession.this.getProvider(clazz);
+      }).when(this.session).getProvider(Mockito.any(Class.class));
+      Mockito.doAnswer(invocation -> {
+          Class clazz = (Class)invocation.getArgument(0);
+          String id = (String)invocation.getArgument(1);
+          return MockKeycloakSession.this.getProvider(clazz, id);
+      }).when(this.session).getProvider(Mockito.any(Class.class), Mockito.any(String.class));
+    }
+
+    public KeycloakSession getSession() {
+      return this.session;
     }
 
     private void initCredentialProvider() {
@@ -155,19 +186,51 @@ public class BaseHelper {
       factories.add(new PasswordCredentialProviderFactory());
 
       // Initialise all credential providers
-      Map<String, Provider> providers = new HashMap<>();
+      Map<String, Object> providers = new HashMap<>();
       for (CredentialProviderFactory factory : factories) {
-        providers.put(factory.getId(), factory.create(this));
+        providers.put(factory.getId(), factory.create(this.getSession()));
       }
 
       this.providerMap.put(CredentialProvider.class.getName(), providers);
     }
 
-    @Override
-    public <T extends Provider> T getProvider(Class<T> clazz) {
+    private void initDatastoreProivder() {
+      // Initialise datastore provider factory
+      DatastoreProviderFactory factory = new DefaultDatastoreProviderFactory();
+
+      // Initialise datastore provider
+      Map<String, Object> providers = new HashMap<>();
+      providers.put(factory.getId(), factory.create(this.getSession()));
+
+      this.providerMap.put(DatastoreProvider.class.getName(), providers);
+    }
+
+    private void initUserProvider() {
+      // Initialise User provider factory
+      JpaUserProviderFactory factory = new JpaUserProviderFactory();
+
+      // Initialise user provider
+      Map<String, Object> providers = new HashMap<>();
+      providers.put(factory.getId(), factory.create(this.getSession()));
+
+      this.providerMap.put(UserProvider.class.getName(), providers);
+    }
+
+    private void initJpaConnectionProvider() {
+      // Initialise Jpa connection provider factory
+      JpaConnectionProviderFactory factory = new DefaultJpaConnectionProviderFactory();
+
+      // Initialise jpa connection provider
+      Map<String, Object> providers = new HashMap<>();
+      providers.put(factory.getId(), factory.create(this.getSession()));
+
+      this.providerMap.put(JpaConnectionProvider.class.getName(), providers);
+    }
+
+    public Provider getProvider(Class<? extends Provider> clazz) {
       String className = clazz.getName();
       if (providerMap.containsKey(className)) {
-        Provider[] providers = (Provider[]) providerMap.get(className).values().toArray();
+        Object[] providers = providerMap.get(className).values().toArray();
         try {
           return clazz.cast(providers[data.consumeInt(0, providers.length - 1)]);
         } catch (ClassCastException e) {
@@ -177,13 +240,12 @@ public class BaseHelper {
       return null;
     }
 
-    @Override
-    public <T extends Provider> T getProvider(Class<T> clazz, String id) {
+    public Provider getProvider(Class<? extends Provider> clazz, String id) {
       String className = clazz.getName();
       if (providerMap.containsKey(className)) {
-        Map<String, Provider> providerIdMap = providerMap.get(className);
+        Map<String, Object> providerIdMap = providerMap.get(className);
         try {
-          Provider provider = providerIdMap.get(id);
+          Object provider = providerIdMap.get(id);
           if (provider != null) {
             return clazz.cast(provider);
           }
