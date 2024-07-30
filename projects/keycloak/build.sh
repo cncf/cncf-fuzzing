@@ -27,7 +27,7 @@ MAVEN_ARGS=$MAVEN_ARGS"-DskipExamples -DskipTestsuite -DskipQuarkus"
 ## which are not used by the fuzzers.
 EXCLUDE_DOCS="!docs,!docs/maven-plugin,!docs/guides"
 
-EXCLUDE_DEPENDENCY="!dependencies/server-all"
+EXCLUDE_DEPENDENCY="!dependencies,!dependencies/server-all,!dependencies/server-min"
 
 EXCLUDE_FEDERATION="!federation,!federation/sssd"
 
@@ -35,7 +35,8 @@ EXCLUDE_INTEGRATION="!integration,!integration/admin-client-jee,!integration/adm
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integration/client-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
-EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js"
+EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js,!js/libs/ui-shared,!js/apps/admin-ui,"
+EXCLUDE_JS=$EXCLUDE_JS"!js/apps/account-ui,!adapters/oidc/js"
 
 EXCLUDE_MISC="!misc,!misc/keycloak-test-helper"
 
@@ -44,8 +45,10 @@ EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!q
 
 EXCLUDE_REST="!rest,!rest/admin-ui-ext"
 
+EXCLUDE_THEMES="!themes"
+
 EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_INTEGRATION,$EXCLUDE_JS
-EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_QUARKUS,$EXCLUDE_REST
+EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_QUARKUS,$EXCLUDE_REST,$EXCLUDE_THEMES
 
 ## Execute maven build
 $MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
