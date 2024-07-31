@@ -16,6 +16,8 @@
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -23,10 +25,13 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationSelectionOption;
@@ -34,9 +39,9 @@ import org.keycloak.authentication.FlowStatus;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.credential.OTPCredentialProviderFactory;
@@ -45,6 +50,12 @@ import org.keycloak.credential.RecoveryAuthnCodesCredentialProviderFactory;
 import org.keycloak.credential.UserCredentialManager;
 import org.keycloak.credential.WebAuthnCredentialProviderFactory;
 import org.keycloak.credential.WebAuthnPasswordlessCredentialProviderFactory;
+import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.credential.hash.PasswordHashProviderFactory;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
+import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
+import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
+import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
@@ -52,47 +63,62 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
-import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.jpa.JpaUserProvider;
 import org.keycloak.models.jpa.JpaUserProviderFactory;
+import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
+import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
+import org.keycloak.models.sessions.infinispan.SessionEntityUpdater;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
+import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
+import org.keycloak.storage.adapter.AbstractUserAdapter;
 import org.keycloak.storage.datastore.DefaultDatastoreProviderFactory;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
+import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
+import org.keycloak.storage.jpa.JpaUserFederatedStorageProviderFactory;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 /**
  * This is a base helper class that provides base methods for some fuzzing in the keycloak project.
  */
 public class BaseHelper {
-  public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
-    // Initialise crypto providers
-    CryptoIntegration.init(BaseHelper.class.getClassLoader());
+  private static MockKeycloakSession session;
 
-    // Initialise a keycloak session object
-    MockKeycloakSession session = new MockKeycloakSession();
-    session.init(data);
+  public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
+    if (session == null) {
+      // Initialise crypto providers
+      CryptoIntegration.init(BaseHelper.class.getClassLoader());
+
+      // Initialise a keycloak session object
+      session = new MockKeycloakSession();
+      session.init(data);
+    }
 
     return session.getSession();
   }
 
   public static RealmModel createRealmModel(FuzzedDataProvider data) {
-    // Initialise KeycloakSession
-    KeycloakSession session = createKeycloakSession(data);
+    if (session == null) {
+      createKeycloakSession(data);
+    }
 
     RealmModel realm = Mockito.mock(RealmModel.class);
 
@@ -146,30 +172,126 @@ public class BaseHelper {
     return context;
   }
 
+  protected static class DefaultScope implements Config.Scope {
+    private Map<String, String> configs;
+
+    public DefaultScope(FuzzedDataProvider data) {
+      this.configs = new HashMap<>();
+      this.configs.put("url", data.consumeString(16));
+      this.configs.put("driver", "org.h2.Driver");
+      this.configs.put("user", data.consumeString(16));
+      this.configs.put("password", data.consumeString(16));
+    }
+
+    @Override
+    public String get(String key) {
+      return this.get(key, null);
+    }
+
+    @Override
+    public String get(String key, String defaultValue) {
+      return this.configs.getOrDefault(key, defaultValue);
+    }
+
+    @Override
+    public String[] getArray(String key) {
+      String value = this.get(key);
+      if (value != null) {
+        String[] a = value.split(",");
+        for (int i = 0; i < a.length; i++) {
+          a[i] = a[i].trim();
+        }
+        return a;
+      } else {
+        return null;
+      }
+    }
+
+    @Override
+    public Integer getInt(String key) {
+      return getInt(key, null);
+    }
+
+    @Override
+    public Integer getInt(String key, Integer defaultValue) {
+      String v = this.get(key, null);
+      return v != null ? Integer.valueOf(v) : defaultValue;
+    }
+
+    @Override
+    public Long getLong(String key) {
+      return this.getLong(key, null);
+    }
+
+    @Override
+    public Long getLong(String key, Long defaultValue) {
+      String v = this.get(key, null);
+      return v != null ? Long.valueOf(v) : defaultValue;
+    }
+
+    @Override
+    public Boolean getBoolean(String key) {
+      return this.getBoolean(key, null);
+    }
+
+    @Override
+    public Boolean getBoolean(String key, Boolean defaultValue) {
+      String v = this.get(key, null);
+      return v != null ? Boolean.valueOf(v) : defaultValue;
+    }
+
+    @Override
+    public Config.Scope scope(String... scope) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+  }
+
   protected static class MockKeycloakSession {
     private Map<String, Map<String, Object>> providerMap;
     private KeycloakSession session;
     private FuzzedDataProvider data;
 
     public void init(FuzzedDataProvider data) {
-      this.session = Mockito.mock(KeycloakSession.class);
+      // Initialise KeycloakSessionFactory
+      KeycloakSessionFactory sessionFactory = Mockito.mock(KeycloakSessionFactory.class);
 
+      // Initialise KeycloakSession
+      this.session = Mockito.mock(KeycloakSession.class);
+      Mockito.doAnswer(
+              invocation -> {
+                Class clazz = (Class) invocation.getArgument(0);
+                return MockKeycloakSession.this.getProvider(clazz);
+              })
+          .when(this.session)
+          .getProvider(Mockito.any(Class.class));
+      Mockito.doAnswer(
+              invocation -> {
+                Class clazz = (Class) invocation.getArgument(0);
+                String id = (String) invocation.getArgument(1);
+                return MockKeycloakSession.this.getProvider(clazz, id);
+              })
+          .when(this.session)
+          .getProvider(Mockito.any(Class.class), Mockito.any(String.class));
+      Mockito.doReturn(sessionFactory).when(this.session).getKeycloakSessionFactory();
+
+      // Initialise other needed providers
       this.data = data;
       this.providerMap = new HashMap<>();
       this.initCredentialProvider();
+      this.initPasswordHashProvider();
       this.initDatastoreProivder();
-      this.initUserProvider();
       this.initJpaConnectionProvider();
+      this.initUserProvider();
+      this.initUserFederatedStorageProvider();
 
-      Mockito.doAnswer(invocation -> {
-        Class clazz = (Class)invocation.getArgument(0);
-        return MockKeycloakSession.this.getProvider(clazz);
-      }).when(this.session).getProvider(Mockito.any(Class.class));
-      Mockito.doAnswer(invocation -> {
-          Class clazz = (Class)invocation.getArgument(0);
-          String id = (String)invocation.getArgument(1);
-          return MockKeycloakSession.this.getProvider(clazz, id);
-      }).when(this.session).getProvider(Mockito.any(Class.class), Mockito.any(String.class));
+      Mockito.doReturn(MockKeycloakSession.this.getProvider(UserProvider.class))
+          .when(this.session)
+          .users();
     }
 
     public KeycloakSession getSession() {
@@ -194,9 +316,27 @@ public class BaseHelper {
       this.providerMap.put(CredentialProvider.class.getName(), providers);
     }
 
+    private void initPasswordHashProvider() {
+      // Initialise all password hash provider factories
+      List<PasswordHashProviderFactory> factories = new ArrayList<>();
+      factories.add(new Pbkdf2PasswordHashProviderFactory());
+      factories.add(new Pbkdf2Sha256PasswordHashProviderFactory());
+      factories.add(new Pbkdf2Sha512PasswordHashProviderFactory());
+      factories.add(new Argon2PasswordHashProviderFactory());
+
+      // Initialise all credential providers
+      Map<String, Object> providers = new HashMap<>();
+      for (PasswordHashProviderFactory factory : factories) {
+        providers.put(factory.getId(), factory.create(this.getSession()));
+      }
+
+      this.providerMap.put(PasswordHashProvider.class.getName(), providers);
+    }
+
     private void initDatastoreProivder() {
       // Initialise datastore provider factory
       DatastoreProviderFactory factory = new DefaultDatastoreProviderFactory();
+      factory.init(new DefaultScope(this.data));
 
       // Initialise datastore provider
       Map<String, Object> providers = new HashMap<>();
@@ -205,26 +345,84 @@ public class BaseHelper {
       this.providerMap.put(DatastoreProvider.class.getName(), providers);
     }
 
+    private void initJpaConnectionProvider() {
+      // Initialise JpaConnectionProvider factory
+      JpaConnectionProviderFactory factory = new DefaultJpaConnectionProviderFactory();
+      factory.init(new DefaultScope(this.data));
+
+      // Initialise JpaConnectionProvider provider
+      Map<String, Object> providers = new HashMap<>();
+      JpaConnectionProvider provider = Mockito.mock(JpaConnectionProvider.class);
+      providers.put(factory.getId(), provider);
+
+      // Initialise Entity Manager
+      EntityManager em = Mockito.mock(EntityManager.class);
+      TypedQuery query = Mockito.mock(TypedQuery.class);
+      Mockito.doReturn(query)
+          .when(em)
+          .createNamedQuery(Mockito.any(String.class), Mockito.any(Class.class));
+      Mockito.doReturn(query).when(query).setParameter(Mockito.any(String.class), Mockito.any());
+      Mockito.doReturn(em).when(provider).getEntityManager();
+
+      this.providerMap.put(JpaConnectionProvider.class.getName(), providers);
+    }
+
     private void initUserProvider() {
-      // Initialise User provider factory
+      // Initialise user provider factory
       JpaUserProviderFactory factory = new JpaUserProviderFactory();
+      factory.init(new DefaultScope(this.data));
 
       // Initialise user provider
       Map<String, Object> providers = new HashMap<>();
-      providers.put(factory.getId(), factory.create(this.getSession()));
+      JpaUserProvider provider = (JpaUserProvider) factory.create(this.getSession());
+      RealmModel realm = createRealmModel(this.data);
+      UserModel user = new DefaultUserModel(this.getSession(), realm, new ComponentModel());
+      ((DefaultUserModel) user).setUsername(this.data.consumeString(32));
+      provider.createCredential(
+          realm,
+          user,
+          PasswordCredentialModel.createFromValues(
+              data.consumeString(8), data.consumeBytes(8), 8, data.consumeString(32)));
+      provider.createCredential(
+          realm,
+          user,
+          OTPCredentialModel.createTOTP(
+              data.consumeString(8), data.consumeInt(), data.consumeInt(), data.consumeString(8)));
+      String[] value = {data.consumeString(32)};
+      provider.createCredential(
+          realm,
+          user,
+          RecoveryAuthnCodesCredentialModel.createFromValues(
+              Arrays.asList(value), 0l, data.consumeString(8)));
+      provider.createCredential(
+          realm,
+          user,
+          WebAuthnCredentialModel.create(
+              data.consumeString(8),
+              data.consumeString(8),
+              data.consumeString(8),
+              data.consumeString(8),
+              data.consumeString(8),
+              data.consumeString(8),
+              16l,
+              data.consumeString(8)));
+      providers.put(factory.getId(), provider);
 
       this.providerMap.put(UserProvider.class.getName(), providers);
     }
 
-    private void initJpaConnectionProvider() {
-      // Initialise Jpa connection provider factory
-      JpaConnectionProviderFactory factory = new DefaultJpaConnectionProviderFactory();
+    private void initUserFederatedStorageProvider() {
+      // Initialise user provider factory
+      UserFederatedStorageProviderFactory factory = new JpaUserFederatedStorageProviderFactory();
+      factory.init(new DefaultScope(this.data));
 
-      // Initialise jpa connection provider
+      // Initialise user provider
       Map<String, Object> providers = new HashMap<>();
-      providers.put(factory.getId(), factory.create(this.getSession()));
+      UserFederatedStorageProvider provider =
+          (UserFederatedStorageProvider) factory.create(this.getSession());
+      providers.put(factory.getId(), provider);
 
-      this.providerMap.put(JpaConnectionProvider.class.getName(), providers);
+      this.providerMap.put(UserFederatedStorageProvider.class.getName(), providers);
     }
 
     public Provider getProvider(Class<? extends Provider> clazz) {
@@ -232,7 +430,11 @@ public class BaseHelper {
       if (providerMap.containsKey(className)) {
         Object[] providers = providerMap.get(className).values().toArray();
         try {
-          return clazz.cast(providers[data.consumeInt(0, providers.length - 1)]);
+          if (providers.length == 1) {
+            return clazz.cast(providers[0]);
+          } else {
+            return clazz.cast(providers[data.consumeInt(0, providers.length - 1)]);
+          }
         } catch (ClassCastException e) {
           // Known exception
         }
@@ -315,7 +517,30 @@ public class BaseHelper {
 
       session = createKeycloakSession(data);
       realm = createRealmModel(data);
-      sessionModel = new AuthenticationSessionAdapter(session, null, null, null);
+      RootAuthenticationSessionAdapter rootSessionModel =
+          new RootAuthenticationSessionAdapter(
+              session,
+              new SessionEntityUpdater<RootAuthenticationSessionEntity>() {
+                @Override
+                public RootAuthenticationSessionEntity getEntity() {
+                  return new RootAuthenticationSessionEntity("default");
+                }
+
+                @Override
+                public void onEntityUpdated() {
+                  // Do nothing
+                }
+
+                @Override
+                public void onEntityRemoved() {
+                  // Do nothing
+                }
+              },
+              realm,
+              10);
+      sessionModel =
+          new AuthenticationSessionAdapter(
+              session, rootSessionModel, "default", new AuthenticationSessionEntity());
 
       this.newEvent();
       options = new ArrayList<>();
