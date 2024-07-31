@@ -18,6 +18,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -42,6 +44,9 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieProviderFactory;
+import org.keycloak.cookie.DefaultCookieProviderFactory;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.credential.OTPCredentialProviderFactory;
@@ -62,6 +67,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -86,6 +92,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.services.resteasy.ResteasyKeycloakContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
@@ -279,11 +286,23 @@ public class BaseHelper {
           .getProvider(Mockito.any(Class.class), Mockito.any(String.class));
       Mockito.doReturn(sessionFactory).when(this.session).getKeycloakSessionFactory();
 
+      Map<String, Cookie> cookies = new HashMap<>();
+      cookies.put(data.consumeString(16), new Cookie(data.consumeString(16), data.consumeString(16)));
+
+      KeycloakContext context = Mockito.mock(KeycloakContext.class);
+      HttpRequest request = Mockito.mock(HttpRequest.class);
+      HttpHeaders headers = Mockito.mock(HttpHeaders.class);
+      Mockito.doReturn(cookies).when(headers).getCookies();
+      Mockito.doReturn(headers).when(request).getHttpHeaders();
+      Mockito.doReturn(headers).when(context).getRequestHeaders();
+      Mockito.doReturn(context).when(this.session).getContext();
+
       // Initialise other needed providers
       this.data = data;
       this.providerMap = new HashMap<>();
       this.initCredentialProvider();
       this.initPasswordHashProvider();
+      this.initCookieProvider();
       this.initDatastoreProivder();
       this.initJpaConnectionProvider();
       this.initUserProvider();
@@ -331,6 +350,18 @@ public class BaseHelper {
       }
 
       this.providerMap.put(PasswordHashProvider.class.getName(), providers);
+    }
+
+    private void initCookieProvider() {
+      // Initialise cookie provider factory
+      CookieProviderFactory factory = new DefaultCookieProviderFactory();
+      factory.init(new DefaultScope(this.data));
+
+      // Initialise cookie provider
+      Map<String, Object> providers = new HashMap<>();
+      providers.put(factory.getId(), factory.create(this.getSession()));
+
+      this.providerMap.put(CookieProvider.class.getName(), providers);
     }
 
     private void initDatastoreProivder() {
@@ -542,11 +573,12 @@ public class BaseHelper {
           new AuthenticationSessionAdapter(
               session, rootSessionModel, "default", new AuthenticationSessionEntity());
 
+      form = Mockito.mock(LoginFormsProvider.class);
+
       this.newEvent();
       options = new ArrayList<>();
       userSession = null;
       flowPath = "";
-      form = null;
       baseUri = null;
       execution = null;
       flow = null;
