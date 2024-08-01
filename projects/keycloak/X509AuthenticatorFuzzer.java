@@ -17,38 +17,24 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
-import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
-import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.authentication.authenticators.x509.ValidateX509CertificateUsernameFactory;
+import org.keycloak.authentication.authenticators.x509.X509ClientCertificateAuthenticatorFactory;
 
 /** This fuzzer targets authenticate methods of different Authenticator implementations. */
-public class ConditionalAuthenticatorFuzzer {
+public class X509AuthenticatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       AuthenticatorFactory factory = null;
-      AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
-
-      switch (data.consumeInt(1, 4)) {
-        case 1:
-          factory = new ConditionalLoaAuthenticatorFactory();
-          break;
-        case 2:
-          factory = new ConditionalRoleAuthenticatorFactory();
-          break;
-        case 3:
-          factory = new ConditionalUserAttributeValueFactory();
-          break;
-        case 4:
-          factory = new ConditionalUserConfiguredAuthenticatorFactory();
-          break;
+      if (data.consumeBoolean()) {
+        factory = new ValidateX509CertificateUsernameFactory();
+      } else {
+        factory = new X509ClientCertificateAuthenticatorFactory();
       }
 
       // Fuzz the authenticate method
       if (factory != null) {
-        KeycloakSession session = BaseHelper.createKeycloakSession(data);
-        Authenticator authenticator = factory.create(session);
+        Authenticator authenticator = factory.create(null);
+        AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
         BaseHelper.randomizeContext(context, null, factory.getRequirementChoices());
         authenticator.authenticate(context);
       }
