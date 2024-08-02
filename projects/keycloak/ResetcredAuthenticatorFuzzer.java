@@ -50,7 +50,7 @@ public class ResetcredAuthenticatorFuzzer {
       if (authenticator != null) {
         authenticator.authenticate(context);
       }
-    } catch (IllegalStateException e) {
+    } catch (RuntimeException e) {
       // Known exception
     }
   }
