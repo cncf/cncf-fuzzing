@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -60,6 +61,7 @@ import org.keycloak.credential.hash.PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
@@ -67,10 +69,13 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -92,7 +97,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.resteasy.ResteasyKeycloakContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
@@ -129,7 +133,35 @@ public class BaseHelper {
 
     RealmModel realm = Mockito.mock(RealmModel.class);
 
+    Mockito.doReturn(createClientModel(data)).when(realm).addClient(Mockito.any(String.class));
+
     return realm;
+  }
+
+  public static ClientModel createClientModel(FuzzedDataProvider data) {
+    String[] algorithm = {
+      Algorithm.HS256, Algorithm.HS384, Algorithm.HS512,
+      Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
+      Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+      Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+      Algorithm.EdDSA, Algorithm.Ed25519, Algorithm.Ed448,
+      Algorithm.RSA1_5, Algorithm.RSA_OAEP, Algorithm.RSA_OAEP_256,
+      Algorithm.AES
+    };
+
+    ClientModel client = Mockito.mock(ClientModel.class);
+    Mockito.doReturn(data.pickValue(algorithm)).when(client).getAttribute(Mockito.any());
+
+    return client;
+  }
+
+  public static RoleModel createRoleModel(FuzzedDataProvider data) {
+    RealmModel realm = createRealmModel(data);
+
+    DefaultRoleModel role = new DefaultRoleModel(realm);
+    role.configData(data);
+
+    return role;
   }
 
   public static String generateServerConfigurationJson() {
@@ -258,6 +290,121 @@ public class BaseHelper {
     }
   }
 
+  protected static class DefaultRoleModel implements RoleModel {
+    private RealmModel realm;
+    private FuzzedDataProvider data;
+
+    public DefaultRoleModel(RealmModel realm) {
+      this.realm = realm;
+    }
+
+    public void configData(FuzzedDataProvider data) {
+      this.data = data;
+    }
+
+    @Override
+    public String getId() {
+      return this.data.consumeString(8);
+    }
+
+    @Override
+    public String getName() {
+      return this.data.consumeString(16);
+    }
+
+    @Override
+    public String getDescription() {
+      return this.data.consumeString(16);
+    }
+
+    @Override
+    public boolean isComposite() {
+      return this.data.consumeBoolean();
+    }
+
+    @Override
+    public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
+      return Stream.empty();
+    }
+
+    @Override
+    public boolean isClientRole() {
+      return this.data.consumeBoolean();
+    }
+
+    @Override
+    public String getContainerId() {
+      return this.data.consumeString(8);
+    }
+
+    @Override
+    public RoleContainerModel getContainer() {
+      return realm;
+    }
+
+    @Override
+    public boolean hasRole(RoleModel role) {
+      return data.consumeBoolean();
+    }
+
+    @Override
+    public String getFirstAttribute(String name) {
+      return data.consumeString(16);
+    }
+
+    @Override
+    public Stream<String> getAttributeStream(String name) {
+      return Stream.of(data.consumeString(16), data.consumeString(16));
+    }
+
+    @Override
+    public Map<String, List<String>> getAttributes() {
+      List<String> list = new ArrayList<>();
+      list.add(data.consumeString(16));
+      list.add(data.consumeString(16));
+
+      Map<String, List<String>> map = new HashMap<>();
+      map.put(data.consumeString(16), list);
+
+      return map;
+    }
+
+    @Override
+    public void setDescription(String description) {
+      // Do nothing
+    }
+
+    @Override
+    public void setName(String name) {
+      // Do nothing
+    }
+
+    @Override
+    public void addCompositeRole(RoleModel role) {
+      // Do nothing
+    }
+
+    @Override
+    public void removeCompositeRole(RoleModel role) {
+      // Do nothing
+    }
+
+    @Override
+    public void setSingleAttribute(String name, String value) {
+      // Do nothing
+    }
+
+    @Override
+    public void setAttribute(String name, List<String> values) {
+      // Do nothing
+    }
+
+    @Override
+    public void removeAttribute(String name) {
+      // Do nothing
+    }
+  }
+
   protected static class MockKeycloakSession {
     private Map<String, Map<String, Object>> providerMap;
     private KeycloakSession session;
@@ -287,7 +434,8 @@ public class BaseHelper {
       Mockito.doReturn(sessionFactory).when(this.session).getKeycloakSessionFactory();
 
       Map<String, Cookie> cookies = new HashMap<>();
-      cookies.put(data.consumeString(16), new Cookie(data.consumeString(16), data.consumeString(16)));
+      cookies.put(
+          data.consumeString(16), new Cookie(data.consumeString(16), data.consumeString(16)));
 
       KeycloakContext context = Mockito.mock(KeycloakContext.class);
       HttpRequest request = Mockito.mock(HttpRequest.class);
@@ -574,6 +722,8 @@ public class BaseHelper {
               session, rootSessionModel, "default", new AuthenticationSessionEntity());
 
       form = Mockito.mock(LoginFormsProvider.class);
+      flow = Mockito.mock(AuthenticationFlowModel.class);
+      Mockito.doReturn(data.consumeString(8)).when(flow).getId();
 
       this.newEvent();
       options = new ArrayList<>();
@@ -581,7 +731,6 @@ public class BaseHelper {
       flowPath = "";
       baseUri = null;
       execution = null;
-      flow = null;
       config = null;
       connection = null;
       uriInfo = null;
@@ -789,10 +938,6 @@ public class BaseHelper {
     @Override
     public AuthenticationExecutionModel getExecution() {
       return this.execution;
-    }
-
-    public void setTopLevelFlow(AuthenticationFlowModel flow) {
-      this.flow = flow;
     }
 
     @Override
