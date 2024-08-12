@@ -22,12 +22,18 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.KeyGenerator;
 import org.bouncycastle.crypto.CryptoException;
 import org.keycloak.crypto.def.AesKeyWrapAlgorithmProvider;
+import org.keycloak.crypto.def.BCEcdhEsAlgorithmProvider;
 import org.keycloak.crypto.def.DefaultRsaKeyEncryption256JWEAlgorithmProvider;
+import org.keycloak.crypto.elytron.ElytronEcdhEsAlgorithmProvider;
 import org.keycloak.crypto.elytron.ElytronRsaKeyEncryption256JWEAlgorithmProvider;
+import org.keycloak.crypto.fips.BCFIPSEcdhEsAlgorithmProvider;
 import org.keycloak.crypto.fips.FIPSAesKeyWrapAlgorithmProvider;
+import org.keycloak.crypto.fips.FIPSRsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.alg.DirectAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
@@ -41,10 +47,20 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 public class JweAlgorithmProviderFuzzer {
   // Set up a list of valid encryption algorithm for the JWE object
   private static final String[] enc = {
-    JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM
+    JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM,
+    JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384,
+    JWEConstants.A256CBC_HS512
   };
 
-  private static KeyPair keyPair;
+  private static final String[] alg = {
+    JWEConstants.DIRECT, JWEConstants.A128KW, JWEConstants.RSA1_5,
+    JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256, JWEConstants.ECDH_ES,
+    JWEConstants.ECDH_ES_A128KW, JWEConstants.ECDH_ES_A192KW,
+    JWEConstants.ECDH_ES_A256KW
+  };
+
+  private static Key encryptionKey;
+  private static Key decryptionKey;
   private static Key key;
 
   public static void fuzzerInitialize() {
@@ -56,7 +72,9 @@ public class JweAlgorithmProviderFuzzer {
 
       KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
       generator.initialize(2048);
-      keyPair = generator.generateKeyPair();
+      KeyPair keyPair = generator.generateKeyPair();
+      encryptionKey = keyPair.getPublic();
+      decryptionKey = keyPair.getPrivate();
     } catch (NoSuchAlgorithmException e) {
       // Known exception
     }
@@ -65,51 +83,72 @@ public class JweAlgorithmProviderFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     try {
       JWEAlgorithmProvider algorithmProvider = null;
-      Key encryptionKey = null;
-      Key decryptionKey = null;
 
       // Randomly create an JWE Algorithm Provider instance
-      switch (data.consumeInt(1, 5)) {
+      switch (data.consumeInt(1, 10)) {
         case 1:
           encryptionKey = key;
           decryptionKey = key;
-          algorithmProvider = new AesKeyWrapAlgorithmProvider();
+          algorithmProvider = new DirectAlgorithmProvider();
           break;
         case 2:
           encryptionKey = key;
           decryptionKey = key;
-          algorithmProvider = new org.keycloak.crypto.elytron.AesKeyWrapAlgorithmProvider();
+          algorithmProvider = new AesKeyWrapAlgorithmProvider();
+          break;
         case 3:
+          encryptionKey = key;
+          decryptionKey = key;
+          algorithmProvider = new org.keycloak.crypto.elytron.AesKeyWrapAlgorithmProvider();
+        case 4:
           encryptionKey = key;
           decryptionKey = key;
           algorithmProvider = new FIPSAesKeyWrapAlgorithmProvider();
           break;
-        case 4:
-          // TODO: make encryptionKey and decryptionKey global vars
-          encryptionKey = keyPair.getPublic();
-          decryptionKey = keyPair.getPrivate();
+        case 5:
           algorithmProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
           break;
-        case 5:
-          // TODO: make encryptionKey and decryptionKey global vars
-          encryptionKey = keyPair.getPublic();
-          decryptionKey = keyPair.getPrivate();
+        case 6:
           algorithmProvider = new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA");
+          break;
+        case 7:
+          Key tempKey = decryptionKey;
+          decryptionKey = encryptionKey;
+          encryptionKey = tempKey;
+          algorithmProvider = new BCEcdhEsAlgorithmProvider();
+          break;
+        case 8:
+          algorithmProvider = new BCFIPSEcdhEsAlgorithmProvider();
+          break;
+        case 9:
+          algorithmProvider = new ElytronEcdhEsAlgorithmProvider();
+          break;
+        case 10:
+          algorithmProvider = new FIPSRsaKeyEncryptionJWEAlgorithmProvider(null);
           break;
       }
 
+      // Generate JWEEncryptionProvider object
+      JWEEncryptionProvider provider =
+          new AesGcmJWEEncryptionProvider(data.pickValue(JweAlgorithmProviderFuzzer.enc));
+
+      // Generate JWEHeader object
+      JWEHeader header = new JWEHeader(
+          data.pickValue(JweAlgorithmProviderFuzzer.alg),
+          data.pickValue(JweAlgorithmProviderFuzzer.enc),
+          null
+      );
+
       // Randomly choose to encode or decode with the JWE Algorithm provider instance
       if (data.consumeBoolean()) {
-        JWEEncryptionProvider provider =
-            new AesGcmJWEEncryptionProvider(data.pickValue(JweAlgorithmProviderFuzzer.enc));
         JWEKeyStorage storage = new JWEKeyStorage();
         storage.setEncryptionProvider(provider);
         storage.setEncryptionKey(encryptionKey);
         storage.setDecryptionKey(decryptionKey);
 
-        algorithmProvider.encodeCek(provider, storage, encryptionKey);
+        algorithmProvider.encodeCek(provider, storage, encryptionKey, header.toBuilder());
       } else {
-        algorithmProvider.decodeCek(data.consumeRemainingAsBytes(), decryptionKey);
+        algorithmProvider.decodeCek(data.consumeRemainingAsBytes(), decryptionKey, header, provider);
       }
     } catch (NoSuchMethodError | AssertionError e) {
       // Known error
