@@ -11,7 +11,7 @@ compile_go_fuzzer github.com/kubeedge/viaduct/pkg/lane FuzzLaneReadMessage fuzz_
 cp $SRC/cncf-fuzzing/projects/kubeedge/dtmanager_fuzzer.go $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/
 mv $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/twin_test.go $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/twint_test_fuzz.go
 cd $SRC/kubeedge
-go mod tidy && go mod vendor
+go mod tidy && GOWORK=off go mod vendor
 
 # remove logs
 sed 's/klog\./\/\/klog\./g' -i $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/twin.go
@@ -48,7 +48,7 @@ compile_go_fuzzer github.com/kubeedge/kubeedge/cloud/pkg/cloudhub/common FuzzVol
 
 cp $SRC/cncf-fuzzing/projects/kubeedge/mqtt_broker_fuzzer.go $SRC/kubeedge/edge/pkg/eventbus/mqtt/
 go get github.com/256dpi/gomqtt/client
-go mod tidy && go mod vendor
+go mod tidy && GOWORK=off go mod vendor
 sed 's/topic\.NewTree/topic\.NewStandardTree/g' -i $SRC/kubeedge/edge/pkg/eventbus/mqtt/server.go
 compile_go_fuzzer github.com/kubeedge/kubeedge/edge/pkg/eventbus/mqtt FuzzMqttPublish fuzz_mqtt_publish
 
