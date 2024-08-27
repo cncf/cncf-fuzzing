@@ -31,7 +31,7 @@ EXCLUDE_DEPENDENCY="!dependencies,!dependencies/server-all,!dependencies/server-
 
 EXCLUDE_FEDERATION="!federation,!federation/sssd"
 
-EXCLUDE_INTEGRATION="!integration,!integration/admin-client-jee,!integration/admin-client,"
+EXCLUDE_INTEGRATION="!integration,!integration/admin-client,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integration/client-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
@@ -40,7 +40,7 @@ EXCLUDE_JS=$EXCLUDE_JS"!js/apps/account-ui,!adapters/oidc/js"
 
 EXCLUDE_MISC="!misc,!misc/keycloak-test-helper"
 
-EXCLUDE_QUARKUS="!quarkus,!quarkus/config-api,!quarkus/runtime,!quarkus/deployment,"
+EXCLUDE_QUARKUS="!quarkus,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
 
 EXCLUDE_REST="!rest,!rest/admin-ui-ext"
