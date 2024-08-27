@@ -112,6 +112,7 @@ public class KeycloakModelUtilsFuzzer {
           break;
         case 20:
           KeycloakModelUtils.isFlowUsed(
+              BaseHelper.createKeycloakSession(data),
               BaseHelper.createRealmModel(data),
               BaseHelper.createAuthenticationFlowContext(data).getTopLevelFlow());
           break;
