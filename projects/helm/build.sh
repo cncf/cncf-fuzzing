@@ -65,8 +65,12 @@ mv $SRC/cncf-fuzzing/projects/helm/resolver_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/helm/strvals_fuzzer.go \
    $SRC/helm/pkg/strvals/
 
+mv $SRC/cncf-fuzzing/projects/helm/ignore_fuzzer_test.go \
+   $SRC/helm/pkg/ignore/
+
+printf "package ignore\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > pkg/ignore/register_fuzz_pkg.go
 go mod download && go mod tidy
-go get github.com/AdaLogics/go-fuzz-headers@latest
+compile_native_go_fuzzer helm.sh/helm/v3/pkg/ignore FuzzIgnoreParse fuzz_ignore_parse
 compile_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzStrvalsParse fuzz_strvals_parse
 compile_go_fuzzer helm.sh/helm/v3/internal/resolver FuzzResolve fuzz_resolve
 compile_go_fuzzer helm.sh/helm/v3/pkg/lint FuzzLintAll fuzz_lint_all
@@ -109,16 +113,6 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzDownloadIndexFile fuzz_download_i
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzChartRepositoryLoad fuzz_chart_repository_load
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzRepoFileUtils fuzz_repo_file_utils
 compile_go_fuzzer helm.sh/helm/v3/pkg/repo FuzzWriteFile fuzz_write_file
-
-
-
-mv $SRC/cncf-fuzzing/projects/helm/ignore_fuzzer_test.go \
-   $SRC/helm/internal/ignore/
-
-
-printf "package ignore\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/helm/internal/ignore/registerfuzzdeps.go
-go mod download && go mod tidy
-compile_native_go_fuzzer helm.sh/helm/v3/internal/ignore FuzzIgnoreParse fuzz_ignore_parse
 
 zip $OUT/fuzz_create_from_seed_corpus.zip $SRC/helm/pkg/chartutil/testdata/frobnitz/*
 mv $SRC/cncf-fuzzing/projects/helm/dicts/* $OUT/
