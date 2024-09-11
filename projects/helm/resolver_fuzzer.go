@@ -65,6 +65,6 @@ func FuzzResolve(data []byte) int {
 	registryClient, _ := registry.NewClient()
 	r := New(chartPath, repository, registryClient)
 
-	_, _ = r.Resolve(deps, repoNames)
+	r.Resolve(deps, repoNames)
 	return 1
 }
