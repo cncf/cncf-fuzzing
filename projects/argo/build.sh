@@ -20,17 +20,6 @@ cd $SRC/gitops-engine
 mv $SRC/cncf-fuzzing/projects/argo/gitops-eng_diff_fuzzer.go ./pkg/diff/
 compile_go_fuzzer github.com/argoproj/gitops-engine/pkg/diff FuzzGitopsDiff fuzz_gitops_diff
 
-# install Go 1.19.3
-apt-get update && apt-get install -y wget
-cd $SRC
-wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
-
-mkdir temp-go
-rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.19.3.linux-amd64.tar.gz
-mv temp-go/go/* /root/.go/
-rm -r temp-go
-
 cd $SRC/argo-rollouts
 go mod tidy
 mv analysis/controller_test.go analysis/controller_test_fuzz.go
@@ -40,10 +29,6 @@ compile_go_fuzzer github.com/argoproj/argo-rollouts/analysis FuzzreconcileAnalys
 mv $SRC/cncf-fuzzing/projects/argo/rollouts-metrics_fuzzer.go \
    $SRC/argo-rollouts/metricproviders/webmetric//
 compile_go_fuzzer github.com/argoproj/argo-rollouts/metricproviders/webmetric FuzzNewWebMetricJsonParser fuzz_new_web_metric_json_parser
-
-mv $SRC/cncf-fuzzing/projects/argo/rollouts-record_fuzzer.go \
-   $SRC/argo-rollouts/utils/record/
-compile_go_fuzzer github.com/argoproj/argo-rollouts/utils/record FuzzSendNotifications fuzz_send_notifications
 
 mv $SRC/argo-rollouts/metricproviders/prometheus/prometheus_test.go \
    $SRC/argo-rollouts/metricproviders/prometheus/prometheus_test_fuzz.go
@@ -166,19 +151,6 @@ compile_go_fuzzer github.com/argoproj/argo-cd/v2/reposerver/repository FuzzGener
 mv $SRC/cncf-fuzzing/projects/argo/normalizer_fuzzer.go $SRC/argo-cd/util/argo/normalizers/
 compile_go_fuzzer github.com/argoproj/argo-cd/v2/util/argo/normalizers FuzzNormalize fuzz_normalize
 
-
-# install Go 1.20.5
-apt-get update && apt-get install -y wget
-cd $SRC
-wget https://go.dev/dl/go1.20.6.linux-amd64.tar.gz
-
-mkdir temp-go
-rm -rf /root/.go/*
-tar -C temp-go/ -xzf go1.20.6.linux-amd64.tar.gz
-mv temp-go/go/* /root/.go/
-
-# required by Go 1.20
-export CXX="${CXX} -lresolv"
 
 # argo-workflows fuzzers
 cd $SRC/argo-workflows

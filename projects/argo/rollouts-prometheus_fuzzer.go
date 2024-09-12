@@ -30,10 +30,13 @@ func FuzzPrometheusProvider(data []byte) int {
 		return 0
 	}
 	e := log.Entry{}
-	mock := mockAPI{
+	mock := &mockAPI{
 		value: newScalar(10),
 	}
-	p := NewPrometheusProvider(mock, e)
+	p, err := NewPrometheusProvider(mock, e, metric)
+	if err != nil {
+		return 0
+	}
 	_ = p.Run(newAnalysisRun(), metric)
 	return 1
 }

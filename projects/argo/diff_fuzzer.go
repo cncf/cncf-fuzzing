@@ -23,6 +23,7 @@ import (
 
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	appstatecache "github.com/argoproj/argo-cd/v2/util/cache/appstate"
+	"github.com/argoproj/argo-cd/v2/util/argo/normalizers"
 
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -54,7 +55,7 @@ func defaultDiffConfigParams() *diffConfigParams {
 
 func diffConfigFuzz(params *diffConfigParams) (DiffConfig, error) {
 	diffConfig, err := NewDiffConfigBuilder().
-		WithDiffSettings(params.ignores, params.overrides, params.ignoreRoles).
+		WithDiffSettings(params.ignores, params.overrides, params.ignoreRoles, normalizers.IgnoreNormalizerOpts{}).
 		WithTracking(params.label, params.trackingMethod).
 		WithNoCache().
 		Build()
