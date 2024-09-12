@@ -15,6 +15,7 @@
 package cron
 
 import (
+	"context"
 	"runtime"
 	"strings"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned/fake"
 	"github.com/argoproj/argo-workflows/v3/workflow/metrics"
+	"github.com/argoproj/argo-workflows/v3/util/telemetry"
 )
 
 func catchPanics() {
@@ -56,7 +58,10 @@ func FuzzWoCRun(data []byte) int {
 	v1alpha1.MustUnmarshal(data, &cronWf)
 
 	cs := fake.NewSimpleClientset()
-	testMetrics := metrics.New(metrics.ServerConfig{}, metrics.ServerConfig{})
+	testMetrics, err := metrics.New(context.Background(), telemetry.TestScopeName, telemetry.TestScopeName, &telemetry.Config{}, metrics.Callbacks{})
+	if err != nil {
+		panic(err)
+	}
 	woc := &cronWfOperationCtx{
 		wfClientset:       cs,
 		wfClient:          cs.ArgoprojV1alpha1().Workflows(""),

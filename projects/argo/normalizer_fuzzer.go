@@ -70,7 +70,7 @@ func FuzzNormalize(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	normalizer, err := NewIgnoreNormalizer(ignore, overrides)
+	normalizer, err := NewIgnoreNormalizer(ignore, overrides, IgnoreNormalizerOpts{})
 	if err != nil {
 		return 0
 	}
