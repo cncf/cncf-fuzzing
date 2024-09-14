@@ -151,10 +151,11 @@ func FuzzMaxAndLastRevision(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	logger := klog.Background()
 	if max {
-		_ = MaxRevision(allRSs)
+		_ = MaxRevision(logger, allRSs)
 	} else {
-		LastRevision(allRSs)
+		LastRevision(logger, allRSs)
 	}
 	return 1
 }
