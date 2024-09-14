@@ -18,7 +18,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"testing"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,8 +26,8 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
-	"sigs.k8s.io/cluster-api/internal/test/envtest"
 	"sigs.k8s.io/cluster-api/util/collections"
+	"sigs.k8s.io/cluster-api/controlplane/kubeadm/internal"
 	//ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -37,9 +37,6 @@ import (
 )
 
 var (
-	env *envtest.Environment
-	//ctx                           = ctrl.SetupSignalHandler()
-	ctx, _                        = context.WithCancel(context.Background())
 	fakeGenericMachineTemplateCRD = &apiextensionsv1.CustomResourceDefinition{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
@@ -60,45 +57,50 @@ var (
 	}
 )
 
-func FuzzKubeadmControlPlaneReconciler(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	cluster, kcp, tmpl, err := createClusterWithControlPlaneFuzz(f)
-	if err != nil {
-		return 0
-	}
-	if tmpl == nil {
-		return 0
-	}
-	objs := []client.Object{fakeGenericMachineTemplateCRD, cluster.DeepCopy(), kcp.DeepCopy(), tmpl.DeepCopy()}
+func FuzzKubeadmControlPlaneReconciler(f *testing.F) {
+	f.Fuzz(func (t *testing.T, data []byte){
+		fdp := fuzz.NewConsumer(data)
+		cluster, kcp, tmpl, err := createClusterWithControlPlaneFuzz(fdp)
+		if err != nil {
+			return
+		}
+		if tmpl == nil {
+			return
+		}
+		objs := []client.Object{fakeGenericMachineTemplateCRD, cluster.DeepCopy(), kcp.DeepCopy(), tmpl.DeepCopy()}
 
-	m := &clusterv1.Machine{}
-	err = f.GenerateStruct(m)
-	if err != nil {
-		return 0
-	}
-	cfg := &bootstrapv1.KubeadmConfig{}
-	err = f.GenerateStruct(cfg)
-	if err != nil {
-		return 0
-	}
-	objs = append(objs, m, cfg)
-	fmc := &fakeManagementCluster{
-		Machines: collections.Machines{},
-		Workload: fakeWorkloadCluster{},
-	}
-	fmc.Machines.Insert(m)
-	fakeClient := newFakeClient(objs...)
-	fmc.Reader = fakeClient
+		m := &clusterv1.Machine{}
+		err = fdp.GenerateStruct(m)
+		if err != nil {
+			return
+		}
+		cfg := &bootstrapv1.KubeadmConfig{}
+		err = fdp.GenerateStruct(cfg)
+		if err != nil {
+			return
+		}
+		objs = append(objs, m, cfg)
+		fmc := &fakeManagementCluster{
+			Machines: collections.Machines{},
+			Workload: &fakeWorkloadCluster{},
+		}
+		fmc.Machines.Insert(m)
+		fakeClient := newFakeClient(objs...)
+		fmc.Reader = fakeClient
 
-	r := &KubeadmControlPlaneReconciler{
-		Client:                    fakeClient,
-		APIReader:                 fakeClient,
-		managementCluster:         fmc,
-		managementClusterUncached: fmc,
-	}
-	fmt.Println("calling reconcile")
-	_, err = r.reconcile(ctx, cluster, kcp)
-	return 1
+		r := &KubeadmControlPlaneReconciler{
+			Client:                    fakeClient,
+			managementCluster:         fmc,
+			managementClusterUncached: fmc,
+		}
+		controlPlane := &internal.ControlPlane{}
+		err = fdp.GenerateStruct(controlPlane)
+		if err != nil {
+			return
+		}
+
+		_, err = r.reconcile(context.Background(), controlPlane)
+	})
 }
 
 func createClusterWithControlPlaneFuzz(f *fuzz.ConsumeFuzzer) (*clusterv1.Cluster, *controlplanev1.KubeadmControlPlane, *unstructured.Unstructured, error) {

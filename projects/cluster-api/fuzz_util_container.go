@@ -15,21 +15,15 @@
 
 package container
 
-func FuzzModifyImageRepository(data []byte) int {
-	if len(data)%2 != 0 {
-		return 0
-	}
-	imageName := string(data[:len(data)/2])
-	repositoryName := string(data[len(data)/2:])
-	_, _ = ModifyImageRepository(imageName, repositoryName)
-	return 1
+import "testing"
+
+func FuzzModifyImageRepository(f *testing.F) {
+    f.Fuzz(func (t *testing.T, imageName, repositoryName string){
+		ModifyImageRepository(imageName, repositoryName)
+	})
 }
-func FuzzModifyImageTag(data []byte) int {
-	if len(data)%2 != 0 {
-		return 0
-	}
-	imageName := string(data[:len(data)/2])
-	repositoryName := string(data[len(data)/2:])
-	_, _ = ModifyImageTag(imageName, repositoryName)
-	return 1
+func FuzzModifyImageTag(f *testing.F) {
+    f.Fuzz(func (t *testing.T, imageName, repositoryName string){
+		ModifyImageRepository(imageName, repositoryName)
+	})
 }

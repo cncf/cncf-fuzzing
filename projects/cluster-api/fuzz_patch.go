@@ -16,6 +16,7 @@
 package patch
 
 import (
+	"testing"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,32 +55,30 @@ func init() {
 	_ = addonsv1.AddToScheme(fakeScheme)
 }
 
-func FuzzPatch(data []byte) int {
-	//var obj client.Object
-	f := fuzz.NewConsumer(data)
-	objType, err := f.GetInt()
-	if err != nil {
-		return 0
-	}
-	obj := objects[objType%len(objects)]
-	err = f.GenerateStruct(obj)
-	if err != nil {
-		return 0
-	}
-	patcher, err := NewHelper(obj, fake.NewClientBuilder().
-		WithScheme(fakeScheme).
-		WithObjects(obj).
-		Build())
-	if err != nil {
-		return 0
-	}
-	err = f.GenerateStruct(obj)
-	if err != nil {
-		return 0
-	}
-	_ = patcher.Patch(fuzzCtx, obj)
-	if err != nil {
-		return 0
-	}
-	return 1
+func FuzzPatch(f *testing.F) {
+    f.Fuzz(func (t *testing.T, data []byte){
+		//var obj client.Object
+		fdp := fuzz.NewConsumer(data)
+		objType, err := fdp.GetInt()
+		if err != nil {
+			return
+		}
+		obj := objects[objType%len(objects)]
+		err = fdp.GenerateStruct(obj)
+		if err != nil {
+			return
+		}
+		patcher, err := NewHelper(obj, fake.NewClientBuilder().
+			WithScheme(fakeScheme).
+			WithObjects(obj).
+			Build())
+		if err != nil {
+			return
+		}
+		err = fdp.GenerateStruct(obj)
+		if err != nil {
+			return
+		}
+		patcher.Patch(fuzzCtx, obj)
+	})
 }

@@ -1,8 +1,9 @@
-package machineset
+package cluster
 
 import (
         "context"
         "fmt"
+        "testing"
         "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
         "sigs.k8s.io/cluster-api/internal/test/builder"
         corev1 "k8s.io/api/core/v1"
@@ -61,37 +62,39 @@ func validateUnstructured(unstr *unstructured.Unstructured) error {
         return nil
 }
 
-func FuzzMachinesetReconcile(data []byte) int {
-        f := fuzz.NewConsumer(data)
-        unstr, err := GetUnstructured(f)
-        if err != nil {
-                return 0
-        }
-        err = validateUnstructured(unstr)
-        if err != nil {
-                return 0
-        }
-        machineset := &clusterv1.MachineSet{}
-        err = f.GenerateStruct(machineset)
-        if err != nil {
-                return 0
-        }
-        node := &corev1.Node{}
-        err = f.GenerateStruct(node)
-        if err != nil {
-                return 0
-        }
-        clientFake := fake.NewClientBuilder().WithScheme(fakeSchemeForFuzzing).WithObjects(
-                machineset,
-                node,
-                unstr,
-                builder.GenericInfrastructureMachineCRD.DeepCopy(),
-        ).Build()
-        r := &Reconciler{
-                Client:    clientFake,
-                APIReader: clientFake,
-        }
+func FuzzClusterReconcile(f *testing.F) {
+        f.Fuzz(func (t *testing.T, data []byte){
+                fdp := fuzz.NewConsumer(data)
+                unstr, err := GetUnstructured(fdp)
+                if err != nil {
+                        return
+                }
+                err = validateUnstructured(unstr)
+                if err != nil {
+                        return
+                }
+                cluster := &clusterv1.Cluster{}
+                err = fdp.GenerateStruct(cluster)
+                if err != nil {
+                        return
+                }
+                node := &corev1.Node{}
+                err = fdp.GenerateStruct(node)
+                if err != nil {
+                        return
+                }
+                clientFake := fake.NewClientBuilder().WithScheme(fakeSchemeForFuzzing).WithObjects(
+                        cluster,
+                        node,
+                        unstr,
+                        builder.GenericInfrastructureMachineCRD.DeepCopy(),
+                ).Build()
+                r := &Reconciler{
+                        Client:    clientFake,
+                        APIReader:    clientFake,
+                }
 
-        _, _ = r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(machineset)})
-        return 1
+                r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
+                
+        })
 }

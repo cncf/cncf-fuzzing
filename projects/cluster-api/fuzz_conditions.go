@@ -16,38 +16,40 @@
 package conditions
 
 import (
+	"testing"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-func FuzzPatchApply(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	getterBefore := &clusterv1.Cluster{}
-	err := f.GenerateStruct(getterBefore)
-	if err != nil {
-		return 0
-	}
-	getterAfter := &clusterv1.Cluster{}
-	err = f.GenerateStruct(getterAfter)
-	if err != nil {
-		return 0
-	}
+func FuzzPatchApply(f *testing.F) {
+    f.Fuzz(func (t *testing.T, data []byte){
+		fdp := fuzz.NewConsumer(data)
+		getterBefore := &clusterv1.Cluster{}
+		err := fdp.GenerateStruct(getterBefore)
+		if err != nil {
+			return
+		}
+		getterAfter := &clusterv1.Cluster{}
+		err = fdp.GenerateStruct(getterAfter)
+		if err != nil {
+			return
+		}
 
-	setter := &clusterv1.Cluster{}
-	err = f.GenerateStruct(setter)
-	if err != nil {
-		return 0
-	}
+		setter := &clusterv1.Cluster{}
+		err = fdp.GenerateStruct(setter)
+		if err != nil {
+			return
+		}
 
-	var options []ApplyOption
-	err = f.CreateSlice(&options)
-	if err != nil {
-		return 0
-	}
-	patch, err := NewPatch(getterBefore, getterAfter)
-	if err != nil {
-		return 0
-	}
-	_ = patch.Apply(setter, options...)
-	return 1
+		var options []ApplyOption
+		err = fdp.CreateSlice(&options)
+		if err != nil {
+			return
+		}
+		patch, err := NewPatch(getterBefore, getterAfter)
+		if err != nil {
+			return
+		}
+		patch.Apply(setter, options...)
+	})
 }
