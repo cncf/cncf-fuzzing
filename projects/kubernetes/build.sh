@@ -19,28 +19,23 @@ set -o pipefail
 set -o errexit
 set -x
 
+cd "$SRC"
+git clone --depth=1 https://github.com/AdamKorcz/go-118-fuzz-build --branch=include-all-test-files
+cd go-118-fuzz-build
+go build .
+mv go-118-fuzz-build /root/go/bin/
+
 # Add more sanitizers
 #############################################################################
-cd $SRC/instrumentation
-go run main.go --target_dir=$SRC/kubernetes
-cd $SRC
+#cd $SRC/instrumentation
+#go run main.go --target_dir=$SRC/kubernetes
+#cd $SRC
 #############################################################################
 
 cd $SRC/kubernetes
-go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@22e92b7968997eabd210694dd4825dd0d19b697c
-
-# Create fuzzers for all marshaling and unmarshaling routines
-#############################################################################
 mkdir $SRC/kubernetes/test/fuzz/fuzzing
+#go mod edit -replace github.com/AdaLogics/go-fuzz-headers=github.com/AdamKorcz/go-fuzz-headers-1@22e92b7968997eabd210694dd4825dd0d19b697c
 
-if [ "$SANITIZER" != "coverage" ]; then
-   grep -r ") Marshal()" . > $SRC/grep_result.txt
-   mv $SRC/cncf-fuzzing/projects/kubernetes/autogenerate.py ./
-   python3 autogenerate.py --input_file $SRC/grep_result.txt
-   #mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
-fi
-# Done creating fuzzer for all marshaling and unmarshaling routines
-#############################################################################
 
 export KUBE_FUZZERS=$SRC/cncf-fuzzing/projects/kubernetes
 
@@ -96,13 +91,12 @@ mkdir native_fuzzing && cd native_fuzzing
 # and Go would therefore remove it from go.mod once we run "go mod tidy && go mod vendor".
 go install github.com/AdamKorcz/go-118-fuzz-build@latest
 printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n )\n" > register.go
-cat register.go
 
 go mod tidy
-go mod vendor
+go work vendor
 
 # Delete broken fuzzer in 3rd-party dependency.
-find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
+#find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
 
 # Build the fuzzers
 compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQuantity fuzz_parse_quantity
@@ -137,14 +131,11 @@ rm native_go_parser_fuzzers_test.go
 # disable this fuzzer for now
 #compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/server FuzzRequest fuzz_request
 
-go mod tidy && go mod vendor
+go mod tidy && go work vendor
 
 # Delete broken fuzzer from a 3rd-party dependency
-find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
+#find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
 
-#if [ "$SANITIZER" != "coverage" ]; then
-   #compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
-#fi
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiRoundtrip fuzz_api_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet/kuberuntime FuzzKubeRuntime fuzz_kube_runtime
 compile_go_fuzzer k8s.io/kubernetes/pkg/kubelet FuzzSyncPod fuzz_sync_pod
@@ -163,13 +154,25 @@ compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzControllerRoundtrip fu
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzKubeletSchemeRoundtrip fuzz_kubelet_scheme_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzProxySchemeRoundtrip fuzz_proxy_scheme_roundtrip
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzRoundTripType fuzz_rountrip_type
-compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzDecodeRemoteConfigSource fuzz_decode_remote_config_source
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzReadLogs fuzz_read_logs
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzRoundtrip fuzz_roundtrip
-compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzSetDefaults_KubeSchedulerConfiguration fuzz_set_defaults_kube_scheduler_configuration
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzAllValidation fuzz_all_validation
 # Done building go-fuzz fuzzers
 #############################################################################
 
+# Create fuzzers for all marshaling and unmarshaling routines
+#############################################################################
 
 cd $SRC/kubernetes
+if [ "$SANITIZER" != "coverage" ]; then
+   grep -r ") Marshal()" . > $SRC/grep_result.txt
+   mv $SRC/cncf-fuzzing/projects/kubernetes/autogenerate.py ./
+   python3 autogenerate.py --input_file $SRC/grep_result.txt
+   mv api_marshaling_fuzzer.go $SRC/kubernetes/test/fuzz/fuzzing/
+fi
+# Done creating fuzzer for all marshaling and unmarshaling routines
+#############################################################################
+
+if [ "$SANITIZER" != "coverage" ]; then
+   compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzApiMarshaling fuzz_api_marshaling
+fi

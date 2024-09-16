@@ -54,7 +54,10 @@ func FuzzRequest(data []byte) int {
 
 	url := fw.testHTTPServer.URL + urlString
 
-	upgradeRoundTripper := spdy.NewRoundTripper(nil)
+	upgradeRoundTripper, err := spdy.NewRoundTripper(nil)
+	if err != nil {
+		return 0
+	}
 	c := &http.Client{Transport: upgradeRoundTripper}
 
 	resp, err := c.Do(makeReq(t, "POST", url, "v4.channel.k8s.io"))

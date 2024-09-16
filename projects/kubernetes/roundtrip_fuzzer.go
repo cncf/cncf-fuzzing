@@ -26,10 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	featuregatetesting "k8s.io/component-base/featuregate/testing"
-	"k8s.io/kubernetes/pkg/features"
-
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
@@ -434,8 +430,6 @@ func FuzzSchedulingV1beta1PriorityClass(data []byte) int {
 
 func FuzzStorageV1CSIDriver(data []byte) int {
 	initLocalTest.Do(initTesting)
-	t := &testing.T{}
-	defer featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.CSIStorageCapacity, true)()
 	o := &storagev1.CSIDriver{}
 	sgv := storagev1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
@@ -444,8 +438,6 @@ func FuzzStorageV1CSIDriver(data []byte) int {
 
 func FuzzStorageV1StorageClass(data []byte) int {
 	initLocalTest.Do(initTesting)
-	t := &testing.T{}
-	defer featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.CSIStorageCapacity, true)()
 	o := &storagev1.StorageClass{}
 	sgv := storagev1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
@@ -454,8 +446,6 @@ func FuzzStorageV1StorageClass(data []byte) int {
 
 func FuzzStorageV1beta1CSIDriver(data []byte) int {
 	initLocalTest.Do(initTesting)
-	t := &testing.T{}
-	defer featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.CSIStorageCapacity, true)()
 	o := &storagev1beta1.CSIDriver{}
 	sgv := storagev1beta1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
@@ -464,8 +454,6 @@ func FuzzStorageV1beta1CSIDriver(data []byte) int {
 
 func FuzzStorageV1beta1StorageClass(data []byte) int {
 	initLocalTest.Do(initTesting)
-	t := &testing.T{}
-	defer featuregatetesting.SetFeatureGateDuringTest(t, utilfeature.DefaultFeatureGate, features.CSIStorageCapacity, true)()
 	o := &storagev1beta1.StorageClass{}
 	sgv := storagev1beta1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)

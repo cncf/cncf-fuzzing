@@ -69,7 +69,10 @@ func FuzzAesRoundtrip(data []byte) int {
 }
 
 func testGCMTTransformer(randBytes []byte, aesBlock cipher.Block) error {
-	transformer := aestransformer.NewGCMTransformer(aesBlock)
+	transformer, err := aestransformer.NewGCMTransformer(aesBlock)
+	if err != nil {
+		return err
+	}
 	defaultContext := value.DefaultContext("")
 	ciphertext, err := transformer.TransformToStorage(context.Background(), randBytes, defaultContext)
 	if err != nil {
