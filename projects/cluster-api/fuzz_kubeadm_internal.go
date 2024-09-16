@@ -16,34 +16,42 @@
 package internal
 
 import (
+	"testing"
 	"encoding/json"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/yaml"
 	"strings"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzMatchesMachineSpec(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	machineConfigs := make(map[string]*bootstrapv1.KubeadmConfig)
-	err := f.FuzzMap(&machineConfigs)
-	if err != nil {
-		return 0
-	}
-	kcp := &controlplanev1.KubeadmControlPlane{}
-	err = f.GenerateStruct(kcp)
-	if err != nil {
-		return 0
-	}
-	infraConfigs, err := createInfraConfigs(f)
-	if err != nil {
-		return 0
-	}
-	_ = MatchesMachineSpec(infraConfigs, machineConfigs, kcp)
-	return 1
+func FuzzMatchesMachineSpec(f *testing.F) {
+	f.Fuzz(func (t *testing.T, data []byte){
+		fdp := fuzz.NewConsumer(data)
+		machineConfigs := make(map[string]*bootstrapv1.KubeadmConfig)
+		err := fdp.FuzzMap(&machineConfigs)
+		if err != nil {
+			return
+		}
+		kcp := &controlplanev1.KubeadmControlPlane{}
+		err = fdp.GenerateStruct(kcp)
+		if err != nil {
+			return
+		}
+		machine := &clusterv1.Machine{}
+		err = fdp.GenerateStruct(machine)
+		if err != nil {
+			return
+		}
+		infraConfigs, err := createInfraConfigs(fdp)
+		if err != nil {
+			return
+		}
+		matchesMachineSpec(infraConfigs, machineConfigs, kcp, machine)
+	})
 }
 
 func createInfraConfigs(f *fuzz.ConsumeFuzzer) (map[string]*unstructured.Unstructured, error) {

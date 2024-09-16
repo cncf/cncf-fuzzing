@@ -18,6 +18,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"testing"
 
 	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	"sigs.k8s.io/cluster-api/internal/controllers/topology/cluster/scope"
+	//"sigs.k8s.io/cluster-api/internal/controllers/topology/cluster/scope"
 	"sigs.k8s.io/cluster-api/internal/test/builder"
 	//"sigs.k8s.io/cluster-api/internal/test/envtest"
 	"sigs.k8s.io/cluster-api/util"
@@ -70,7 +71,7 @@ func GetUnstructured(f *fuzz.ConsumeFuzzer) (*unstructured.Unstructured, error) 
 	return &unstructured.Unstructured{Object: obj}, nil
 }
 
-func validateBlueprint(b *scope.ClusterBlueprint) error {
+/*func validateBlueprint(b *scope.ClusterBlueprint) error {
 	if b.ClusterClass == nil {
 		return fmt.Errorf("ClusterClass is nil")
 	}
@@ -78,7 +79,7 @@ func validateBlueprint(b *scope.ClusterBlueprint) error {
 		return fmt.Errorf("ClusterClass.Spec.ControlPlane.MachineInfrastructure is nil")
 	}
 	return nil
-}
+}*/
 
 func validateUnstructured(unstr *unstructured.Unstructured) error {
 	if _, ok := unstr.Object["kind"]; !ok {
@@ -96,37 +97,38 @@ func validateUnstructured(unstr *unstructured.Unstructured) error {
 	return nil
 }
 
-func FuzzClusterReconcile(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	unstr, err := GetUnstructured(f)
-	if err != nil {
-		return 0
-	}
-	err = validateUnstructured(unstr)
-	if err != nil {
-		return 0
-	}
-	cluster := &clusterv1.Cluster{}
-	err = f.GenerateStruct(cluster)
-	if err != nil {
-		return 0
-	}
-	node := &corev1.Node{}
-	err = f.GenerateStruct(node)
-	if err != nil {
-		return 0
-	}
-	clientFake := fake.NewClientBuilder().WithObjects(
-		node,
-		cluster,
-		builder.GenericInfrastructureMachineCRD.DeepCopy(),
-		unstr,
-	).Build()
-	r := &Reconciler{
-		Client:    clientFake,
-		APIReader: clientFake,
-	}
+func FuzzClusterReconcile(f *testing.F) {
+    f.Fuzz(func (t *testing.T, data []byte){
+		fdp := fuzz.NewConsumer(data)
+		unstr, err := GetUnstructured(fdp)
+		if err != nil {
+			return
+		}
+		err = validateUnstructured(unstr)
+		if err != nil {
+			return
+		}
+		cluster := &clusterv1.Cluster{}
+		err = fdp.GenerateStruct(cluster)
+		if err != nil {
+			return
+		}
+		node := &corev1.Node{}
+		err = fdp.GenerateStruct(node)
+		if err != nil {
+			return
+		}
+		clientFake := fake.NewClientBuilder().WithObjects(
+			node,
+			cluster,
+			builder.GenericInfrastructureMachineCRD.DeepCopy(),
+			unstr,
+		).Build()
+		r := &Reconciler{
+			Client:    clientFake,
+			APIReader: clientFake,
+		}
 
-	_, _ = r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
-	return 1
+		r.Reconcile(fuzzCtx, reconcile.Request{NamespacedName: util.ObjectKey(cluster)})
+	})
 }

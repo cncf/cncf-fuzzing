@@ -17,19 +17,23 @@ package yaml
 
 import (
 	"os"
+	"testing"
 )
 
-func FuzzYamlParse(data []byte) int {
-	file, err := os.Create("fuzz")
-	if err != nil {
-		return 0
-	}
-	defer file.Close()
-	defer os.Remove("fuzz")
-	_, err = file.Write(data)
-	if err != nil {
-		return 0
-	}
-	_, _ = Parse(ParseInput{File: "fuzz"})
-	return 1
+func FuzzYamlParse(f *testing.F) {
+    f.Fuzz(func (t *testing.T, data []byte){
+		file, err := os.Create("fuzz")
+		if err != nil {
+			return
+		}
+		defer func() {
+			file.Close()
+			os.Remove("fuzz")
+		}()
+		_, err = file.Write(data)
+		if err != nil {
+			return
+		}
+		Parse(ParseInput{File: "fuzz"})
+	})
 }

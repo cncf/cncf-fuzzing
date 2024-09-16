@@ -16,112 +16,109 @@
 package utils
 
 import (
-	"github.com/blang/semver"
+	"testing"
+	"github.com/blang/semver/v4"
 	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 
-func FuzzKubeadmTypesMarshalling(data []byte) int {
-	if len(data)<10 {
-		return 0
-	}
-	intType := int(data[0])
-	switch intType%4 {
-	case 0:
-		return fuzzMarshalClusterConfigurationForVersion(data[1:])
-	case 1:
-		return fuzzMarshalClusterStatusForVersion(data[1:])
-	case 2:
-		return fuzzMarshalInitConfigurationForVersion(data[1:])
-	case 3:
-		return fuzzMarshalJoinConfigurationForVersion(data[1:])
-	}
-	return 1
+func FuzzKubeadmTypesMarshalling(f *testing.F) {
+	f.Fuzz(func (t *testing.T, data []byte, parserType int){
+		switch parserType%4 {
+		case 0:
+			fuzzMarshalClusterConfigurationForVersion(data)
+		case 1:
+			fuzzMarshalClusterStatusForVersion(data)
+		case 2:
+			fuzzMarshalInitConfigurationForVersion(data)
+		case 3:
+			fuzzMarshalJoinConfigurationForVersion(data)
+		}
+		return
+	})
 }
 
-func fuzzMarshalClusterConfigurationForVersion(data []byte) int {
+func fuzzMarshalClusterConfigurationForVersion(data []byte) {
 	f := fuzz.NewConsumer(data)
 	obj := &bootstrapv1.ClusterConfiguration{}
 	err := f.GenerateStruct(obj)
 	if err != nil {
-		return 0
+		return
 	}
 	versionStr, err := f.GetString()
 	if err != nil {
-		return 0
+		return
 	}
 	version, err := semver.Parse(versionStr)
 	if err != nil {
-		return 0
+		return
 	}
 	_, _ = MarshalClusterConfigurationForVersion(obj, version)
-	return 1
 }
 
-func fuzzMarshalClusterStatusForVersion(data []byte) int {
+func fuzzMarshalClusterStatusForVersion(data []byte) {
 	f := fuzz.NewConsumer(data)
 	obj := &bootstrapv1.ClusterStatus{}
 	err := f.GenerateStruct(obj)
 	if err != nil {
-		return 0
+		return
 	}
 	versionStr, err := f.GetString()
 	if err != nil {
-		return 0
+		return
 	}
 	version, err := semver.Parse(versionStr)
 	if err != nil {
-		return 0
+		return
 	}
-	_, _ = MarshalClusterStatusForVersion(obj, version)
-	return 1
+	MarshalClusterStatusForVersion(obj, version)
 }
 
-func fuzzMarshalInitConfigurationForVersion(data []byte) int {
+func fuzzMarshalInitConfigurationForVersion(data []byte) {
 	f := fuzz.NewConsumer(data)
 	obj := &bootstrapv1.InitConfiguration{}
 	err := f.GenerateStruct(obj)
 	if err != nil {
-		return 0
+		return
 	}
 	versionStr, err := f.GetString()
 	if err != nil {
-		return 0
+		return
 	}
 	version, err := semver.Parse(versionStr)
 	if err != nil {
-		return 0
+		return
 	}
-	_, _ = MarshalInitConfigurationForVersion(obj, version)
-	return 1
+	_, _ = MarshalInitConfigurationForVersion(&bootstrapv1.ClusterConfiguration{}, obj, version)
 }
 
-func fuzzMarshalJoinConfigurationForVersion(data []byte) int {
+func fuzzMarshalJoinConfigurationForVersion(data []byte) {
 	f := fuzz.NewConsumer(data)
 	obj := &bootstrapv1.JoinConfiguration{}
 	err := f.GenerateStruct(obj)
 	if err != nil {
-		return 0
+		return
 	}
 	versionStr, err := f.GetString()
 	if err != nil {
-		return 0
+		return
 	}
 	version, err := semver.Parse(versionStr)
 	if err != nil {
-		return 0
+		return
 	}
-	_, _ = MarshalJoinConfigurationForVersion(obj, version)
-	return 1
+	_, _ = MarshalJoinConfigurationForVersion(&bootstrapv1.ClusterConfiguration{}, obj, version)
 }
 
-func FuzzUnmarshalClusterConfiguration(data []byte) int {
-	_, _ = UnmarshalClusterConfiguration(string(data))
-	return 1
+func FuzzUnmarshalClusterConfiguration(f *testing.F) {
+	f.Fuzz(func (t *testing.T, data string){
+		_, _ = UnmarshalClusterConfiguration(data)
+	})
 }
 
-func FuzzUnmarshalClusterStatus(data []byte) int {
-	_, _ = UnmarshalClusterStatus(string(data))
-	return 1
+func FuzzUnmarshalClusterStatus(f *testing.F) {
+	f.Fuzz(func (t *testing.T, data string){
+		_, _ = UnmarshalClusterStatus(data)
+	})
 }
