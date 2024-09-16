@@ -327,7 +327,6 @@ func createOptions(ff *fuzz.ConsumeFuzzer) (notation.VerifyOptions, error) {
 
 var (
 	ts             truststore.X509TrustStore
-	policyDocument = dummyPolicyDocument()
 	vv             *verifier
 	skv            *noSkipVerifier
 	mockRepo       = mock.NewRepository()
@@ -349,12 +348,10 @@ func init() {
 	dir.UserConfigDir = "fuzz-dir"
 	ts = truststore.NewX509TrustStore(dir.ConfigFS())
 	vv = &verifier{
-		trustPolicyDoc: &policyDocument,
 		trustStore:     ts,
 		pluginManager:  mock.PluginManager{},
 	}
 	skv = &noSkipVerifier{
-		trustPolicyDoc: &policyDocument,
 		trustStore:     ts,
 		pluginManager:  mock.PluginManager{},
 	}
@@ -478,7 +475,7 @@ func FuzzVerify(f *testing.F) {
 		}
 		policies = newPolicies
 
-		policyDoc := trustpolicy.Document{
+		policyDoc := trustpolicy.OCIDocument{
 			Version:       "1.0",
 			TrustPolicies: policies,
 		}
@@ -486,13 +483,8 @@ func FuzzVerify(f *testing.F) {
 		if err != nil {
 			t.Skip()
 		}
-		vv.trustPolicyDoc = &policyDoc
-		skv.trustPolicyDoc = &policyDoc
+		vv.ociTrustPolicyDoc = &policyDoc
 
-		var err2 error
-		_, _, err2 = notation.Verify(context.Background(), skv, mockRepo, opts)
-		if err2 != nil {
-			//fmt.Println("err2: ", err2)
-		}
+		notation.Verify(context.Background(), skv, mockRepo, opts)
 	})
 }
