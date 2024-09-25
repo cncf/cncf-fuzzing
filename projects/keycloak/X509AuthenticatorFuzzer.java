@@ -32,12 +32,10 @@ public class X509AuthenticatorFuzzer {
       }
 
       // Fuzz the authenticate method
-      if (factory != null) {
-        Authenticator authenticator = factory.create(null);
-        AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
-        BaseHelper.randomizeContext(context, null, factory.getRequirementChoices());
-        authenticator.authenticate(context);
-      }
+      Authenticator authenticator = factory.create(null);
+      AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
+      BaseHelper.randomizeContext(context, null, factory.getRequirementChoices());
+      authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
     }

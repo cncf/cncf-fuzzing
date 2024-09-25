@@ -51,35 +51,25 @@ public class SamlParserFuzzer {
       switch (data.consumeInt(1, 10)) {
         case 1:
           parser = SAMLParser.getInstance();
-          break;
         case 2:
           parser = new SAML11SubjectParser();
-          break;
         case 3:
           parser = new SAML11ResponseParser();
-          break;
         case 4:
           parser = new SAML11RequestParser();
-          break;
         case 5:
           parser = new SAML11AssertionParser();
-          break;
         case 6:
           QName qName = new QName(data.consumeString(data.consumeInt(1, 1024)));
           parser = AnyDomParser.getInstance(qName);
-          break;
         case 7:
           parser = DsaKeyValueParser.getInstance();
-          break;
         case 8:
           parser = KeyInfoParser.getInstance();
-          break;
         case 9:
           parser = RsaKeyValueParser.getInstance();
-          break;
         case 10:
           parser = X509DataParser.getInstance();
-          break;
       }
 
       // Initialize a XMLEventReader with InputStream source pointing
@@ -89,9 +79,7 @@ public class SamlParserFuzzer {
       ByteArrayInputStream bais = new ByteArrayInputStream(input);
       XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(bais);
 
-      if (parser != null) {
-        parser.parse(reader);
-      }
+      parser.parse(reader);
     } catch (ParsingException | XMLStreamException | RuntimeException e) {
       // Known exception
     }

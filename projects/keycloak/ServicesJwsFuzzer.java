@@ -65,41 +65,34 @@ public class ServicesJwsFuzzer {
         case 1:
           // Execute the target method
           manager.encode(token);
-          break;
         case 2:
           // Execute the target method
           manager.decode(data.consumeRemainingAsString(), Token.class);
-          break;
         case 3:
           // Execute the target method
           manager.decodeClientJWT(
               data.consumeRemainingAsString(), clientModel, (joseToken, client) -> {}, Token.class);
-          break;
         case 4:
           // Execute the target method
           manager.signatureAlgorithm(data.pickValue(EnumSet.allOf(TokenCategory.class)));
-          break;
         case 5:
           // Execute the target method
           manager.encodeAndEncrypt(token);
-          break;
         case 6:
           // Execute the target method
           manager.cekManagementAlgorithm(data.pickValue(EnumSet.allOf(TokenCategory.class)));
-          break;
         case 7:
           // Execute the target method
           manager.encryptAlgorithm(data.pickValue(EnumSet.allOf(TokenCategory.class)));
-          break;
         case 8:
           // Create and mock UserModel with random data
           UserModel userModel = Mockito.mock(UserModel.class);
-          Mockito.when(userModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+          Mockito.when(userModel.getId()).thenReturn(data.consumeString(data.consumeInt(0, 10000)));
 
           // Create and mock UserSessionModel with random data
           UserSessionModel userSessionModel = Mockito.mock(UserSessionModel.class);
           Mockito.when(userSessionModel.getId())
-              .thenReturn(data.consumeString(data.remainingBytes() / 2));
+              .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
 
           // Create and mock AuthenticatedClientSessionModel with random data
           AuthenticatedClientSessionModel sessionModel =
@@ -169,52 +162,52 @@ public class ServicesJwsFuzzer {
   }
 
   private static void randomizeClientModel(FuzzedDataProvider data) {
-    Mockito.when(clientModel.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getId()).thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getClientId())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
-    Mockito.when(clientModel.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
+    Mockito.when(clientModel.getName()).thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getDescription())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.isEnabled()).thenReturn(data.consumeBoolean());
     Mockito.when(clientModel.isAlwaysDisplayInConsole()).thenReturn(data.consumeBoolean());
     Mockito.when(clientModel.getWebOrigins())
-        .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
+        .thenReturn(Set.of(data.consumeString(data.consumeInt(0, 10000))));
     Mockito.when(clientModel.getRedirectUris())
-        .thenReturn(Set.of(data.consumeString(data.remainingBytes() / 2)));
+        .thenReturn(Set.of(data.consumeString(data.consumeInt(0, 10000))));
     Mockito.when(clientModel.getManagementUrl())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getRootUrl())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getBaseUrl())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getNodeReRegistrationTimeout()).thenReturn(data.consumeInt());
     Mockito.when(clientModel.getClientAuthenticatorType())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.validateSecret(Mockito.any(String.class)))
         .thenReturn(data.consumeBoolean());
-    Mockito.when(clientModel.getSecret()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+    Mockito.when(clientModel.getSecret()).thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getRegistrationToken())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getProtocol())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getAttribute(Mockito.any(String.class)))
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getAuthenticationFlowBindingOverride(Mockito.any(String.class)))
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.isFrontchannelLogout()).thenReturn(data.consumeBoolean());
     Mockito.when(clientModel.isFullScopeAllowed()).thenReturn(data.consumeBoolean());
 
     Map<String, String> map = new HashMap<String, String>();
     map.put(
-        data.consumeString(data.remainingBytes() / 2),
-        data.consumeString(data.remainingBytes() / 2));
+        data.consumeString(data.consumeInt(0, 10000)),
+        data.consumeString(data.consumeInt(0, 10000)));
     Mockito.when(clientModel.getAttributes()).thenReturn(map);
     Mockito.when(clientModel.getAuthenticationFlowBindingOverrides()).thenReturn(map);
   }
 
   private static void randomizeRealmModel(FuzzedDataProvider data) {
     Mockito.when(realmModel.getDefaultSignatureAlgorithm())
-        .thenReturn(data.consumeString(data.remainingBytes() / 2));
+        .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
   }
 
   private static void randomizeKeycloakSession(FuzzedDataProvider data) {
@@ -224,10 +217,10 @@ public class ServicesJwsFuzzer {
     SignatureProvider signatureProvider = null;
     if (data.consumeBoolean()) {
       signatureProvider =
-          new MacSecretSignatureProvider(session, data.consumeString(data.remainingBytes() / 2));
+          new MacSecretSignatureProvider(session, data.consumeString(data.consumeInt(0, 10000)));
     } else {
       signatureProvider =
-          new ECDSASignatureProvider(session, data.consumeString(data.remainingBytes() / 2));
+          new ECDSASignatureProvider(session, data.consumeString(data.consumeInt(0, 10000)));
     }
 
     // Randomly choose a ClientSignatureVerifierProvider
@@ -235,27 +228,27 @@ public class ServicesJwsFuzzer {
     if (data.consumeBoolean()) {
       clientSignatureVerifierProvider =
           new MacSecretClientSignatureVerifierProvider(
-              session, data.consumeString(data.remainingBytes() / 2));
+              session, data.consumeString(data.consumeInt(0, 10000)));
     } else {
       clientSignatureVerifierProvider =
           new ECDSAClientSignatureVerifierProvider(
-              session, data.consumeString(data.remainingBytes() / 2));
+              session, data.consumeString(data.consumeInt(0, 10000)));
     }
 
     // Create RsaCekManagementProvider instance
     CekManagementProvider cekManagementProvider =
-        new RsaCekManagementProvider(session, data.consumeString(data.remainingBytes() / 2));
+        new RsaCekManagementProvider(session, data.consumeString(data.consumeInt(0, 10000)));
 
     // Randomly choose a ContentEncryptionProvider
     ContentEncryptionProvider contentEncryptionProvider = null;
     if (data.consumeBoolean()) {
       contentEncryptionProvider =
           new AesGcmContentEncryptionProvider(
-              session, data.consumeString(data.remainingBytes() / 2));
+              session, data.consumeString(data.consumeInt(0, 10000)));
     } else {
       contentEncryptionProvider =
           new AesCbcHmacShaContentEncryptionProvider(
-              session, data.consumeString(data.remainingBytes() / 2));
+              session, data.consumeString(data.consumeInt(0, 10000)));
     }
 
     // Create mock return for KeycloakSession Object

@@ -66,82 +66,56 @@ public class SamlMetadataParserFuzzer {
       switch (data.consumeInt(1, 26)) {
         case 1:
           parser = SAMLEntityAttributesParser.getInstance();
-          break;
         case 2:
           parser = SAMLUIInfoParser.getInstance();
-          break;
         case 3:
           parser = SAMLArtifactResolutionServiceParser.getInstance();
-          break;
         case 4:
           parser = SAMLAssertinIDRequestServiceParser.getInstance();
-          break;
         case 5:
           parser = SAMLAssertionConsumerServiceParser.getInstance();
-          break;
         case 6:
           parser = SAMLAttributeAuthorityDescriptorParser.getInstance();
-          break;
         case 7:
           parser = SAMLAttributeConsumingServiceParser.getInstance();
-          break;
         case 8:
           parser = SAMLAttributeParser.getInstance();
-          break;
         case 9:
           parser = SAMLAttributeServiceParser.getInstance();
-          break;
         case 10:
           parser = SAMLAuthnAuthorityDescriptorParser.getInstance();
-          break;
         case 11:
           parser = SAMLAuthnQueryServiceParser.getInstance();
-          break;
         case 12:
           parser = SAMLAuthzServiceParser.getInstance();
-          break;
         case 13:
           parser = SAMLContactPersonParser.getInstance();
-          break;
         case 14:
           parser = SAMLEncryptionMethodParser.getInstance();
-          break;
         case 15:
           parser = SAMLEntityDescriptorParser.getInstance();
-          break;
         case 16:
           parser = SAMLExtensionsParser.getInstance();
-          break;
         case 17:
           parser = SAMLIDPSSODescriptorParser.getInstance();
-          break;
         case 18:
           parser = SAMLKeyDescriptorParser.getInstance();
-          break;
         case 19:
           parser = SAMLManageNameIDServiceParser.getInstance();
-          break;
         case 20:
           parser = SAMLNameIDMappingServiceParser.getInstance();
-          break;
         case 21:
           parser = SAMLOrganizationParser.getInstance();
-          break;
         case 22:
           parser = SAMLPDPDescriptorParser.getInstance();
-          break;
         case 23:
           parser = SAMLRequestedAttributeParser.getInstance();
-          break;
         case 24:
           parser = SAMLSingleLogoutServiceParser.getInstance();
-          break;
         case 25:
           parser = SAMLSingleSignOnServiceParser.getInstance();
-          break;
         case 26:
           parser = SAMLSPSSODescriptorParser.getInstance();
-          break;
       }
 
       // Initialize a XMLEventReader with InputStream source pointing
@@ -151,9 +125,7 @@ public class SamlMetadataParserFuzzer {
       ByteArrayInputStream bais = new ByteArrayInputStream(input);
       XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(bais);
 
-      if (parser != null) {
-        parser.parse(reader);
-      }
+      parser.parse(reader);
     } catch (ParsingException | XMLStreamException | RuntimeException e) {
       // Known exception
     }

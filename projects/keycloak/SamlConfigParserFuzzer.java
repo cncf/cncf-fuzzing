@@ -53,43 +53,30 @@ public class SamlConfigParserFuzzer {
       switch (data.consumeInt(1, 13)) {
         case 1:
           parser = HttpClientParser.getInstance();
-          break;
         case 2:
           parser = IdpParser.getInstance();
-          break;
         case 3:
           parser = KeycloakSamlAdapterParser.getInstance();
-          break;
         case 4:
           parser = KeycloakSamlAdapterV1Parser.getInstance();
-          break;
         case 5:
           parser = KeysParser.getInstance();
-          break;
         case 6:
           parser = KeyParser.getInstance();
-          break;
         case 7:
           parser = KeyStoreParser.getInstance();
-          break;
         case 8:
           parser = PrincipalNameMappingParser.getInstance();
-          break;
         case 9:
           parser = RoleMappingsProviderParser.getInstance();
-          break;
         case 10:
           parser = RoleMappingParser.getInstance();
-          break;
         case 11:
           parser = SingleLogoutServiceParser.getInstance();
-          break;
         case 12:
           parser = SingleSignOnServiceParser.getInstance();
-          break;
         case 13:
           parser = SpParser.getInstance();
-          break;
       }
 
       // Initialize a XMLEventReader with InputStream source pointing
@@ -99,9 +86,7 @@ public class SamlConfigParserFuzzer {
       ByteArrayInputStream bais = new ByteArrayInputStream(input);
       XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(bais);
 
-      if (parser != null) {
-        parser.parse(reader);
-      }
+      parser.parse(reader);
     } catch (ParsingException | XMLStreamException | RuntimeException e) {
       // Known exception
     }

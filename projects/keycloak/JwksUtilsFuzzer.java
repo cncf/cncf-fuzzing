@@ -73,9 +73,9 @@ public class JwksUtilsFuzzer {
           // Generate JWK key with the random RSA public key
           JWK jwk = builder.rsa(keyPair.getPublic());
 
-          jwk.setOtherClaims(RSAPublicJWK.MODULUS, data.consumeString(data.remainingBytes() / 2));
+          jwk.setOtherClaims(RSAPublicJWK.MODULUS, data.consumeString(data.consumeInt(0, 10000)));
           jwk.setOtherClaims(
-              RSAPublicJWK.PUBLIC_EXPONENT, data.consumeString(data.remainingBytes() / 2));
+              RSAPublicJWK.PUBLIC_EXPONENT, data.consumeString(data.consumeInt(0, 10000)));
 
           keys[i] = jwk;
         } else {
@@ -88,8 +88,8 @@ public class JwksUtilsFuzzer {
 
           String[] crv = {"P-256", "P-384", "P-521"};
           jwk.setOtherClaims(ECPublicJWK.CRV, data.pickValue(crv));
-          jwk.setOtherClaims(ECPublicJWK.X, data.consumeString(data.remainingBytes() / 2));
-          jwk.setOtherClaims(ECPublicJWK.Y, data.consumeString(data.remainingBytes() / 2));
+          jwk.setOtherClaims(ECPublicJWK.X, data.consumeString(data.consumeInt(0, 10000)));
+          jwk.setOtherClaims(ECPublicJWK.Y, data.consumeString(data.consumeInt(0, 10000)));
 
           keys[i] = jwk;
         }

@@ -66,10 +66,8 @@ public class SamlValidationUtilFuzzer {
           // Fuzz
           RedirectBindingSignatureUtil.validateRedirectBindingSignature(
               sigAlg, rawBytes, signature, keyLocator, "Fuzz");
-          break;
         case 2:
           JAXPValidationUtil.validate(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-          break;
         case 3:
           // Initialise a random XML Document object
           DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -78,7 +76,6 @@ public class SamlValidationUtilFuzzer {
           Document doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
 
           JAXPValidationUtil.checkSchemaValidation(doc);
-          break;
       }
     } catch (RuntimeException | IOException | SAXException | ProcessingException e) {
       // Known exception

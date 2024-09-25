@@ -23,23 +23,18 @@ import org.keycloak.jose.jwk.JWKParser;
 public class JwkParserFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Retrieves choice and data for randomly
-      // calling subsequent methods after parsing
-      Boolean choice = data.consumeBoolean();
-      String keyType = data.consumeString(10);
-
-      // Retrieve a new JWKParser instance
+      // Create a new JWKParser instance
       JWKParser parser = JWKParser.create();
 
       // Call the parse method with random string
-      parser.parse(data.consumeRemainingAsString());
+      parser.parse(data.consumeString(data.consumeInt(0, 10000)));
 
       // Randomly executing methods in JWKParser
       // which rely on the parsing result
-      if (choice) {
+      if (data.consumeBoolean()) {
         parser.toPublicKey();
       } else {
-        parser.isKeyTypeSupported(keyType);
+        parser.isKeyTypeSupported(data.consumeString(data.consumeInt(0, 10000)));
       }
     } catch (RuntimeException e) {
       // Known exception

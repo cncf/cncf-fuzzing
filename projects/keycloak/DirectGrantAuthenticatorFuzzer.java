@@ -33,19 +33,14 @@ public class DirectGrantAuthenticatorFuzzer {
       switch (data.consumeInt(1, 3)) {
         case 1:
           authenticator = new ValidateOTP();
-          break;
         case 2:
           authenticator = new ValidatePassword();
-          break;
         case 3:
           authenticator = new ValidateUsername();
-          break;
       }
 
       // Fuzz the authenticate method
-      if (authenticator != null) {
-        authenticator.authenticate(context);
-      }
+      authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
     }
