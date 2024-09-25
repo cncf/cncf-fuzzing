@@ -33,25 +33,20 @@ public class ConditionalAuthenticatorFuzzer {
       switch (data.consumeInt(1, 4)) {
         case 1:
           factory = new ConditionalLoaAuthenticatorFactory();
-          break;
         case 2:
           factory = new ConditionalRoleAuthenticatorFactory();
-          break;
         case 3:
           factory = new ConditionalUserAttributeValueFactory();
-          break;
         case 4:
           factory = new ConditionalUserConfiguredAuthenticatorFactory();
-          break;
       }
 
       // Fuzz the authenticate method
-      if (factory != null) {
-        KeycloakSession session = BaseHelper.createKeycloakSession(data);
-        Authenticator authenticator = factory.create(session);
-        BaseHelper.randomizeContext(context, null, factory.getRequirementChoices());
-        authenticator.authenticate(context);
-      }
+      KeycloakSession session = BaseHelper.createKeycloakSession(data);
+      Authenticator authenticator = factory.create(session);
+      BaseHelper.randomizeContext(context, null, factory.getRequirementChoices());
+      authenticator.authenticate(context);
+      
     } catch (RuntimeException e) {
       // Known exception
     }

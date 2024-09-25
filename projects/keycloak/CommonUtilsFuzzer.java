@@ -32,68 +32,47 @@ public class CommonUtilsFuzzer {
       switch (choice) {
         case 1:
           Encode.encodeQueryString(data.consumeRemainingAsString());
-          break;
         case 2:
           Encode.encodePath(data.consumeRemainingAsString());
-          break;
         case 3:
           Encode.encodePathSegment(data.consumeRemainingAsString());
-          break;
         case 4:
           Encode.encodeFragment(data.consumeRemainingAsString());
-          break;
         case 5:
           Encode.encodeMatrixParam(data.consumeRemainingAsString());
-          break;
         case 6:
           Encode.encodeQueryParam(data.consumeRemainingAsString());
-          break;
         case 7:
           Encode.decodePath(data.consumeRemainingAsString());
-          break;
         case 8:
           Encode.encodePathAsIs(data.consumeRemainingAsString());
-          break;
         case 9:
           Encode.encodePathSaveEncodings(data.consumeRemainingAsString());
-          break;
         case 10:
           Encode.encodePathSegmentAsIs(data.consumeRemainingAsString());
-          break;
         case 11:
           Encode.encodePathSegmentSaveEncodings(data.consumeRemainingAsString());
-          break;
         case 12:
           Encode.encodeQueryParamAsIs(data.consumeRemainingAsString());
-          break;
         case 13:
           Encode.encodeQueryParamSaveEncodings(data.consumeRemainingAsString());
-          break;
         case 14:
           Encode.encodeFragmentAsIs(data.consumeRemainingAsString());
-          break;
         case 15:
           EnvUtil.replace(data.consumeRemainingAsString());
-          break;
         case 16:
           FindFile.findFile(data.consumeRemainingAsString());
-          break;
         case 17:
           HtmlUtils.escapeAttribute(data.consumeRemainingAsString());
-          break;
         case 18:
           Integer port = data.consumeInt(1, 65536);
           NetworkUtils.formatAddress(new InetSocketAddress(data.consumeRemainingAsString(), port));
-          break;
         case 19:
           PathHelper.replaceEnclosedCurlyBraces(data.consumeRemainingAsString());
-          break;
         case 20:
           PathHelper.recoverEnclosedCurlyBraces(data.consumeRemainingAsString());
-          break;
         case 21:
           StackUtil.getShortStackTrace(data.consumeRemainingAsString());
-          break;
       }
     } catch (RuntimeException e) {
       // Known exception

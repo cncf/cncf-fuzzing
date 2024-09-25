@@ -27,32 +27,25 @@ public class AuthenticatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       Authenticator authenticator = null;
-      AuthenticatorFactory factory = null;
       AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
 
       switch (data.consumeInt(1, 4)) {
         case 1:
           authenticator = AttemptedAuthenticator.SINGLETON;
-          break;
         case 2:
           authenticator = new AllowAccessAuthenticatorFactory().create(context.getSession());
-          break;
         case 3:
           authenticator = new DenyAccessAuthenticatorFactory().create(context.getSession());
-          break;
         case 4:
-          factory = new UserSessionLimitsAuthenticatorFactory();
+          AuthenticatorFactory factory = new UserSessionLimitsAuthenticatorFactory();
           context =
               BaseHelper.randomizeContext(
                   context, factory.getConfigProperties(), factory.getRequirementChoices());
           authenticator = factory.create(context.getSession());
-          break;
       }
 
       // Fuzz the authenticate method
-      if (authenticator != null) {
-        authenticator.authenticate(context);
-      }
+      authenticator.authenticate(context);  
     } catch (RuntimeException e) {
       // Known exception
     }
