@@ -61,13 +61,10 @@ public class CertificateUtilsProviderFuzzer {
       switch (data.consumeInt(1, 3)) {
         case 1:
           provider = new BCCertificateUtilsProvider();
-          break;
         case 2:
           provider = new ElytronCertificateUtilsProvider();
-          break;
         case 3:
           provider = new BCFIPSCertificateUtilsProvider();
-          break;
       }
 
       // Randomly choose which method to invoke
@@ -77,37 +74,32 @@ public class CertificateUtilsProviderFuzzer {
           cert =
               (X509Certificate)
                   cf.generateCertificate(
-                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+                      new ByteArrayInputStream(data.consumeBytes(data.consumeInt(1, 10000))));
           provider.generateV3Certificate(
               keyPair, keyPair.getPrivate(), cert, data.consumeRemainingAsString());
-          break;
         case 2:
           provider.generateV1SelfSignedCertificate(keyPair, data.consumeRemainingAsString());
-          break;
         case 3:
           cert =
               (X509Certificate)
                   cf.generateCertificate(
-                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+                      new ByteArrayInputStream(data.consumeRemainingAsBytes()));
           provider.getCertificatePolicyList(cert);
-          break;
         case 4:
           cert =
               (X509Certificate)
                   cf.generateCertificate(
-                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+                      new ByteArrayInputStream(data.consumeRemainingAsBytes()));
           provider.getCRLDistributionPoints(cert);
-          break;
         case 5:
           Date startDate = new Date(data.consumeLong());
           Date expiryDate = new Date(data.consumeLong());
           provider.createServicesTestCertificate(
-              data.consumeString(data.remainingBytes() / 2),
+              data.consumeString(data.consumeInt(1, 10000)),
               startDate,
               expiryDate,
               keyPair,
               data.consumeRemainingAsString());
-          break;
       }
     } catch (Exception | NoSuchMethodError | ExceptionInInitializerError | NoClassDefFoundError e) {
       // Known exception and errors directly thrown from the above methods

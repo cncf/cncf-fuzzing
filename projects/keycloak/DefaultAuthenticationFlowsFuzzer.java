@@ -33,34 +33,24 @@ public class DefaultAuthenticationFlowsFuzzer {
       switch (choice) {
         case 1:
           DefaultAuthenticationFlows.addFlows(realm);
-          break;
         case 2:
           DefaultAuthenticationFlows.migrateFlows(realm);
-          break;
         case 3:
           DefaultAuthenticationFlows.registrationFlow(realm, true);
-          break;
         case 4:
           DefaultAuthenticationFlows.browserFlow(realm, true);
-          break;
         case 5:
           DefaultAuthenticationFlows.directGrantFlow(realm, true);
-          break;
         case 6:
           DefaultAuthenticationFlows.addIdentityProviderAuthenticator(realm, string);
-          break;
         case 7:
           DefaultAuthenticationFlows.clientAuthFlow(realm);
-          break;
         case 8:
           DefaultAuthenticationFlows.firstBrokerLoginFlow(realm, true);
-          break;
         case 9:
           DefaultAuthenticationFlows.samlEcpProfile(realm);
-          break;
         case 10:
           DefaultAuthenticationFlows.dockerAuthenticationFlow(realm);
-          break;
       }
     } catch (RuntimeException e) {
       // Known exception
