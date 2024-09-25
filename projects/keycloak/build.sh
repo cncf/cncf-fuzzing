@@ -36,9 +36,7 @@ EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integ
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
 EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js,!js/libs/ui-shared,!js/apps/admin-ui,"
-EXCLUDE_JS=$EXCLUDE_JS"!js/apps/account-ui,!adapters/oidc/js"
-
-EXCLUDE_MISC="!misc,!misc/keycloak-test-helper"
+EXCLUDE_JS=$EXCLUDE_JS"!js/apps/account-ui"
 
 EXCLUDE_QUARKUS="!quarkus,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
@@ -46,9 +44,10 @@ EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!q
 EXCLUDE_REST="!rest,!rest/admin-ui-ext"
 
 EXCLUDE_THEMES="!themes"
+EXCLUDE_TEST_FRAMEWORK="!test-framework"
 
 EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_INTEGRATION,$EXCLUDE_JS
-EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_MISC,$EXCLUDE_QUARKUS,$EXCLUDE_REST,$EXCLUDE_THEMES
+EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_QUARKUS,$EXCLUDE_REST,$EXCLUDE_THEMES,$EXCLUDE_TEST_FRAMEWORK
 
 ## Execute maven build
 $MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
