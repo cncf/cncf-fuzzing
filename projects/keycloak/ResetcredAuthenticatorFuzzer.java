@@ -27,29 +27,22 @@ public class ResetcredAuthenticatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       Authenticator authenticator = null;
-      AuthenticatorFactory factory = null;
       AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
       BaseHelper.randomizeContext(context, null, null);
 
       switch (data.consumeInt(1, 4)) {
         case 1:
           authenticator = new ResetCredentialChooseUser();
-          break;
         case 2:
           authenticator = new ResetCredentialEmail();
-          break;
         case 3:
           authenticator = new ResetOTP();
-          break;
         case 4:
           authenticator = new ResetPassword();
-          break;
       }
 
       // Fuzz the authenticate method
-      if (authenticator != null) {
-        authenticator.authenticate(context);
-      }
+      authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
     }

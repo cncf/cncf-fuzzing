@@ -40,13 +40,10 @@ public class PemUtilsProviderFuzzer {
       switch (choice) {
         case 1:
           provider = new BCPemUtilsProvider();
-          break;
         case 2:
           provider = new ElytronPEMUtilsProvider();
-          break;
         case 3:
           provider = new BCFIPSPemUtilsProvider();
-          break;
       }
 
       // Random choose method target for PemUtilsProvider
@@ -54,33 +51,25 @@ public class PemUtilsProviderFuzzer {
       switch (choice) {
         case 1:
           provider.decodeCertificate(data.consumeRemainingAsString());
-          break;
         case 2:
           provider.decodePublicKey(data.consumeRemainingAsString());
-          break;
         case 3:
           provider.decodePrivateKey(data.consumeRemainingAsString());
-          break;
         case 4:
           provider.encodeKey(KeyUtils.generateRsaKeyPair(2048).getPrivate());
-          break;
         case 5:
           X509Certificate cert =
               (X509Certificate)
                   cf.generateCertificate(
-                      new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+                      new ByteArrayInputStream(data.consumeRemainingAsBytes()));
           provider.encodeCertificate(cert);
-          break;
         case 6:
           provider.pemToDer(data.consumeRemainingAsString());
-          break;
         case 7:
           provider.removeBeginEnd(data.consumeRemainingAsString());
-          break;
         case 8:
           String[] certChain = {data.consumeRemainingAsString()};
           provider.generateThumbprint(certChain, "X.509");
-          break;
       }
     } catch (GeneralSecurityException | RuntimeException e) {
       // Known exception

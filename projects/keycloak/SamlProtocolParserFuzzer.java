@@ -51,37 +51,26 @@ public class SamlProtocolParserFuzzer {
       switch (data.consumeInt(1, 11)) {
         case 1:
           parser = SAMLArtifactResolveParser.getInstance();
-          break;
         case 2:
           parser = SAMLArtifactResponseParser.getInstance();
-          break;
         case 3:
           parser = SAMLAttributeQueryParser.getInstance();
-          break;
         case 4:
           parser = SAMLAuthNRequestParser.getInstance();
-          break;
         case 5:
           parser = SAMLExtensionsParser.getInstance();
-          break;
         case 6:
           parser = SAMLRequestedAuthnContextParser.getInstance();
-          break;
         case 7:
           parser = SAMLResponseParser.getInstance();
-          break;
         case 8:
           parser = SAMLSloRequestParser.getInstance();
-          break;
         case 9:
           parser = SAMLSloResponseParser.getInstance();
-          break;
         case 10:
           parser = SAMLStatusCodeParser.getInstance();
-          break;
         case 11:
           parser = SAMLStatusParser.getInstance();
-          break;
       }
 
       // Initialize a XMLEventReader with InputStream source pointing
@@ -91,9 +80,7 @@ public class SamlProtocolParserFuzzer {
       ByteArrayInputStream bais = new ByteArrayInputStream(input);
       XMLEventReader reader = XMLInputFactory.newInstance().createXMLEventReader(bais);
 
-      if (parser != null) {
-        parser.parse(reader);
-      }
+      parser.parse(reader);
     } catch (ParsingException | XMLStreamException | RuntimeException e) {
       // Known exception
     }

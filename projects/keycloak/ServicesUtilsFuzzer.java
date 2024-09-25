@@ -73,19 +73,18 @@ public class ServicesUtilsFuzzer {
             certs[i] =
                 (X509Certificate)
                     cf.generateCertificate(
-                        new ByteArrayInputStream(data.consumeBytes(data.remainingBytes() / 2)));
+                        new ByteArrayInputStream(data.consumeBytes(data.consumeInt(0, 10000))));
           }
           X509CRL crl =
               (X509CRL) cf.generateCRL(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
 
           // Call target method
           CRLUtils.check(certs, crl, session);
-          break;
         case 2:
           // Create and mock GroupModel instance with random data
           GroupModel group = Mockito.mock(GroupModel.class);
-          Mockito.when(group.getId()).thenReturn(data.consumeString(data.remainingBytes() / 2));
-          Mockito.when(group.getName()).thenReturn(data.consumeString(data.remainingBytes() / 2));
+          Mockito.when(group.getId()).thenReturn(data.consumeString(data.consumeInt(0, 10000)));
+          Mockito.when(group.getName()).thenReturn(data.consumeString(data.consumeInt(0, 10000)));
           Mockito.when(group.getParent()).thenReturn(null);
 
           Stream.Builder<GroupModel> builder = Stream.builder();
@@ -93,8 +92,8 @@ public class ServicesUtilsFuzzer {
 
           Map<String, List<String>> attributeMap = new HashMap<String, List<String>>();
           attributeMap.put(
-              data.consumeString(data.remainingBytes() / 2),
-              List.of(data.consumeString(data.remainingBytes() / 2)));
+              data.consumeString(data.consumeInt(0, 10000)),
+              List.of(data.consumeString(data.consumeInt(0, 10000))));
           Mockito.when(group.getAttributes()).thenReturn(attributeMap);
 
           // Create and mock GroupPermissionEvaluator instance with random data
@@ -111,11 +110,11 @@ public class ServicesUtilsFuzzer {
           Mockito.when(groupPermissions.canViewMembers(group)).thenReturn(data.consumeBoolean());
 
           Map<String, Boolean> permissionMap = new HashMap<String, Boolean>();
-          permissionMap.put(data.consumeString(data.remainingBytes() / 2), data.consumeBoolean());
+          permissionMap.put(data.consumeString(data.consumeInt(0, 10000)), data.consumeBoolean());
           Mockito.when(groupPermissions.getAccess(group)).thenReturn(permissionMap);
 
           Set<String> set = new HashSet<String>();
-          set.add(data.consumeString(data.remainingBytes() / 2));
+          set.add(data.consumeString(data.consumeInt(0, 10000)));
           Mockito.when(groupPermissions.getGroupsWithViewPermission()).thenReturn(set);
 
           // Create and mock RealmModel instance with default policy and random data
@@ -136,40 +135,34 @@ public class ServicesUtilsFuzzer {
               throw e;
             }
           }
-          break;
         case 3:
           // Call target method
           RegexUtils.valueMatchesRegex(
-              Pattern.quote(data.consumeString(data.remainingBytes() / 2)),
+              Pattern.quote(data.consumeString(data.consumeInt(0, 10000))),
               data.consumeRemainingAsString());
-          break;
         case 4:
           // Call target method
           SearchQueryUtils.getFields(data.consumeRemainingAsString());
-          break;
         case 5:
           // Call target method
           SearchQueryUtils.unescape(data.consumeRemainingAsString());
-          break;
         case 6:
           // Call target method
           TotpUtils.encode(data.consumeRemainingAsString());
-          break;
         case 7:
           // Create and mock UserModel instance with random data
           UserModel userModel = Mockito.mock(UserModel.class);
           Mockito.when(userModel.getUsername())
-              .thenReturn(data.consumeString(data.remainingBytes() / 2));
+              .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
 
           // Create and mock RealmModel instance with default policy and random data
           RealmModel realmModel = Mockito.mock(RealmModel.class);
           Mockito.when(realmModel.getOTPPolicy()).thenReturn(OTPPolicy.DEFAULT_POLICY);
           Mockito.when(realmModel.getName())
-              .thenReturn(data.consumeString(data.remainingBytes() / 2));
+              .thenReturn(data.consumeString(data.consumeInt(0, 10000)));
 
           // Call target method
           TotpUtils.qrCode(data.consumeRemainingAsString(), realmModel, userModel);
-          break;
       }
     } catch (GeneralSecurityException | PatternSyntaxException e) {
       // Known exception

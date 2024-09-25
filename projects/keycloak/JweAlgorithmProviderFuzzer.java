@@ -41,7 +41,7 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
  * This fuzzer targets the encodeCek and decodeCek methods of different JweAlgorithm Provider
  * implementation classes in the crypto package.
  *
- * <p>The fuzzer randomly selects a provider in each iteration and either encodes or decodes a value
+ * The fuzzer randomly selects a provider in each iteration and either encodes or decodes a value
  * specified by the fuzzer.
  */
 public class JweAlgorithmProviderFuzzer {
@@ -90,12 +90,10 @@ public class JweAlgorithmProviderFuzzer {
           encryptionKey = key;
           decryptionKey = key;
           algorithmProvider = new DirectAlgorithmProvider();
-          break;
         case 2:
           encryptionKey = key;
           decryptionKey = key;
           algorithmProvider = new AesKeyWrapAlgorithmProvider();
-          break;
         case 3:
           encryptionKey = key;
           decryptionKey = key;
@@ -104,28 +102,21 @@ public class JweAlgorithmProviderFuzzer {
           encryptionKey = key;
           decryptionKey = key;
           algorithmProvider = new FIPSAesKeyWrapAlgorithmProvider();
-          break;
         case 5:
           algorithmProvider = new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA");
-          break;
         case 6:
           algorithmProvider = new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA");
-          break;
         case 7:
           Key tempKey = decryptionKey;
           decryptionKey = encryptionKey;
           encryptionKey = tempKey;
           algorithmProvider = new BCEcdhEsAlgorithmProvider();
-          break;
         case 8:
           algorithmProvider = new BCFIPSEcdhEsAlgorithmProvider();
-          break;
         case 9:
           algorithmProvider = new ElytronEcdhEsAlgorithmProvider();
-          break;
         case 10:
           algorithmProvider = new FIPSRsaKeyEncryptionJWEAlgorithmProvider(null);
-          break;
       }
 
       // Generate JWEEncryptionProvider object
