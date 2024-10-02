@@ -74,7 +74,7 @@ public class CredentialValidatorFuzzer {
       // Known exception
     } catch (RuntimeException e) {
       // Catching expected RuntimeException from json parsing problem
-      if (!e.getCause() instanceof JsonProcessingException) {
+      if (!(e.getCause() instanceof JsonProcessingException)) {
         throw e;
       }
     } finally {
