@@ -63,7 +63,7 @@ wget https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.11.0/okhttp-4.
 wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar -O fuzzer-dependencies/junit.jar
 wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.10/kotlin-stdlib-common-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib-commin.jar
 wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/kotlin-stdlib-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib.jar
-wget https://repo1.maven.org/maven2/org/bouncycastle/bc-fips/1.0.2.5/bc-fips-1.0.2.5.jar $OUT/fuzzer-dependencies/bc-fips.jar
+#wget https://repo1.maven.org/maven2/org/bouncycastle/bc-fips/1.0.2.5/bc-fips-1.0.2.5.jar -O $OUT/fuzzer-dependencies/bc-fips.jar
 
 RUNTIME_CLASSPATH_FULL=
 RUNTIME_CLASSPATH_DEFAULT_CRYPTO=
@@ -106,7 +106,8 @@ cp $SRC/BaseHelper*.class $OUT/
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   if [[ "$fuzzer" == *"AuthenticatorFuzzer"* ]] || [[ "$fuzzer" == *"ValidatorFuzzer"* ]] || \
-  [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]]
+  [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]] || \
+  [[ "$fuzzer" == *"DefaultAuthenticionFlowFuzzer"* ]]
   then
     RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO
   else
