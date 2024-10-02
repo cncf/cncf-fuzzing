@@ -45,9 +45,11 @@ public class AuthenticatorFuzzer {
       }
 
       // Fuzz the authenticate method
-      authenticator.authenticate(context);  
+      authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

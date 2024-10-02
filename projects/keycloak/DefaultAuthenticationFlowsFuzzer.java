@@ -54,6 +54,8 @@ public class DefaultAuthenticationFlowsFuzzer {
       }
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

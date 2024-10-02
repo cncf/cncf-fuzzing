@@ -99,6 +99,8 @@ public class KeycloakModelUtilsFuzzer {
       }
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

@@ -45,6 +45,8 @@ public class ResetcredAuthenticatorFuzzer {
       authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

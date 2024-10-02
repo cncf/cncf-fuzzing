@@ -71,6 +71,8 @@ public class ValidatorFuzzer {
       }
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

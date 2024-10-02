@@ -110,6 +110,8 @@ public class AuthzClientFuzzer {
       }
     } catch (RuntimeException e) {
       // Known exception thrown directly from method above.
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

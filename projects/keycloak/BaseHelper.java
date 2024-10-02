@@ -112,6 +112,9 @@ import org.mockito.Mockito;
  */
 public class BaseHelper {
   private static MockKeycloakSession session;
+  private static RealmModel realm;
+  private static ClientModel client;
+  private static AuthenticationFlowContext flowContext;
 
   public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
     if (session == null) {
@@ -131,9 +134,10 @@ public class BaseHelper {
       createKeycloakSession(data);
     }
 
-    RealmModel realm = Mockito.mock(RealmModel.class);
-
-    Mockito.doReturn(createClientModel(data)).when(realm).addClient(Mockito.any(String.class));
+    if (realm == null) {
+      realm = Mockito.mock(RealmModel.class);
+      Mockito.doReturn(createClientModel(data)).when(realm).addClient(Mockito.any(String.class));
+    }
 
     return realm;
   }
@@ -149,8 +153,10 @@ public class BaseHelper {
       Algorithm.AES
     };
 
-    ClientModel client = Mockito.mock(ClientModel.class);
-    Mockito.doReturn(data.pickValue(algorithm)).when(client).getAttribute(Mockito.any());
+    if (client == null) {
+      client = Mockito.mock(ClientModel.class);
+      Mockito.doReturn(data.pickValue(algorithm)).when(client).getAttribute(Mockito.any());
+    }
 
     return client;
   }
@@ -189,7 +195,11 @@ public class BaseHelper {
   }
 
   public static AuthenticationFlowContext createAuthenticationFlowContext(FuzzedDataProvider data) {
-    return new DefaultAuthenticationFlowContext(data);
+    if (flowContext == null) {
+      flowContext = new DefaultAuthenticationFlowContext(data);
+    }
+
+    return flowContext;
   }
 
   public static AuthenticationFlowContext randomizeContext(
@@ -209,6 +219,25 @@ public class BaseHelper {
     }
 
     return context;
+  }
+
+  public static void cleanMockObject() {
+    // Clean up mock keycloak session
+    if (session != null) {
+      session.dereferenceObject();
+    }
+
+    // Deference static mock object instance
+    session = null;
+    realm = null;
+    client = null;
+    flowContext = null;
+
+    // Clean up inline mocks of the mock objects
+    Mockito.framework().clearInlineMocks();
+
+    // Suggest the java garbage collector to clean up unused memory
+    System.gc();
   }
 
   protected static class DefaultScope implements Config.Scope {
@@ -463,6 +492,12 @@ public class BaseHelper {
 
     public KeycloakSession getSession() {
       return this.session;
+    }
+
+    public void dereferenceObject() {
+      providerMap = null;
+      session = null;
+      data = null;
     }
 
     private void initCredentialProvider() {
