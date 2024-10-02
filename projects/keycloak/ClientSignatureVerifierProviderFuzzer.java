@@ -37,6 +37,7 @@ import org.keycloak.crypto.RS256ClientSignatureVerifierProviderFactory;
 import org.keycloak.crypto.RS384ClientSignatureVerifierProviderFactory;
 import org.keycloak.crypto.RS512ClientSignatureVerifierProviderFactory;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
@@ -91,24 +92,23 @@ public class ClientSignatureVerifierProviderFuzzer {
           factory = new RS512ClientSignatureVerifierProviderFactory();
       }
 
-      SignatureVerifierContext verifier =
-          factory
-              .create(mockObject.getSession())
-              .verifier(
-                  mockObject.getClient(),
-                  new JWSInput(data.consumeString(data.consumeInt(0, 10000))));
-
-      verifier.verify(data.consumeBytes(data.consumeInt(0, 10000)), data.consumeRemainingAsBytes());
+      JWSInput input = new JWSInput(data.consumeString(data.consumeInt(0, 10000)));
+      if (validInput(input)) {
+        SignatureVerifierContext verifier = factory.create(mockObject.getSession()).verifier(
+            mockObject.getClient(), input);
+        verifier.verify(data.consumeBytes(data.consumeInt(0, 10000)), data.consumeRemainingAsBytes());
+      }
     } catch (VerificationException | JWSInputException | IllegalArgumentException e) {
       // Known exception
-    } catch (NullPointerException e) {
-      // Special handling for invalid JWSInput from random malformed string.
-      if (!e.getMessage().contains("the return value of \"org.keycloak.jose.jws.JWSHeader")) {
-        throw e;
-      }
     } finally {
       cleanUpStaticMockObject();
     }
+  }
+
+  private static Boolean validInput(JWSInput input) {
+    JWSHeader header = input.getHeader();
+
+    return ((header.getAlgorithm() != null) && (header.getKey() != null) && (header.getX5c() != null));
   }
 
   private static class MockObject {
