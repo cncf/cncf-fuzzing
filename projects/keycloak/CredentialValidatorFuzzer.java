@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.webauthn4j.converter.util.ObjectConverter;
 import java.util.List;
 import java.util.stream.Stream;
@@ -36,6 +37,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+
 import org.mockito.Mockito;
 
 public class CredentialValidatorFuzzer {
@@ -70,6 +72,11 @@ public class CredentialValidatorFuzzer {
           mockObject.getRealmModel(), mockObject.getUserModel(), mockObject.getCredentialInput());
     } catch (IllegalArgumentException e) {
       // Known exception
+    } catch (RuntimeException e) {
+      // Catching expected RuntimeException from json parsing problem
+      if (!e.getCause() instanceof JsonProcessingException) {
+        throw e;
+      }
     } finally {
       cleanUpStaticMockObject();
     }
