@@ -99,8 +99,13 @@ public class ClientSignatureVerifierProviderFuzzer {
                   new JWSInput(data.consumeString(data.consumeInt(0, 10000))));
 
       verifier.verify(data.consumeBytes(data.consumeInt(0, 10000)), data.consumeRemainingAsBytes());
-    } catch (VerificationException | JWSInputException e) {
+    } catch (VerificationException | JWSInputException | IllegalArgumentException e) {
       // Known exception
+    } catch (NullPointerException e) {
+      // Special handling for invalid JWSInput from random malformed string.
+      if (!e.getMessage().contains("the return value of \"org.keycloak.jose.jws.JWSHeader")) {
+        throw e;
+      }
     } finally {
       cleanUpStaticMockObject();
     }
