@@ -46,9 +46,10 @@ public class ConditionalAuthenticatorFuzzer {
       Authenticator authenticator = factory.create(session);
       BaseHelper.randomizeContext(context, null, factory.getRequirementChoices());
       authenticator.authenticate(context);
-      
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

@@ -38,6 +38,8 @@ public class X509AuthenticatorFuzzer {
       authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

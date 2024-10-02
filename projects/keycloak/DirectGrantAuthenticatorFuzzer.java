@@ -43,6 +43,8 @@ public class DirectGrantAuthenticatorFuzzer {
       authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }

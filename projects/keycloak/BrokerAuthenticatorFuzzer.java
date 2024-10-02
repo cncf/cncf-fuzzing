@@ -65,6 +65,8 @@ public class BrokerAuthenticatorFuzzer {
       authenticator.authenticate(context);
     } catch (RuntimeException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 }
