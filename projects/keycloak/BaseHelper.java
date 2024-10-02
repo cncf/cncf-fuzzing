@@ -223,7 +223,9 @@ public class BaseHelper {
 
   public static void cleanMockObject() {
     // Clean up mock keycloak session
-    session.dereferenceObject();
+    if (session != null) {
+      session.dereferenceObject();
+    }
 
     // Deference static mock object instance
     session = null;
