@@ -54,6 +54,7 @@ $MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARG
 
 # Dependency for Mockito and MockWebService functionality for mocking objects and web service
 mkdir -p fuzzer-dependencies
+mkdir -p $OUT/crypto-jar
 wget https://repo1.maven.org/maven2/org/mockito/mockito-core/5.4.0/mockito-core-5.4.0.jar -O fuzzer-dependencies/mockito-core.jar
 wget https://repo1.maven.org/maven2/net/bytebuddy/byte-buddy-agent/1.14.5/byte-buddy-agent-1.14.5.jar -O fuzzer-dependencies/byte-buddy-agent.jar
 wget https://repo1.maven.org/maven2/com/squareup/okhttp3/mockwebserver/4.11.0/mockwebserver-4.11.0.jar -O fuzzer-dependencies/mockwebserver.jar
@@ -63,11 +64,11 @@ wget https://repo1.maven.org/maven2/com/squareup/okhttp3/okhttp/4.11.0/okhttp-4.
 wget https://repo1.maven.org/maven2/junit/junit/4.13/junit-4.13.jar -O fuzzer-dependencies/junit.jar
 wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.10/kotlin-stdlib-common-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib-commin.jar
 wget https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.6.10/kotlin-stdlib-1.6.10.jar -O fuzzer-dependencies/kotlin-stdlib.jar
+wget https://repo1.maven.org/maven2/org/bouncycastle/bc-fips/1.0.2.5/bc-fips-1.0.2.5.jar -O $OUT/crypto-jar/bc-fips-1.0.2.5.jar
 
 RUNTIME_CLASSPATH_FULL=
 RUNTIME_CLASSPATH_DEFAULT_CRYPTO=
 
-mkdir -p $OUT/crypto-jar
 for JARFILE in $(find . -wholename "*/target/keycloak*.jar")
 do
   if [[ "$JARFILE" == *"authz/"* ]] || [[ "$JARFILE" == *"common/"* ]] || \
@@ -91,7 +92,12 @@ done
 # Copy keycloak dependencies
 for JARFILE in $(find . -wholename "*/target/dependency/*.jar" ! -name keycloak*.jar)
 do
-  cp $JARFILE fuzzer-dependencies/
+  if [[ "$JARFILE" == *"bc-fips"* ]]
+  then
+    cp $JARFILE $OUT/crypto-jar/bc-fips.jar
+  else
+    cp $JARFILE fuzzer-dependencies/
+  fi
 done
 mkdir -p $OUT/fuzzer-dependencies
 unzip -o fuzzer-dependencies/\*.jar -d $OUT/fuzzer-dependencies/
@@ -108,8 +114,11 @@ for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]]
   then
     RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO
+  elif [[ "$fuzzer" == *"JweAlgorithmProviderFuzzer"* ]]
+  then
+    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_FULL:$OUT/crypto-jar/bc-fips-1.0.2.5.jar
   else
-    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_FULL
+    RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_FULL:$OUT/crypto-jar/bc-fips.jar
   fi
 
   fuzzer_basename=$(basename -s .java $fuzzer)

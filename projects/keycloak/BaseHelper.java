@@ -130,7 +130,11 @@ public class BaseHelper {
   }
 
   public static RealmModel createRealmModel(FuzzedDataProvider data) {
-    if (session == null) {
+    return createRealmModel(data, true);
+  }
+
+  public static RealmModel createRealmModel(FuzzedDataProvider data, Boolean needKeycloakSession) {
+    if ((session == null) && (needKeycloakSession)) {
       createKeycloakSession(data);
     }
 
