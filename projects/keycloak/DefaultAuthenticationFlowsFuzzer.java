@@ -28,7 +28,7 @@ public class DefaultAuthenticationFlowsFuzzer {
       String string = data.consumeString(64);
 
       // Initialise a random RealmModel
-      RealmModel realm = BaseHelper.createRealmModel(data);
+      RealmModel realm = BaseHelper.createRealmModel(data, false);
 
       switch (choice) {
         case 1:
