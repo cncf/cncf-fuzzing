@@ -61,7 +61,6 @@ import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAssertinIDReq
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAssertionConsumerServiceParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAttributeAuthorityDescriptorParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAttributeConsumingServiceParser;
-import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAttributeParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAttributeServiceParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAuthnAuthorityDescriptorParser;
 import org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAuthnQueryServiceParser;
@@ -84,7 +83,6 @@ import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResol
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLArtifactResponseParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAttributeQueryParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLAuthNRequestParser;
-import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLExtensionsParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLRequestedAuthnContextParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLResponseParser;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLSloRequestParser;
@@ -231,7 +229,7 @@ public class SamlParserFuzzer {
           parser = SAMLAttributeConsumingServiceParser.getInstance();
           break;
         case 40:
-          parser = SAMLAttributeParser.getInstance();
+          parser = org.keycloak.saml.processing.core.parsers.saml.metadata.SAMLAttributeParser.getInstance();
           break;
         case 41:
           parser = SAMLAttributeServiceParser.getInstance();
@@ -300,7 +298,7 @@ public class SamlParserFuzzer {
           parser = SAMLAuthNRequestParser.getInstance();
           break;
         case 63:
-          parser = SAMLExtensionsParser.getInstance();
+          parser = org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLExtensionsParser.getInstance();
           break;
         case 64:
           parser = SAMLRequestedAuthnContextParser.getInstance();
