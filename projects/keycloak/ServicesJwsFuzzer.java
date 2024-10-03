@@ -66,25 +66,32 @@ public class ServicesJwsFuzzer {
         case 1:
           // Execute the target method
           manager.encode(token);
+          break;
         case 2:
           // Execute the target method
           manager.decode(data.consumeRemainingAsString(), Token.class);
+          break;
         case 3:
           // Execute the target method
           manager.decodeClientJWT(
               data.consumeRemainingAsString(), clientModel, (joseToken, client) -> {}, Token.class);
+          break;
         case 4:
           // Execute the target method
           manager.signatureAlgorithm(data.pickValue(EnumSet.allOf(TokenCategory.class)));
+          break;
         case 5:
           // Execute the target method
           manager.encodeAndEncrypt(token);
+          break;
         case 6:
           // Execute the target method
           manager.cekManagementAlgorithm(data.pickValue(EnumSet.allOf(TokenCategory.class)));
+          break;
         case 7:
           // Execute the target method
           manager.encryptAlgorithm(data.pickValue(EnumSet.allOf(TokenCategory.class)));
+          break;
         case 8:
           // Create and mock UserModel with random data
           UserModel userModel = Mockito.mock(UserModel.class);

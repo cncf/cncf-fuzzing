@@ -65,9 +65,11 @@ public class TokenUtilFuzzer {
         case 1:
           // Call isOfflineToken method with random string
           TokenUtil.isOfflineToken(data.consumeRemainingAsString());
+          break;
         case 2:
           // Call getRefreshToken method with random string
           TokenUtil.getRefreshToken(data.consumeRemainingAsBytes());
+          break;
         case 3:
           // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
@@ -80,6 +82,7 @@ public class TokenUtilFuzzer {
 
           // Call jweDirectEncode method with the created keys and random byte array
           TokenUtil.jweDirectEncode(aesKey, hmacKey, data.consumeRemainingAsBytes());
+          break;
         case 4:
           // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
@@ -92,6 +95,7 @@ public class TokenUtilFuzzer {
 
           // Call jweDirectVerifyAndDecode method with the created keys and random byte array
           TokenUtil.jweDirectVerifyAndDecode(aesKey, hmacKey, data.consumeRemainingAsString());
+          break;
         case 5:
           // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
@@ -100,6 +104,7 @@ public class TokenUtilFuzzer {
 
           // Call jweKeyEncryptionVerifyAndDecode method with the created key and random string
           TokenUtil.jweKeyEncryptionVerifyAndDecode(aesKey, data.consumeRemainingAsString());
+          break;
         case 6:
           // Generate AES key for method call
           generator = KeyGenerator.getInstance("AES");
@@ -144,18 +149,24 @@ public class TokenUtilFuzzer {
                 jweAlgorithmProvider,
                 jweEncryptionProvider);
           }
+          break;
         case 7:
           TokenUtil.attachOIDCScope(data.consumeRemainingAsString());
+          break;
         case 8:
           TokenUtil.isOIDCRequest(data.consumeRemainingAsString());
+          break;
         case 9:
           TokenUtil.isOfflineTokenRequested(data.consumeRemainingAsString());
+          break;
         case 10:
           TokenUtil.hasScope(
               data.consumeString(data.consumeInt(0, 10000)), data.consumeRemainingAsString());
+          break;
         case 11:
           TokenUtil.hasPrompt(
               data.consumeString(data.consumeInt(0, 10000)), data.consumeRemainingAsString());
+          break;
       }
     } catch (JWSInputException | JWEException | NoSuchAlgorithmException e) {
       // Known exception

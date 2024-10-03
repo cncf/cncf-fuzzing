@@ -68,28 +68,40 @@ public class ClientSignatureVerifierProviderFuzzer {
       switch (choice) {
         case 1:
           factory = new ES256ClientSignatureVerifierProviderFactory();
+          break;
         case 2:
           factory = new ES384ClientSignatureVerifierProviderFactory();
+          break;
         case 3:
           factory = new ES512ClientSignatureVerifierProviderFactory();
+          break;
         case 4:
           factory = new HS256ClientSignatureVerifierProviderFactory();
+          break;
         case 5:
           factory = new HS384ClientSignatureVerifierProviderFactory();
+          break;
         case 6:
           factory = new HS512ClientSignatureVerifierProviderFactory();
+          break;
         case 7:
           factory = new PS256ClientSignatureVerifierProviderFactory();
+          break;
         case 8:
           factory = new PS384ClientSignatureVerifierProviderFactory();
+          break;
         case 9:
           factory = new PS512ClientSignatureVerifierProviderFactory();
+          break;
         case 10:
           factory = new RS256ClientSignatureVerifierProviderFactory();
+          break;
         case 11:
           factory = new RS384ClientSignatureVerifierProviderFactory();
+          break;
         case 12:
           factory = new RS512ClientSignatureVerifierProviderFactory();
+          break;
       }
 
       JWSInput input = new JWSInput(data.consumeString(data.consumeInt(0, 10000)));

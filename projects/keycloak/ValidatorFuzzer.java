@@ -40,28 +40,40 @@ public class ValidatorFuzzer {
       switch (data.consumeInt(1, 12)) {
         case 1:
           validator = BuiltinValidators.notBlankValidator();
+          break;
         case 2:
           validator = BuiltinValidators.notEmptyValidator();
+          break;
         case 3:
           validator = BuiltinValidators.lengthValidator();
+          break;
         case 4:
           validator = BuiltinValidators.uriValidator();
+          break;
         case 5:
           validator = BuiltinValidators.emailValidator();
+          break;
         case 6:
           validator = BuiltinValidators.patternValidator();
+          break;
         case 7:
           validator = BuiltinValidators.doubleValidator();
+          break;
         case 8:
           validator = BuiltinValidators.integerValidator();
+          break;
         case 9:
           validator = BuiltinValidators.dateValidator();
+          break;
         case 10:
           validator = BuiltinValidators.isoDateValidator();
+          break;
         case 11:
           validator = BuiltinValidators.optionsValidator();
+          break;
         case 12:
           validator = BuiltinValidators.validatorConfigValidator();
+          break;
       }
 
       if (data.consumeBoolean()) {

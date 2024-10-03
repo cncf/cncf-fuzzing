@@ -75,6 +75,7 @@ public class SamlXmlUtilFuzzer {
 
           // Fuzz
           XMLEncryptionUtil.encryptElement(elementName, doc, pubKey, key, 32, wrappingName, true);
+          break;
         case 2:
           // Initialise document
           doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
@@ -85,6 +86,7 @@ public class SamlXmlUtilFuzzer {
 
           // Fuzz
           XMLEncryptionUtil.decryptElementInDocument(doc, locator);
+          break;
         case 3:
           // Initialise string
           String referenceUri = data.consumeString(10);
@@ -94,6 +96,7 @@ public class SamlXmlUtilFuzzer {
           doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
 
           XMLSignatureUtil.sign(doc, "keyName", keyPair, "SHA1", "RSA_SHA1", referenceUri, type);
+          break;
         case 4:
           // Initialise DefaultKeyLocator
           DefaultKeyLocator keyLocator =
@@ -104,8 +107,10 @@ public class SamlXmlUtilFuzzer {
 
           XMLSignatureUtil.validate(doc, keyLocator);
           XMLSignatureUtil.validateSingleNode(doc, keyLocator);
+          break;
         case 5:
           XMLSignatureUtil.createKeyValue(keyPair.getPublic());
+          break;
       }
     } catch (ProcessingException
         | RuntimeException
