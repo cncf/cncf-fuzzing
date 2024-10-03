@@ -72,7 +72,12 @@ public class CredentialValidatorFuzzer {
     } catch (IllegalArgumentException e) {
       // Known exception
     } catch (RuntimeException e) {
-      // Catching expected RuntimeException from json parsing problem
+      // In order to avoid checked JsonProcessingException, Keycloak
+      // wrap the underlying JsonProcessingException from FasterXML library
+      // with unchecked RuntimeException. But the throwing of JsonProcessingException
+      // is an expected behaviour for malformed input. Thus we specifically catch
+      // RuntimeException wrapped around JsonProcessingException to consider that
+      // as expected behaviour. All other RuntimeException is thrown as normal.
       if (!(e.getCause() instanceof JsonProcessingException)) {
         throw e;
       }
