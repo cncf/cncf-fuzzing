@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.webauthn4j.converter.util.ObjectConverter;
 import java.util.List;
 import java.util.stream.Stream;
@@ -70,6 +71,16 @@ public class CredentialValidatorFuzzer {
           mockObject.getRealmModel(), mockObject.getUserModel(), mockObject.getCredentialInput());
     } catch (IllegalArgumentException e) {
       // Known exception
+    } catch (RuntimeException e) {
+      // In order to avoid checked JsonProcessingException, Keycloak
+      // wrap the underlying JsonProcessingException from FasterXML library
+      // with unchecked RuntimeException. But the throwing of JsonProcessingException
+      // is an expected behaviour for malformed input. Thus we specifically catch
+      // RuntimeException wrapped around JsonProcessingException to consider that
+      // as expected behaviour. All other RuntimeException is thrown as normal.
+      if (!(e.getCause() instanceof JsonProcessingException)) {
+        throw e;
+      }
     } finally {
       cleanUpStaticMockObject();
     }
