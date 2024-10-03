@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -119,7 +120,9 @@ public class ServicesJwsFuzzer {
         throw e;
       }
     } catch (RuntimeException e) {
-      // Known exception
+      if (!isExpectedException(e)) {
+        throw e;
+      }
     } finally {
       cleanUpStaticMockObject();
     }
@@ -293,5 +296,26 @@ public class ServicesJwsFuzzer {
 
     // Suggest the java garbage collector to clean up unused memory
     System.gc();
+  }
+
+  private static Boolean isExpectedException(Throwable exc) {
+    Class[] expectedExceptions = {JsonProcessingException.class};
+
+    if (exc.getMessage().contains("Bad Base64 input character")) {
+      // Catch expected exceptions
+    }
+
+    // Check if the exceptions wrapped are expected exceptions
+    Throwable cause = exc.getCause();
+    if (cause == null) {
+      return false;
+    } else {
+      for (Class cls:expectedExceptions) {
+        if (cls.isInstance(cause)) {
+          return true;
+        }
+      }
+      return isExpectedException(cause);
+    }
   }
 }
