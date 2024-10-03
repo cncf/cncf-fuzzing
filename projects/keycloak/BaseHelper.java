@@ -73,6 +73,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -117,6 +118,7 @@ public class BaseHelper {
   private static AuthenticationFlowContext flowContext;
 
   public static KeycloakSession createKeycloakSession(FuzzedDataProvider data) {
+
     if (session == null) {
       // Initialise crypto providers
       CryptoIntegration.init(BaseHelper.class.getClassLoader());
@@ -470,12 +472,26 @@ public class BaseHelper {
       cookies.put(
           data.consumeString(16), new Cookie(data.consumeString(16), data.consumeString(16)));
 
+      KeycloakUriInfo uriInfo = Mockito.mock(KeycloakUriInfo.class);
+      try {
+        Mockito.when(uriInfo.getBaseUri()).thenReturn(new URI("http://localhost"));
+        Mockito.when(uriInfo.getRequestUri()).thenReturn(new URI("http://localhost"));
+      } catch (URISyntaxException e) {
+        // Known exception
+      }
+      MultivaluedMap<String, String> paramMap = new MultivaluedHashMap<String, String>();
+      paramMap.add(
+          data.consumeString(data.remainingBytes() / 2),
+          data.consumeString(data.remainingBytes() / 2));
+      Mockito.when(uriInfo.getQueryParameters()).thenReturn(paramMap);
+
       KeycloakContext context = Mockito.mock(KeycloakContext.class);
       HttpRequest request = Mockito.mock(HttpRequest.class);
       HttpHeaders headers = Mockito.mock(HttpHeaders.class);
       Mockito.doReturn(cookies).when(headers).getCookies();
       Mockito.doReturn(headers).when(request).getHttpHeaders();
       Mockito.doReturn(headers).when(context).getRequestHeaders();
+      Mockito.doReturn(uriInfo).when(context).getUri();
       Mockito.doReturn(context).when(this.session).getContext();
 
       // Initialise other needed providers
