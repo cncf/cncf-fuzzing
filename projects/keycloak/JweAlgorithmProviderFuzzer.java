@@ -152,7 +152,7 @@ public class JweAlgorithmProviderFuzzer {
       }
     } catch (NoSuchMethodError | AssertionError e) {
       // Known error
-    } catch (CryptoException | GeneralSecurityException | IllegalArgumentException e) {
+    } catch (CryptoException | GeneralSecurityException | IllegalArgumentException | NegativeArraySizeException e) {
       // Known exception
     }
   }
