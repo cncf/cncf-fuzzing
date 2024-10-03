@@ -80,7 +80,8 @@ public class JweAlgorithmProviderFuzzer {
     }
   }
 
-  // TEMPORARY DISABLE FIPS CLASSES, TODO: HANDLES FIPS LATER
+  // TEMPORARY DISABLE FIPS CLASSES BECAUSE OF BC-FIPS COLLISION
+  // TODO: HANDLES FIPS LATER
   public static void fuzzerTestOneInput(FuzzedDataProvider data) throws Exception {
     try {
       JWEAlgorithmProvider algorithmProvider = null;
