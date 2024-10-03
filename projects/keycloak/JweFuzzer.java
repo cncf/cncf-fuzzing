@@ -66,8 +66,8 @@ public class JweFuzzer {
       // Create JweKeyStorage
       byte[] keyBytes = data.consumeBytes(32);
       if (keyBytes.length == 0) {
-        // If there is no more bytes from FuzzedDataProvider, use default key byte.
-        keyBytes = HexFormat.of().parseHex("0123456789abcdef0123456789abcdef");
+        // If there is no more bytes from FuzzedDataProvider, exit current iteration
+        return;
       }
       Key key = KeyUtils.loadSecretKey(keyBytes, "HmacSHA256");
       JWEKeyStorage keyStorage = new JWEKeyStorage();
