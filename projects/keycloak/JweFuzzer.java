@@ -17,6 +17,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.util.HexFormat;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
@@ -63,7 +64,12 @@ public class JweFuzzer {
       String enc = data.pickValue(encs);
 
       // Create JweKeyStorage
-      Key key = KeyUtils.loadSecretKey(data.consumeBytes(32), "HmacSHA256");
+      byte[] keyBytes = data.consumeBytes(32);
+      if (keyBytes.length == 0) {
+        // If there is no more bytes from FuzzedDataProvider, use default key byte.
+        keyBytes = HexFormat.of().parseHex("0123456789abcdef0123456789abcdef");
+      }
+      Key key = KeyUtils.loadSecretKey(keyBytes, "HmacSHA256");
       JWEKeyStorage keyStorage = new JWEKeyStorage();
       keyStorage.setEncryptionKey(key);
       keyStorage.setDecryptionKey(key);
@@ -108,7 +114,7 @@ public class JweFuzzer {
       // Call the deserializeCEK methods from JWEEncryptionProvider objects
       achsjeProvider.deserializeCEK(keyStorage);
       agjeProvider.deserializeCEK(keyStorage);
-    } catch (RuntimeException | JWEException | IOException | GeneralSecurityException e) {
+    } catch (JWEException | IOException | GeneralSecurityException | IllegalArgumentException e) {
       // Known exception
     }
   }
