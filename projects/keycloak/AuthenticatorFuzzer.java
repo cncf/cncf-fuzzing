@@ -47,11 +47,14 @@ import org.keycloak.models.KeycloakSession;
 /** This fuzzer targets authenticate methods of different Authenticator implementations. */
 public class AuthenticatorFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
+    AuthenticatorFactory factory = null;
+    Authenticator authenticator = null;
+    KeycloakSession session = null;;
+    AuthenticationFlowContext context = null;
+
     try {
-      AuthenticatorFactory factory = null;
-      Authenticator authenticator = null;
-      KeycloakSession session = BaseHelper.createKeycloakSession(data);
-      AuthenticationFlowContext context = BaseHelper.createAuthenticationFlowContext(data);
+      session = BaseHelper.createKeycloakSession(data);
+      context = BaseHelper.createAuthenticationFlowContext(data);
 
       switch (data.consumeInt(1, 25)) {
         case 1:
