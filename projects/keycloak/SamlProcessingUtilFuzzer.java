@@ -50,13 +50,17 @@ public class SamlProcessingUtilFuzzer {
       switch (choice) {
         case 1:
           JAXBUtil.getValidatingMarshaller(name, schema);
+          break;
         case 2:
           JAXBUtil.getMarshaller(name);
+          break;
         case 3:
           JAXBUtil.getUnmarshaller(name);
+          break;
         case 4:
           String[] schemaArray = (String[]) schemas.toArray();
           JAXBUtil.getValidatingUnmarshaller(names, schemaArray);
+          break;
       }
     } catch (JAXBException | RuntimeException | SAXException | IOException e) {
       // Known exception

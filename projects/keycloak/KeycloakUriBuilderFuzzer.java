@@ -29,16 +29,22 @@ public class KeycloakUriBuilderFuzzer {
       switch (data.consumeInt(1, 6)) {
         case 1:
       	  KeycloakUriBuilder.fromUri(new URI(string));
+          break;
 	case 2:
 	  KeycloakUriBuilder.fromUri(string);
+          break;
 	case 3:
 	  KeycloakUriBuilder.fromPath(string);
+          break;
 	case 4:
 	  KeycloakUriBuilder.fromTemplate(string);
+          break;
 	case 5:
 	  KeycloakUriBuilder.compare(string, string);
+          break;
 	case 6:
 	  KeycloakUriBuilder.relativize(new URI(string), new URI(string));
+          break;
       }
 
       // Create and configure KeycloakUriBuilder object
@@ -47,16 +53,22 @@ public class KeycloakUriBuilderFuzzer {
       switch (data.consumeInt(1, 6)) {
         case 1:
           builder = builder.schemeSpecificPart(string2);
+          break;
 	case 2:
 	  builder = builder.userInfo(string2);
+          break;
 	case 3:
 	  builder = builder.host(string2);
+          break;
 	case 4:
 	  builder = builder.replaceMatrix(string2);
+          break;
 	case 5:
 	  builder = builder.replaceQuery(string2);
+          break;
 	case 6:
 	  builder = builder.fragment(string2);
+          break;
       }
 
       // Call build to build the target URI

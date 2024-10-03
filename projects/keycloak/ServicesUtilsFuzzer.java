@@ -80,6 +80,7 @@ public class ServicesUtilsFuzzer {
 
           // Call target method
           CRLUtils.check(certs, crl, session);
+          break;
         case 2:
           // Create and mock GroupModel instance with random data
           GroupModel group = Mockito.mock(GroupModel.class);
@@ -135,20 +136,25 @@ public class ServicesUtilsFuzzer {
               throw e;
             }
           }
+          break;
         case 3:
           // Call target method
           RegexUtils.valueMatchesRegex(
               Pattern.quote(data.consumeString(data.consumeInt(0, 10000))),
               data.consumeRemainingAsString());
+          break;
         case 4:
           // Call target method
           SearchQueryUtils.getFields(data.consumeRemainingAsString());
+          break;
         case 5:
           // Call target method
           SearchQueryUtils.unescape(data.consumeRemainingAsString());
+          break;
         case 6:
           // Call target method
           TotpUtils.encode(data.consumeRemainingAsString());
+          break;
         case 7:
           // Create and mock UserModel instance with random data
           UserModel userModel = Mockito.mock(UserModel.class);
@@ -163,6 +169,7 @@ public class ServicesUtilsFuzzer {
 
           // Call target method
           TotpUtils.qrCode(data.consumeRemainingAsString(), realmModel, userModel);
+          break;
       }
     } catch (GeneralSecurityException | PatternSyntaxException e) {
       // Known exception

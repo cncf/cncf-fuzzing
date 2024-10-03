@@ -40,19 +40,24 @@ public class JsonSerializerDeserializerFuzzer {
       switch (data.consumeInt(1, 5)) {
         case 1:
           mapper.readValue(data.consumeRemainingAsString(), TestMapObject.class);
+          break;
         case 2:
           mapper.readValue(data.consumeRemainingAsString(), TestStringObject.class);
+          break;
         case 3:
           mapper.readValue(data.consumeRemainingAsString(), TestArrayObject.class);
+          break;
         case 4:
           TestStringObject testStringObject =
               new JsonSerializerDeserializerFuzzer.TestStringObject(
                   data.consumeRemainingAsString());
           mapper.writeValueAsString(testStringObject);
+          break;
         case 5:
           TestArrayObject testArrayObject =
               new JsonSerializerDeserializerFuzzer.TestArrayObject(data);
           mapper.writeValueAsString(testArrayObject);
+          break;
       }
     } catch (IOException e) {
       // Known exception
