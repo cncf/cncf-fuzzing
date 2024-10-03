@@ -18,7 +18,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 
 /** This fuzzer targets different methods in DefaultAuthenticationFlows */
-public class DefaultAuthenticationFlowsFuzzer {
+public class DefaultAuthFlowsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomise choice
