@@ -60,7 +60,7 @@ public class SamlXmlUtilFuzzer {
       // Generate a keypair
       KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
 
-      switch (data.consumeInt(1, 10)) {
+      switch (data.consumeInt(1, 5)) {
         case 1:
           // Initialise qname arguments
           QName elementName = new QName(data.consumeString(data.consumeInt(1, 32)));
