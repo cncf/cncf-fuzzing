@@ -14,6 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.keycloak.jose.jwk.JWKParser;
 
 /**
@@ -36,8 +37,34 @@ public class JwkParserFuzzer {
       } else {
         parser.isKeyTypeSupported(data.consumeString(data.consumeInt(0, 10000)));
       }
-    } catch (RuntimeException e) {
+    } catch (IllegalArgumentException | IllegalStateException e) {
       // Known exception
+    } catch (RuntimeException e) {
+      if (!isExpectedException(e)) {
+        throw e;
+      }
+    }
+  }
+
+  private static Boolean isExpectedException(Throwable exc) {
+    Class[] expectedExceptions = {JsonProcessingException.class};
+
+    // Check if it is an expected RuntimeException
+    if (exc.getMessage().contains("Unsupported keyType")) {
+      return true;
+    }
+
+    // Check if the exceptions wrapped are expected exceptions
+    Throwable cause = exc.getCause();
+    if (cause == null) {
+      return false;
+    } else {
+      for (Class cls:expectedExceptions) {
+        if (cls.isInstance(cause)) {
+          return true;
+        }
+      }
+      return isExpectedException(cause);
     }
   }
 }
