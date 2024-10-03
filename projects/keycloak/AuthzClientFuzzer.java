@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.apache.http.client.ClientProtocolException;
 import org.keycloak.authorization.client.AuthzClient;
 
 /**
@@ -109,9 +110,28 @@ public class AuthzClientFuzzer {
           break;
       }
     } catch (RuntimeException e) {
-      // Known exception thrown directly from method above.
+      if (!isExpectedException(e)) {
+        throw e;
+      }
     } finally {
       BaseHelper.cleanMockObject();
+    }
+  }
+
+  private static Boolean isExpectedException(Throwable exc) {
+    Class[] expectedExceptions = {ClientProtocolException.class};
+
+    // Check if the exceptions wrapped are expected exceptions
+    Throwable cause = exc.getCause();
+    if (cause == null) {
+      return false;
+    } else {
+      for (Class cls:expectedExceptions) {
+        if (cls.isInstance(cause)) {
+          return true;
+        }
+      }
+      return isExpectedException(cause);
     }
   }
 }
