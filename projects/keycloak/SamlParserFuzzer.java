@@ -109,7 +109,7 @@ public class SamlParserFuzzer {
       // instance and run the parse method with the
       // random data provided by the XMLEventReader
       // object created above
-      switch (data.consumeInt(1, 10)) {
+      switch (data.consumeInt(1, 73)) {
         case 1:
           parser = HttpClientParser.getInstance();
           break;
