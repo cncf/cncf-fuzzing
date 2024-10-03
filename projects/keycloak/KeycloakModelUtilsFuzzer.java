@@ -15,6 +15,7 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import java.util.Collections;
+import org.keycloak.common.util.PemException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -98,9 +99,28 @@ public class KeycloakModelUtilsFuzzer {
               BaseHelper.createAuthenticationFlowContext(data).getTopLevelFlow());
       }
     } catch (RuntimeException e) {
-      // Known exception
+      if (!isExpectedException(e)) {
+        throw e;
+      }
     } finally {
       BaseHelper.cleanMockObject();
+    }
+  }
+
+  private static Boolean isExpectedException(Throwable exc) {
+    Class[] expectedExceptions = {PemException.class};
+
+    // Check if the exceptions wrapped are expected exceptions
+    Throwable cause = exc.getCause();
+    if (cause == null) {
+      return false;
+    } else {
+      for (Class cls:expectedExceptions) {
+        if (cls.isInstance(cause)) {
+          return true;
+        }
+      }
+      return isExpectedException(cause);
     }
   }
 }
