@@ -15,6 +15,12 @@
 ///////////////////////////////////////////////////////////////////////////
 import com.code_intelligence.jazzer.api.FuzzedDataProvider;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.ECGenParameterSpec;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,9 +30,11 @@ import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
 import org.keycloak.crypto.AesGcmContentEncryptionProvider;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.ECDSAAlgorithm;
 import org.keycloak.crypto.ECDSAClientSignatureVerifierProvider;
 import org.keycloak.crypto.ECDSASignatureProvider;
 import org.keycloak.crypto.KeyUse;
@@ -34,7 +42,9 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.MacSecretClientSignatureVerifierProvider;
 import org.keycloak.crypto.MacSecretSignatureProvider;
 import org.keycloak.crypto.RsaCekManagementProvider;
+import org.keycloak.crypto.SignatureException;
 import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -54,12 +64,19 @@ public class ServicesJwsFuzzer {
   private static RealmModel realmModel;
   private static KeycloakSession session;
   private static DefaultTokenManager manager;
-  private static Token token;
 
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      mockObjectInstance();
+      mockObjectInstance(data);
       randomizeObjectInstance(data);
+
+      // Create Token instance
+      Token token = new Token() {
+        @Override
+        public TokenCategory getCategory() {
+          return data.pickValue(EnumSet.allOf(TokenCategory.class));
+        }
+      };
 
       // Randomly execute one of the method in DefaultTokenManager
       switch (data.consumeInt(1, 8)) {
@@ -113,12 +130,6 @@ public class ServicesJwsFuzzer {
           manager.initLogoutToken(clientModel, userModel, sessionModel);
           break;
       }
-    } catch (NullPointerException e) {
-      // Handle the case when the execution environment don't have any profile instance
-      if (!e.toString()
-          .contains("the return value of \"org.keycloak.common.Profile.getInstance()\" is null")) {
-        throw e;
-      }
     } catch (RuntimeException e) {
       if (!isExpectedException(e)) {
         throw e;
@@ -128,24 +139,49 @@ public class ServicesJwsFuzzer {
     }
   }
 
-  private static void mockObjectInstance() {
+  private static void mockObjectInstance(FuzzedDataProvider data) {
     // Create and mock Client Model instance
     clientModel = Mockito.mock(ClientModel.class);
 
     // Create and mock Realm Model instance
     realmModel = Mockito.mock(RealmModel.class);
 
+    // Create sample KeyWrapper object
+    KeyWrapper keyWrapper = new KeyWrapper();
+    String[] allAlgorithm = {
+        Algorithm.HS256, Algorithm.HS384, Algorithm.HS512,
+        Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
+        Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+        Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+        Algorithm.RSA1_5, Algorithm.AES
+    };
+    keyWrapper.setAlgorithm(data.pickValue(allAlgorithm));
+
+    try {
+      String[] ecDomain = {"secp256r1", "secp384r1", "secp512r1"};
+      KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+      SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
+      ECGenParameterSpec ecSpec = new ECGenParameterSpec(data.pickValue(ecDomain));
+      keyGen.initialize(ecSpec, randomGen);
+      KeyPair keyPair = keyGen.generateKeyPair();
+      keyWrapper.setPublicKey(keyPair.getPublic());
+      keyWrapper.setPrivateKey(keyPair.getPrivate());
+      keyWrapper.setUse(KeyUse.SIG);
+    } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
+      //Known exceptions, igonre key generation
+    }
+
     // Create and mock Key Manager instance
     KeyManager keyManager = Mockito.mock(KeyManager.class);
     Stream.Builder<KeyWrapper> builder = Stream.builder();
     Mockito.when(keyManager.getKeysStream(Mockito.any(RealmModel.class)))
-        .thenReturn(builder.add(new KeyWrapper()).build());
+        .thenReturn(builder.add(keyWrapper).build());
     Mockito.when(
             keyManager.getActiveKey(
                 Mockito.any(RealmModel.class),
                 Mockito.any(KeyUse.class),
                 Mockito.any(String.class)))
-        .thenReturn(new KeyWrapper());
+        .thenReturn(keyWrapper);
 
     // Create and mock KeycloakContext
     KeycloakContext keycloakContext = Mockito.mock(KeycloakContext.class);
@@ -159,16 +195,12 @@ public class ServicesJwsFuzzer {
 
     // Initialize DefaultTokenManager instance
     manager = new DefaultTokenManager(session);
-
-    // Create and mock Token instance
-    token = Mockito.mock(Token.class);
   }
 
   private static void randomizeObjectInstance(FuzzedDataProvider data) {
     randomizeClientModel(data);
     randomizeRealmModel(data);
     randomizeKeycloakSession(data);
-    randomizeToken(data);
   }
 
   private static void randomizeClientModel(FuzzedDataProvider data) {
@@ -222,15 +254,13 @@ public class ServicesJwsFuzzer {
 
   private static void randomizeKeycloakSession(FuzzedDataProvider data) {
     // Randomly choose a SignatureProvider
-    Mockito.when(token.getCategory())
-        .thenReturn(data.pickValue(EnumSet.allOf(TokenCategory.class)));
     SignatureProvider signatureProvider = null;
     if (data.consumeBoolean()) {
       signatureProvider =
           new MacSecretSignatureProvider(session, data.consumeString(data.consumeInt(0, 10000)));
     } else {
-      signatureProvider =
-          new ECDSASignatureProvider(session, data.consumeString(data.consumeInt(0, 10000)));
+      signatureProvider = new ECDSASignatureProvider(
+          session, data.pickValue(EnumSet.allOf(ECDSAAlgorithm.class)).toString());
     }
 
     // Randomly choose a ClientSignatureVerifierProvider
@@ -242,23 +272,26 @@ public class ServicesJwsFuzzer {
     } else {
       clientSignatureVerifierProvider =
           new ECDSAClientSignatureVerifierProvider(
-              session, data.consumeString(data.consumeInt(0, 10000)));
+              session, data.pickValue(EnumSet.allOf(ECDSAAlgorithm.class)).toString());
     }
 
     // Create RsaCekManagementProvider instance
-    CekManagementProvider cekManagementProvider =
-        new RsaCekManagementProvider(session, data.consumeString(data.consumeInt(0, 10000)));
+    CekManagementProvider cekManagementProvider = new RsaCekManagementProvider(session, JWEConstants.RSA1_5);
 
     // Randomly choose a ContentEncryptionProvider
     ContentEncryptionProvider contentEncryptionProvider = null;
+    String[] gcmAlgorithm = {
+        JWEConstants.A128GCM, JWEConstants.A192GCM, JWEConstants.A256GCM
+    };
+    String[] cbcAlgorithm = {
+        JWEConstants.A128CBC_HS256, JWEConstants.A192CBC_HS384, JWEConstants.A256CBC_HS512
+    };
     if (data.consumeBoolean()) {
       contentEncryptionProvider =
-          new AesGcmContentEncryptionProvider(
-              session, data.consumeString(data.consumeInt(0, 10000)));
+          new AesGcmContentEncryptionProvider(session, data.pickValue(gcmAlgorithm));
     } else {
       contentEncryptionProvider =
-          new AesCbcHmacShaContentEncryptionProvider(
-              session, data.consumeString(data.consumeInt(0, 10000)));
+          new AesCbcHmacShaContentEncryptionProvider(session, data.pickValue(cbcAlgorithm));
     }
 
     // Create mock return for KeycloakSession Object
@@ -278,18 +311,12 @@ public class ServicesJwsFuzzer {
         .thenReturn(contentEncryptionProvider);
   }
 
-  private static void randomizeToken(FuzzedDataProvider data) {
-    Mockito.when(token.getCategory())
-        .thenReturn(data.pickValue(EnumSet.allOf(TokenCategory.class)));
-  }
-
   private static void cleanUpStaticMockObject() {
     // Deference the static object instance
     clientModel = null;
     realmModel = null;
     session = null;
     manager = null;
-    token = null;
 
     // Clean up inline mocks of the mock objects
     Mockito.framework().clearInlineMocks();
@@ -299,7 +326,9 @@ public class ServicesJwsFuzzer {
   }
 
   private static Boolean isExpectedException(Throwable exc) {
-    Class[] expectedExceptions = {JsonProcessingException.class};
+    Class[] expectedExceptions = {
+      JsonProcessingException.class, SignatureException.class
+    };
 
     if (exc.getMessage().contains("Bad Base64 input character")) {
       // Catch expected exceptions
