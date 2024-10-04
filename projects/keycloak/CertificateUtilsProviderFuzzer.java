@@ -109,11 +109,11 @@ public class CertificateUtilsProviderFuzzer {
               data.consumeRemainingAsString());
           break;
       }
-    } catch (Exception | NoSuchMethodError | ExceptionInInitializerError | NoClassDefFoundError e) {
+    } catch (Exception | NoSuchMethodError | ExceptionInInitializerError | NoClassDefFoundError | NoSuchFieldError e) {
       // Known exception and errors directly thrown from the above methods
       // Some methods above capture all exception and throw the general
       // Exception explicitly, thus it need to be catch.
-      // ExceptionInInitializerError and NoClassDefFoundError is caught to
+      // ExceptionInInitializerError, NoSuchFieldError and NoClassDefFoundError is caught to
       // ensure BouncyIntegration fail because of missing providers won't stop
       // the fuzzer.
     }
