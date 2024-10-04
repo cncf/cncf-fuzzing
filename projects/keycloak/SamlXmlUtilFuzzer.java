@@ -53,31 +53,33 @@ import org.xml.sax.SAXException;
 public class SamlXmlUtilFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // InitialiseKeycloakSession
+      // Initialise KeycloakSession
       BaseHelper.createKeycloakSession(data);
 
-      // Create document object
-      Document doc = null;
-
-      // Initialise a random XML Document object
-      DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-      doc = builder.parse("<saml_sample></saml_sample>");
+      // Initialise some random variable
+      Integer choice = data.consumeInt(1, 5);
+      String str1 = data.consumeString(32);
+      String str2 = data.consumeString(32);
 
       // Generate a keypair
       SecureRandom random = new SecureRandom(data.consumeBytes(2500));
       KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-      keyPairGenerator.initialize(32, random);
+      keyPairGenerator.initialize(2048, random);
       KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
       KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
       keyGenerator.init(32, random);
       SecretKey secretKey = keyGenerator.generateKey();
 
-      switch (data.consumeInt(1, 5)) {
+      // Initialise a random XML Document object
+      DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+      Document doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+
+      switch (choice) {
         case 1:
           // Initialise qname arguments
-          QName elementName = new QName(data.consumeString(data.consumeInt(1, 32)));
-          QName wrappingName = new QName(data.consumeString(data.consumeInt(1, 32)));
+          QName elementName = new QName(str1);
+          QName wrappingName = new QName(str2);
 
           // Initialise keys
           PublicKey pubKey = keyPair.getPublic();
@@ -94,11 +96,7 @@ public class SamlXmlUtilFuzzer {
           XMLEncryptionUtil.decryptElementInDocument(doc, locator);
           break;
         case 3:
-          // Initialise string
-          String referenceUri = data.consumeString(10);
-          String type = data.consumeString(10);
-
-          XMLSignatureUtil.sign(doc, "keyName", keyPair, "SHA1", "RSA_SHA1", referenceUri, type);
+          XMLSignatureUtil.sign(doc, "keyName", keyPair, "SHA1", "RSA_SHA1", str1, str2);
           break;
         case 4:
           // Initialise DefaultKeyLocator
