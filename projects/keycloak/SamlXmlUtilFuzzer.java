@@ -53,16 +53,20 @@ import org.xml.sax.SAXException;
 public class SamlXmlUtilFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Initialise KeycloakSession
-      BaseHelper.createKeycloakSession(data);
-
       // Initialise some random variable
       Integer choice = data.consumeInt(1, 5);
       String str1 = data.consumeString(32);
       String str2 = data.consumeString(32);
+      SecureRandom random = new SecureRandom(data.consumeBytes(2500));
+
+      // Initialise a random XML Document object
+      DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+      Document doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+
+      // Initialise KeycloakSession
+      BaseHelper.createKeycloakSession(data);
 
       // Generate a keypair
-      SecureRandom random = new SecureRandom(data.consumeBytes(2500));
       KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
       keyPairGenerator.initialize(2048, random);
       KeyPair keyPair = keyPairGenerator.generateKeyPair();
@@ -70,10 +74,6 @@ public class SamlXmlUtilFuzzer {
       KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
       keyGenerator.init(32, random);
       SecretKey secretKey = keyGenerator.generateKey();
-
-      // Initialise a random XML Document object
-      DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-      Document doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
 
       switch (choice) {
         case 1:
