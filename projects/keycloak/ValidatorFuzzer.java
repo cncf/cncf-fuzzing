@@ -30,14 +30,17 @@ public class ValidatorFuzzer {
       KeycloakSession session = BaseHelper.createKeycloakSession(data);
       ValidationContext context = new ValidationContext(session);
 
+      Integer choice = data.consumeInt(1, 12);
+      Integer choice2 = data.consumeInt(1, 14);
+
       // Generate random map for ValidatorConfig
       Map<String, Object> configMap = new HashMap<String, Object>();
       for (int i = 0; i < data.consumeInt(0, 5); i++) {
-        configMap.put(data.consumeString(data.consumeInt(0, 10000)), data.consumeString(data.consumeInt(0, 10000)));
+        configMap.put(data.consumeString(data.consumeInt(0, 10)), data.consumeString(data.consumeInt(0, 10)));
       }
       ValidatorConfig config = new ValidatorConfig(configMap);
 
-      switch (data.consumeInt(1, 12)) {
+      switch (choice) {
         case 1:
           validator = BuiltinValidators.notBlankValidator();
           break;
@@ -76,13 +79,27 @@ public class ValidatorFuzzer {
           break;
       }
 
-      if (data.consumeBoolean()) {
-        validator.validate(data.consumeRemainingAsString(), "Hint", context, config);
-      } else {
-        validator.validate(data.consumeRemainingAsBytes(), "Hint", context, config);
+      Object obj = null;
+      switch(choice2) {
+        case 1: obj = data.consumeBoolean(); break;
+        case 2: obj = data.consumeBooleans(5); break;
+        case 3: obj = data.consumeByte(); break;
+        case 4: obj = data.consumeRemainingAsBytes(); break;
+        case 5: obj = data.consumeShort(); break;
+        case 6: obj = data.consumeShorts(5); break;
+        case 7: obj = data.consumeInt(); break;
+        case 8: obj = data.consumeInts(5); break;
+        case 9: obj = data.consumeLong(); break;
+        case 10: obj = data.consumeLongs(5); break;
+        case 11: obj = data.consumeFloat(); break;
+        case 12: obj = data.consumeDouble(); break;
+        case 13: obj = data.consumeChar(); break;
+        case 14: obj = data.consumeRemainingAsString(); break;
       }
+      validator.validate(obj, "Hint", context, config);
     } catch (RuntimeException e) {
       // Known exception
+      throw e;
     } finally {
       BaseHelper.cleanMockObject();
     }
