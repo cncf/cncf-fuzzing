@@ -20,8 +20,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.apache.http.client.ClientProtocolException;
+import org.apache.http.ProtocolException;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.Configuration;
 
 /**
  * This fuzzer creates the keycloakJson configuration settings and fuzz the protection and
@@ -78,12 +79,11 @@ public class AuthzClientFuzzer {
       mockResponse.addHeader("Content-Type", "application/json");
       server.enqueue(mockResponse);
 
-      // Set the auth-url to the mock web server
-      String jsonString = keycloakJson.replace("SERVER_URL", serverUrl);
-
       // Create the authz client object for fuzzing
-      AuthzClient client =
-          AuthzClient.create(new ByteArrayInputStream(jsonString.getBytes(StandardCharsets.UTF_8)));
+      Configuration configuration = new Configuration();
+      configuration.setAuthServerUrl(serverUrl);
+      configuration.setRealm("oss-fuzz");
+      AuthzClient client = AuthzClient.create(configuration);
 
       // Randomly fuzz different version of the protection and authorization methods
       // with different parameter combinations
@@ -119,7 +119,7 @@ public class AuthzClientFuzzer {
   }
 
   private static Boolean isExpectedException(Throwable exc) {
-    Class[] expectedExceptions = {ClientProtocolException.class};
+    Class[] expectedExceptions = {ProtocolException.class};
 
     // Check if the exceptions wrapped are expected exceptions
     Throwable cause = exc.getCause();
