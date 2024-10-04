@@ -111,7 +111,8 @@ cp $SRC/BaseHelper*.class $OUT/
 
 for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
   if [[ "$fuzzer" == *"AuthenticatorFuzzer"* ]] || [[ "$fuzzer" == *"ValidatorFuzzer"* ]] || \
-  [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]]
+  [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]] || \
+  [[ "$fuzzer" == *"SamlXmlUtilFuzzer"* ]]
   then
     RUNTIME_CLASSPATH=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO
   elif [[ "$fuzzer" == *"JweAlgorithmProviderFuzzer"* ]]

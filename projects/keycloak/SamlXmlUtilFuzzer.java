@@ -20,13 +20,16 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.function.Consumer;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.XMLSignatureException;
@@ -35,7 +38,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.xml.security.encryption.EncryptedData;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
@@ -51,35 +53,41 @@ import org.xml.sax.SAXException;
 public class SamlXmlUtilFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
-      // Create document object
-      Document doc = null;
+      // Initialise some random variable
+      Integer choice = data.consumeInt(1, 5);
+      String str1 = data.consumeString(32);
+      String str2 = data.consumeString(32);
+      SecureRandom random = new SecureRandom(data.consumeBytes(2500));
 
       // Initialise a random XML Document object
       DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+      Document doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+
+      // Initialise KeycloakSession
+      BaseHelper.createKeycloakSession(data);
 
       // Generate a keypair
-      KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+      keyPairGenerator.initialize(2048, random);
+      KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
-      switch (data.consumeInt(1, 10)) {
+      KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
+      keyGenerator.init(32, random);
+      SecretKey secretKey = keyGenerator.generateKey();
+
+      switch (choice) {
         case 1:
           // Initialise qname arguments
-          QName elementName = new QName(data.consumeString(data.consumeInt(1, 32)));
-          QName wrappingName = new QName(data.consumeString(data.consumeInt(1, 32)));
+          QName elementName = new QName(str1);
+          QName wrappingName = new QName(str2);
 
           // Initialise keys
-          SecretKey key = KeyUtils.loadSecretKey(data.consumeBytes(32), "HmacSHA256");
           PublicKey pubKey = keyPair.getPublic();
 
-          // Initialise document
-          doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-
           // Fuzz
-          XMLEncryptionUtil.encryptElement(elementName, doc, pubKey, key, 32, wrappingName, true);
+          XMLEncryptionUtil.encryptElement(elementName, doc, pubKey, secretKey, 32, wrappingName, true);
           break;
         case 2:
-          // Initialise document
-          doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-
           // Initialise DecryptionKeyLocator
           DefaultDecryptionKeyLocator locator =
               new DefaultDecryptionKeyLocator(keyPair.getPrivate());
@@ -88,22 +96,12 @@ public class SamlXmlUtilFuzzer {
           XMLEncryptionUtil.decryptElementInDocument(doc, locator);
           break;
         case 3:
-          // Initialise string
-          String referenceUri = data.consumeString(10);
-          String type = data.consumeString(10);
-
-          // Initialise document
-          doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
-
-          XMLSignatureUtil.sign(doc, "keyName", keyPair, "SHA1", "RSA_SHA1", referenceUri, type);
+          XMLSignatureUtil.sign(doc, "keyName", keyPair, "SHA1", "RSA_SHA1", str1, str2);
           break;
         case 4:
           // Initialise DefaultKeyLocator
           DefaultKeyLocator keyLocator =
-              new DefaultKeyLocator(KeyUtils.loadSecretKey(data.consumeBytes(32), "HmacSHA256"));
-
-          // Initialise document
-          doc = builder.parse(new ByteArrayInputStream(data.consumeRemainingAsBytes()));
+              new DefaultKeyLocator(secretKey);
 
           XMLSignatureUtil.validate(doc, keyLocator);
           XMLSignatureUtil.validateSingleNode(doc, keyLocator);
@@ -113,13 +111,14 @@ public class SamlXmlUtilFuzzer {
           break;
       }
     } catch (ProcessingException
-        | RuntimeException
         | IOException
         | ParserConfigurationException
         | SAXException e) {
       // Known exception
     } catch (GeneralSecurityException | MarshalException | XMLSignatureException e) {
       // Known exception
+    } finally {
+      BaseHelper.cleanMockObject();
     }
   }
 
