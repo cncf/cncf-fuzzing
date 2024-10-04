@@ -112,7 +112,6 @@ public class SamlXmlUtilFuzzer {
           XMLSignatureUtil.createKeyValue(keyPair.getPublic());
           break;
       }
-      System.out.println("ABC");
     } catch (ProcessingException
         | IOException
         | ParserConfigurationException
