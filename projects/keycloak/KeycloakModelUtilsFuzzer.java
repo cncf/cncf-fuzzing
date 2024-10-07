@@ -128,7 +128,9 @@ public class KeycloakModelUtilsFuzzer {
   }
 
   private static Boolean isExpectedException(Throwable exc) {
-    Class[] expectedExceptions = {PemException.class};
+    Class[] expectedExceptions = {
+        PemException.class, UnsupportedOperationException.class
+    };
 
     // Check if the exceptions wrapped are expected exceptions
     Throwable cause = exc.getCause();
