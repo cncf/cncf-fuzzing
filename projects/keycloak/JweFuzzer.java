@@ -114,8 +114,10 @@ public class JweFuzzer {
       // Call the deserializeCEK methods from JWEEncryptionProvider objects
       achsjeProvider.deserializeCEK(keyStorage);
       agjeProvider.deserializeCEK(keyStorage);
-    } catch (JWEException | IOException | GeneralSecurityException | IllegalArgumentException e) {
+    } catch (JWEException | IOException | GeneralSecurityException e) {
       // Known exception
+    } catch (IllegalArgumentException | IllegalStateException e) {
+      // Known RuntimeException
     }
   }
 }
