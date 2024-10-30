@@ -3,10 +3,10 @@ set -o pipefail
 set -o errexit
 set -x
 
-cp $SRC/cncf-fuzzing/projects/kubeedge/lane_fuzzer.go $SRC/kubeedge/staging/src/github.com/kubeedge/viaduct/pkg/lane/
-cd $SRC/kubeedge/staging/src/github.com/kubeedge/viaduct
-sed '94d' -i $SRC/kubeedge/staging/src/github.com/kubeedge/viaduct/pkg/translator/message.go
-compile_go_fuzzer github.com/kubeedge/viaduct/pkg/lane FuzzLaneReadMessage fuzz_lane_read_message
+cp $SRC/cncf-fuzzing/projects/kubeedge/lane_fuzzer.go $SRC/kubeedge/pkg/viaduct/pkg/lane/
+cd $SRC/kubeedge/pkg/viaduct
+sed '94d' -i $SRC/kubeedge/pkg/viaduct/pkg/translator/message.go
+compile_go_fuzzer github.com/kubeedge/kubeedge/pkg/viaduct/pkg/lane FuzzLaneReadMessage fuzz_lane_read_message
 
 cp $SRC/cncf-fuzzing/projects/kubeedge/dtmanager_fuzzer.go $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/
 mv $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/twin_test.go $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/twint_test_fuzz.go
