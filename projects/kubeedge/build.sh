@@ -6,6 +6,7 @@ set -x
 cp $SRC/cncf-fuzzing/projects/kubeedge/lane_fuzzer.go $SRC/kubeedge/pkg/viaduct/pkg/lane/
 cd $SRC/kubeedge/pkg/viaduct
 sed '94d' -i $SRC/kubeedge/pkg/viaduct/pkg/translator/message.go
+go mod tidy && GOWORK=off go mod vendor
 compile_go_fuzzer github.com/kubeedge/kubeedge/pkg/viaduct/pkg/lane FuzzLaneReadMessage fuzz_lane_read_message
 
 cp $SRC/cncf-fuzzing/projects/kubeedge/dtmanager_fuzzer.go $SRC/kubeedge/edge/pkg/devicetwin/dtmanager/

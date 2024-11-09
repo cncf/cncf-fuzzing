@@ -20,9 +20,9 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/golang/mock/gomock"
 	"github.com/kubeedge/beehive/pkg/core/model"
-	"github.com/kubeedge/viaduct/mocks"
-	"github.com/kubeedge/viaduct/pkg/packer"
-	"github.com/kubeedge/viaduct/pkg/translator"
+	"github.com/kubeedge/kubeedge/pkg/viaduct/mocks"
+	"github.com/kubeedge/kubeedge/pkg/viaduct/pkg/packer"
+	"github.com/kubeedge/kubeedge/pkg/viaduct/pkg/translator"
 )
 
 var mockFuzzStream *mocks.MockStream
