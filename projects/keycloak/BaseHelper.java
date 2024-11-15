@@ -88,10 +88,8 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.jpa.JpaUserProvider;
 import org.keycloak.models.jpa.JpaUserProviderFactory;
 import org.keycloak.models.sessions.infinispan.AuthenticationSessionAdapter;
-import org.keycloak.models.sessions.infinispan.RootAuthenticationSessionAdapter;
 import org.keycloak.models.sessions.infinispan.SessionEntityUpdater;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
-import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -751,13 +749,14 @@ public class BaseHelper {
 
       session = createKeycloakSession(data);
       realm = createRealmModel(data);
-      RootAuthenticationSessionAdapter rootSessionModel =
-          new RootAuthenticationSessionAdapter(
+      sessionModel =
+          new AuthenticationSessionAdapter(
               session,
-              new SessionEntityUpdater<RootAuthenticationSessionEntity>() {
+              null,
+              new SessionEntityUpdater<AuthenticationSessionEntity>() {
                 @Override
-                public RootAuthenticationSessionEntity getEntity() {
-                  return new RootAuthenticationSessionEntity("default");
+                public AuthenticationSessionEntity getEntity() {
+                  return new AuthenticationSessionEntity();
                 }
 
                 @Override
@@ -770,12 +769,7 @@ public class BaseHelper {
                   // Do nothing
                 }
               },
-              realm,
-              10);
-      sessionModel =
-          new AuthenticationSessionAdapter(
-              session, rootSessionModel, "default", new AuthenticationSessionEntity());
-
+              "default");
       form = Mockito.mock(LoginFormsProvider.class);
       flow = Mockito.mock(AuthenticationFlowModel.class);
       Mockito.doReturn(data.consumeString(8)).when(flow).getId();
