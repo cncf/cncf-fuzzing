@@ -29,6 +29,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"testing"
 
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
@@ -37,61 +38,61 @@ import (
 	v2 "github.com/distribution/distribution/v3/registry/api/v2"
 	_ "github.com/distribution/distribution/v3/registry/storage/driver/inmemory"
 	"github.com/distribution/reference"
-	"github.com/docker/libtrust"
 )
 
 func init() {
 	logrus.SetLevel(logrus.PanicLevel)
 }
-func FuzzApp(data []byte) int {
-	config := configuration.Configuration{
-		Storage: configuration.Storage{
-			"inmemory": configuration.Parameters{},
-			"maintenance": configuration.Parameters{"uploadpurging": map[interface{}]interface{}{
-				"enabled": false,
-			}},
-		},
-	}
-	config.HTTP.Prefix = "/test/"
-	config.HTTP.Headers = headerConfig
 
-	logFile, err := os.OpenFile("/tmp/text.log",
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return 0
-	}
-	defer logFile.Close()
+func FuzzApp(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		config := configuration.Configuration{
+			Storage: configuration.Storage{
+				"inmemory": configuration.Parameters{},
+				"maintenance": configuration.Parameters{"uploadpurging": map[interface{}]interface{}{
+					"enabled": false,
+				}},
+			},
+		}
+		config.HTTP.Prefix = "/test/"
+		config.HTTP.Headers = headerConfig
 
-	env, err := newFuzzEnvWithConfig(&config, logFile)
-	if err != nil {
-		return 0
-	}
-	defer env.Shutdown()
-	ref, _ := reference.WithName("foo/bar")
-	uploadURLBaseAbs, _, err := startFuzzPushLayer(env, ref)
-	if err != nil || uploadURLBaseAbs == "" {
-		return 0
-	}
+		logFile, err := os.OpenFile("/tmp/text.log",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return
+		}
+		defer logFile.Close()
 
-	baseURL, err := env.builder.BuildBaseURL()
-	if err != nil {
-		return 0
-	}
+		env, err := newFuzzEnvWithConfig(&config, logFile)
+		if err != nil {
+			return
+		}
+		defer env.Shutdown()
+		ref, _ := reference.WithName("foo/bar")
+		uploadURLBaseAbs, _, err := startFuzzPushLayer(env, ref)
+		if err != nil || uploadURLBaseAbs == "" {
+			return
+		}
 
-	parsed, _ := url.Parse(baseURL)
-	if !strings.HasPrefix(parsed.Path, config.HTTP.Prefix) || err != nil {
-		return 0
-	}
+		baseURL, err := env.builder.BuildBaseURL()
+		if err != nil {
+			return
+		}
 
-	dgst := digest.FromBytes(data)
+		parsed, _ := url.Parse(baseURL)
+		if !strings.HasPrefix(parsed.Path, config.HTTP.Prefix) || err != nil {
+			return
+		}
 
-	resp, err := doPushLayerFuzz(ref, dgst, uploadURLBaseAbs, bytes.NewReader(data))
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
+		dgst := digest.FromBytes(data)
 
-	return 1
+		resp, err := doPushLayerFuzz(ref, dgst, uploadURLBaseAbs, bytes.NewReader(data))
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+	})
 }
 
 func newFuzzEnvWithConfig(config *configuration.Configuration, logFile *os.File) (*testEnv, error) {
@@ -106,13 +107,7 @@ func newFuzzEnvWithConfig(config *configuration.Configuration, logFile *os.File)
 		return nil, err
 	}
 
-	pk, err := libtrust.GenerateECP256PrivateKey()
-	if err != nil {
-		return nil, err
-	}
-
 	return &testEnv{
-		pk:      pk,
 		ctx:     ctx,
 		config:  *config,
 		app:     app,

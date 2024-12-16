@@ -15,7 +15,12 @@
 
 package challenge
 
-func FuzzParseValueAndParams(data []byte) int {
-	_, _ = parseValueAndParams(string(data))
-	return 1
+import (
+	"testing"
+)
+
+func FuzzParseValueAndParams(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		_, _ = parseValueAndParams(string(data))
+	})
 }

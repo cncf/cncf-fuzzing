@@ -44,19 +44,20 @@ func init() {
 	testing.Init()
 }
 
-func FuzzFR(data []byte) int {
-	dir, err := ioutil.TempDir(".", "test-dir-")
-	if err != nil {
-		return 0
-	}
-	defer os.RemoveAll(dir)
-	driver := inmemory.New()
-	fr, err := newFileReader(context.Background(), driver, dir, 10)
-	if err != nil {
-		return 0
-	}
-	_, _ = fr.Read(data)
-	return 0
+func FuzzFR(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		dir, err := ioutil.TempDir(".", "test-dir-")
+		if err != nil {
+			return
+		}
+		defer os.RemoveAll(dir)
+		driver := inmemory.New()
+		fr, err := newFileReader(context.Background(), driver, dir, 10)
+		if err != nil {
+			return
+		}
+		_, _ = fr.Read(data)
+	})
 }
 
 // CreateRandomTarFile creates a random tarfile, returning it as an
@@ -148,96 +149,97 @@ func seekerSizeFuzz(seeker io.ReadSeeker) (int64, error) {
 	return end, nil
 }
 
-func FuzzBlob(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	randomDataReader, dgst, err := CreateRandomTarFile(f)
-	if err != nil {
-		return 0
-	}
-	ctx := context.Background()
-	imageName, _ := reference.WithName("foo/bar")
-	driver := inmemory.New()
-	registry, err := NewRegistry(ctx, driver, BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider(memory.UnlimitedSize)), EnableDelete, EnableRedirect)
-	if err != nil {
-		return 0
-	}
-	repository, err := registry.Repository(ctx, imageName)
-	if err != nil {
-		return 0
-	}
-	bs := repository.Blobs(ctx)
+func FuzzBlob(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		fdp := fuzz.NewConsumer(data)
+		randomDataReader, dgst, err := CreateRandomTarFile(fdp)
+		if err != nil {
+			return
+		}
+		ctx := context.Background()
+		imageName, _ := reference.WithName("foo/bar")
+		driver := inmemory.New()
+		registry, err := NewRegistry(ctx, driver, BlobDescriptorCacheProvider(memory.NewInMemoryBlobDescriptorCacheProvider(memory.UnlimitedSize)), EnableDelete, EnableRedirect)
+		if err != nil {
+			return
+		}
+		repository, err := registry.Repository(ctx, imageName)
+		if err != nil {
+			return
+		}
+		bs := repository.Blobs(ctx)
 
-	h := sha256.New()
-	rd := io.TeeReader(randomDataReader, h)
+		h := sha256.New()
+		rd := io.TeeReader(randomDataReader, h)
 
-	blobUpload, err := bs.Create(ctx)
-	if err != nil {
-		return 0
-	}
+		blobUpload, err := bs.Create(ctx)
+		if err != nil {
+			return
+		}
 
-	// Get the size of our random tarfile
-	randomDataSize, err := seekerSizeFuzz(randomDataReader)
-	if err != nil {
-		return 0
-	}
+		// Get the size of our random tarfile
+		randomDataSize, err := seekerSizeFuzz(randomDataReader)
+		if err != nil {
+			return
+		}
 
-	nn, err := io.Copy(blobUpload, rd)
-	if err != nil {
-		return 0
-	}
+		nn, err := io.Copy(blobUpload, rd)
+		if err != nil {
+			return
+		}
 
-	if nn != randomDataSize {
-		panic(fmt.Sprintf(("layer data write incomplete")))
-	}
+		if nn != randomDataSize {
+			panic(fmt.Sprintf(("layer data write incomplete")))
+		}
 
-	blobUpload.Close()
+		blobUpload.Close()
 
-	offset := blobUpload.Size()
-	if offset != nn {
-		return 0
-	}
+		offset := blobUpload.Size()
+		if offset != nn {
+			return
+		}
 
-	// Do a resume, for good fun
-	blobUpload, err = bs.Resume(ctx, blobUpload.ID())
-	if err != nil {
-		return 0
-	}
+		// Do a resume, for good fun
+		blobUpload, err = bs.Resume(ctx, blobUpload.ID())
+		if err != nil {
+			return
+		}
 
-	_, err = blobUpload.Commit(ctx, distribution.Descriptor{Digest: dgst})
-	if err != nil {
-		return 0
-	}
-	return 1
+		_, err = blobUpload.Commit(ctx, distribution.Descriptor{Digest: dgst})
+		if err != nil {
+			return
+		}
+	})
 }
 
-func FuzzSchema2ManifestHandler(data []byte) int {
-	t := &testing.T{}
-	f := fuzz.NewConsumer(data)
-	m := schema2.Manifest{}
-	err := f.GenerateStruct(&m)
-	if err != nil {
-		return 0
-	}
-	dm, err := schema2.FromStruct(m)
-	if err != nil {
-		fmt.Println(err)
-		return 0
-	}
+func FuzzSchema2ManifestHandler(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		fdp := fuzz.NewConsumer(data)
+		m := schema2.Manifest{}
+		err := fdp.GenerateStruct(&m)
+		if err != nil {
+			return
+		}
+		dm, err := schema2.FromStruct(m)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-	ctx := context.Background()
-	_ = ctx
-	inmemoryDriver := inmemory.New()
-	registry := createRegistry(t, inmemoryDriver,
-		ManifestURLsAllowRegexp(regexp.MustCompile("^https?://foo")),
-		ManifestURLsDenyRegexp(regexp.MustCompile("^https?://foo/nope")))
-	repo := makeRepository(t, registry, "test")
-	manifestService := makeManifestService(t, repo)
-	_ = manifestService
-	_, err = manifestService.Put(ctx, dm)
-	if err != nil {
+		ctx := context.Background()
+		_ = ctx
+		inmemoryDriver := inmemory.New()
+		registry := createRegistry(t, inmemoryDriver,
+			ManifestURLsAllowRegexp(regexp.MustCompile("^https?://foo")),
+			ManifestURLsDenyRegexp(regexp.MustCompile("^https?://foo/nope")))
+		repo := makeRepository(t, registry, "test")
+		manifestService := makeManifestService(t, repo)
+		_ = manifestService
+		_, err = manifestService.Put(ctx, dm)
+		if err != nil {
 
-	}
-	return 1
+		}
+	})
 }
 
 // CreateRandomLayers returns a map of n digests. We don't particularly care
@@ -255,91 +257,89 @@ func CreateRandomLayersFuzz(n int, f *fuzz.ConsumeFuzzer) (map[digest.Digest]io.
 	return digestMap, nil
 }
 
-func FuzzMarkAndSweep(data []byte) int {
-	f := fuzz.NewConsumer(data)
+func FuzzMarkAndSweep(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		fdp := fuzz.NewConsumer(data)
 
-	// Create random layers
-	randomLayers1, err := CreateRandomLayersFuzz(3, f)
-	if err != nil {
-		return 0
-	}
+		// Create random layers
+		randomLayers1, err := CreateRandomLayersFuzz(3, fdp)
+		if err != nil {
+			return
+		}
 
-	randomLayers2, err := CreateRandomLayersFuzz(3, f)
-	if err != nil {
-		return 0
-	}
+		randomLayers2, err := CreateRandomLayersFuzz(3, fdp)
+		if err != nil {
+			return
+		}
+		ctx := context.Background()
+		inmemoryDriver := inmemory.New()
 
-	t := &testing.T{}
-	ctx := context.Background()
-	inmemoryDriver := inmemory.New()
+		registry := createRegistry(t, inmemoryDriver)
+		repo := makeRepository(t, registry, "deletemanifests")
+		manifestService, _ := repo.Manifests(ctx)
 
-	registry := createRegistry(t, inmemoryDriver)
-	repo := makeRepository(t, registry, "deletemanifests")
-	manifestService, _ := repo.Manifests(ctx)
+		// Upload all layers
+		err = testutil.UploadBlobs(repo, randomLayers1)
+		if err != nil {
+			return
+		}
 
-	// Upload all layers
-	err = testutil.UploadBlobs(repo, randomLayers1)
-	if err != nil {
-		return 0
-	}
+		err = testutil.UploadBlobs(repo, randomLayers2)
+		if err != nil {
+			return
+		}
 
-	err = testutil.UploadBlobs(repo, randomLayers2)
-	if err != nil {
-		return 0
-	}
+		// Construct manifests
+		manifest1, err := testutil.MakeSchema2Manifest(repo, getKeys(randomLayers1))
+		if err != nil {
+			return
+		}
 
-	// Construct manifests
-	manifest1, err := testutil.MakeSchema1Manifest(getKeys(randomLayers1))
-	if err != nil {
-		return 0
-	}
+		manifest2, err := testutil.MakeSchema2Manifest(repo, getKeys(randomLayers2))
+		if err != nil {
+			return
+		}
 
-	manifest2, err := testutil.MakeSchema1Manifest(getKeys(randomLayers2))
-	if err != nil {
-		return 0
-	}
+		_, err = manifestService.Put(ctx, manifest1)
+		if err != nil {
+			return
+		}
 
-	_, err = manifestService.Put(ctx, manifest1)
-	if err != nil {
-		return 0
-	}
+		_, err = manifestService.Put(ctx, manifest2)
+		if err != nil {
+			return
+		}
 
-	_, err = manifestService.Put(ctx, manifest2)
-	if err != nil {
-		return 0
-	}
+		manifestEnumerator, _ := manifestService.(distribution.ManifestEnumerator)
+		manifestEnumerator.Enumerate(ctx, func(dgst digest.Digest) error {
+			repo.Tags(ctx).Tag(ctx, "test", distribution.Descriptor{Digest: dgst})
+			return nil
+		})
 
-	manifestEnumerator, _ := manifestService.(distribution.ManifestEnumerator)
-	manifestEnumerator.Enumerate(ctx, func(dgst digest.Digest) error {
-		repo.Tags(ctx).Tag(ctx, "test", distribution.Descriptor{Digest: dgst})
-		return nil
+		before1 := allBlobs(t, registry)
+		before2 := allManifests(t, manifestService)
+
+		// run GC with dry-run (should not remove anything)
+		err = MarkAndSweep(context.Background(), inmemoryDriver, registry, GCOpts{
+			DryRun:         true,
+			RemoveUntagged: true,
+		})
+		if err != nil {
+			panic(err)
+		}
+		afterDry1 := allBlobs(t, registry)
+		afterDry2 := allManifests(t, manifestService)
+		if len(before1) != len(afterDry1) {
+			panic(fmt.Sprintf("Garbage collection affected blobs storage: %d != %d\n", len(before1), len(afterDry1)))
+		}
+		if len(before2) != len(afterDry2) {
+			panic(fmt.Sprintf("Garbage collection affected manifest storage: %d != %d", len(before2), len(afterDry2)))
+		}
+
+		// Run GC (removes everything because no manifests with tags exist)
+		_ = MarkAndSweep(context.Background(), inmemoryDriver, registry, GCOpts{
+			DryRun:         false,
+			RemoveUntagged: true,
+		})
 	})
-
-	before1 := allBlobs(t, registry)
-	before2 := allManifests(t, manifestService)
-
-	// run GC with dry-run (should not remove anything)
-	err = MarkAndSweep(context.Background(), inmemoryDriver, registry, GCOpts{
-		DryRun:         true,
-		RemoveUntagged: true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	afterDry1 := allBlobs(t, registry)
-	afterDry2 := allManifests(t, manifestService)
-	if len(before1) != len(afterDry1) {
-		panic(fmt.Sprintf("Garbage collection affected blobs storage: %d != %d\n", len(before1), len(afterDry1)))
-	}
-	if len(before2) != len(afterDry2) {
-		panic(fmt.Sprintf("Garbage collection affected manifest storage: %d != %d", len(before2), len(afterDry2)))
-	}
-
-	// Run GC (removes everything because no manifests with tags exist)
-	_ = MarkAndSweep(context.Background(), inmemoryDriver, registry, GCOpts{
-		DryRun:         false,
-		RemoveUntagged: true,
-	})
-
-	return 1
 }

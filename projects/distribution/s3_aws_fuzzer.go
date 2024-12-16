@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http/httptest"
+	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -61,107 +62,102 @@ func newS3DriverForFuzzing(rootDir string) *Driver {
 	}
 }
 
-func FuzzS3Driver(data []byte) int {
-	availablePaths = make([]string, 0)
-	f := fuzz.NewConsumer(data)
+func FuzzS3Driver(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		availablePaths = make([]string, 0)
+		fdp := fuzz.NewConsumer(data)
 
-	backend := s3mem.New()
-	faker := gofakes3.New(backend)
-	ts := httptest.NewServer(faker.Server())
-	defer ts.Close()
+		backend := s3mem.New()
+		faker := gofakes3.New(backend)
+		ts := httptest.NewServer(faker.Server())
+		defer ts.Close()
 
-	s3Config := &aws.Config{
-		Credentials:      credentials.NewStaticCredentials("YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", ""),
-		Endpoint:         aws.String(ts.URL),
-		Region:           aws.String("eu-central-1"),
-		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(true),
-	}
-	newSession := session.New(s3Config)
+		s3Config := &aws.Config{
+			Credentials:      credentials.NewStaticCredentials("YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", ""),
+			Endpoint:         aws.String(ts.URL),
+			Region:           aws.String("eu-central-1"),
+			DisableSSL:       aws.Bool(true),
+			S3ForcePathStyle: aws.Bool(true),
+		}
+		newSession := session.New(s3Config)
 
-	s3Client := s3.New(newSession)
-	cparams := &s3.CreateBucketInput{
-		Bucket: aws.String("newbucket"),
-	}
+		s3Client := s3.New(newSession)
+		cparams := &s3.CreateBucketInput{
+			Bucket: aws.String("newbucket"),
+		}
 
-	// Create a new bucket using the CreateBucket call.
-	_, err := s3Client.CreateBucket(cparams)
-	if err != nil {
-		return 0
-	}
-	dr := &driver{
-		S3:                          s3Client,
-		Bucket:                      "newbucket",
-		MultipartCopyChunkSize:      int64(defaultMultipartCopyChunkSize),
-		MultipartCopyMaxConcurrency: int64(defaultMultipartCopyMaxConcurrency),
-		MultipartCopyThresholdSize:  int64(defaultMultipartCopyThresholdSize),
-	}
+		// Create a new bucket using the CreateBucket call.
+		_, err := s3Client.CreateBucket(cparams)
+		if err != nil {
+			return
+		}
+		dr := &driver{
+			S3:                          s3Client,
+			Bucket:                      "newbucket",
+			MultipartCopyChunkSize:      int64(defaultMultipartCopyChunkSize),
+			MultipartCopyMaxConcurrency: int64(defaultMultipartCopyMaxConcurrency),
+			MultipartCopyThresholdSize:  int64(defaultMultipartCopyThresholdSize),
+		}
 
-	d := &Driver{
-		baseEmbed: baseEmbed{
-			Base: base.Base{
-				StorageDriver: dr,
+		d := &Driver{
+			baseEmbed: baseEmbed{
+				Base: base.Base{
+					StorageDriver: dr,
+				},
 			},
-		},
-	}
+		}
 
-	err = doRandomOperationts(d, f)
-	if err != nil {
-		return 0
-	}
-
-	return 1
+		err = doRandomOperationts(d, fdp)
+		if err != nil {
+			return
+		}
+	})
 }
 
-func doRandomOperationts(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	noOfOperations, err := f.GetInt()
+func doRandomOperationts(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	noOfOperations, err := fdp.GetInt()
 	if err != nil {
 		return err
 	}
 	maxOperations := noOfOperations % 100
 	noOfOps := 8
 	for i := 0; i < maxOperations; i++ {
-		op, err := f.GetInt()
+		op, err := fdp.GetInt()
 		if err != nil {
 			return err
 		}
 		if op%noOfOps == 0 {
-			err = putContentFuzz(d, f)
+			err = putContentFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
 		} else if op%noOfOps == 1 {
-			err = doWalkFuzz(d, f)
+			err = doWalkFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
 		} else if op%noOfOps == 2 {
-			err = URLForFuzz(d, f)
+			err = doWriteFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
 		} else if op%noOfOps == 3 {
-			err = doWriteFuzz(d, f)
+			err = doStatFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
 		} else if op%noOfOps == 4 {
-			err = doStatFuzz(d, f)
+			err = doMoveFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
 		} else if op%noOfOps == 5 {
-			err = doMoveFuzz(d, f)
+			err = doDeleteFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
 		} else if op%noOfOps == 6 {
-			err = doDeleteFuzz(d, f)
-			if err != nil {
-				return err
-			}
-		} else if op%noOfOps == 7 {
-			err = doListFuzz(d, f)
+			err = doListFuzz(d, fdp)
 			if err != nil {
 				return err
 			}
@@ -170,19 +166,19 @@ func doRandomOperationts(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func putContentFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	putContent, err := f.GetBytes()
+func putContentFuzz(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	putContent, err := fdp.GetBytes()
 	if err != nil {
 		return err
 	}
-	pathLength, err := f.GetInt()
+	pathLength, err := fdp.GetInt()
 	if err != nil {
 		return err
 	}
 	if pathLength%100 == 0 {
 		return errors.New("Too short path")
 	}
-	path, err := f.GetStringFrom("abcdefghijklmnopqrstuvwxyz123456789-.", pathLength%100)
+	path, err := fdp.GetStringFrom("abcdefghijklmnopqrstuvwxyz123456789-.", pathLength%100)
 	if err != nil {
 		return err
 	}
@@ -206,27 +202,15 @@ func doWalkFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func URLForFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := getAvailablePath(f)
-	if err != nil {
-		return err
-	}
-	_, err = d.URLFor(context.Background(), path, nil)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func doWriteFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	writeContent, err := f.GetBytes()
+func doWriteFuzz(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	writeContent, err := fdp.GetBytes()
 	if err != nil {
 		return err
 	}
 	if len(writeContent) < 3 {
 		return err
 	}
-	path, err := getAvailablePath(f)
+	path, err := getAvailablePath(fdp)
 	if err != nil {
 		return err
 	}
@@ -243,8 +227,8 @@ func doWriteFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func doStatFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := getAvailablePath(f)
+func doStatFuzz(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := getAvailablePath(fdp)
 	if err != nil {
 		return err
 	}
@@ -252,8 +236,8 @@ func doStatFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func doListFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	opath, err := getAvailablePath(f)
+func doListFuzz(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	opath, err := getAvailablePath(fdp)
 	if err != nil {
 		return err
 	}
@@ -261,12 +245,12 @@ func doListFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func doMoveFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	sourcePath, err := getAvailablePath(f)
+func doMoveFuzz(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	sourcePath, err := getAvailablePath(fdp)
 	if err != nil {
 		return err
 	}
-	destPath, err := getAvailablePath(f)
+	destPath, err := getAvailablePath(fdp)
 	if err != nil {
 		return err
 	}
@@ -274,8 +258,8 @@ func doMoveFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func doDeleteFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := getAvailablePath(f)
+func doDeleteFuzz(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := getAvailablePath(fdp)
 	if err != nil {
 		return err
 	}
@@ -283,11 +267,11 @@ func doDeleteFuzz(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func getAvailablePath(f *fuzz.ConsumeFuzzer) (string, error) {
+func getAvailablePath(fdp *fuzz.ConsumeFuzzer) (string, error) {
 	if len(availablePaths) == 0 {
 		return "", errors.New("No paths are available")
 	}
-	index, err := f.GetInt()
+	index, err := fdp.GetInt()
 	if err != nil {
 		return "", err
 	}

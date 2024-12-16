@@ -15,17 +15,22 @@
 
 package manifestlist
 
-func FuzzUnmarshalJSON(data []byte) int {
-	m := new(DeserializedManifestList)
-	err := m.UnmarshalJSON(b)
-	if err != nil {
-		return 0
-	}
-	b, err := m.MarshalSON()
-	if err != nil {
-		return 0
-	}
-	_, _, _ = m.Payload()
-	_ = m.References()
-	return 1
+import (
+	"testing"
+)
+
+func FuzzUnmarshalJSON(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		m := new(DeserializedManifestList)
+		err := m.UnmarshalJSON(b)
+		if err != nil {
+			return 0
+		}
+		b, err := m.MarshalSON()
+		if err != nil {
+			return 0
+		}
+		_, _, _ = m.Payload()
+		_ = m.References()
+	})
 }

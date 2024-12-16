@@ -37,74 +37,74 @@ import (
 	"github.com/distribution/reference"
 )
 
-func FuzzProxyBlobstore(data []byte) int {
-	t := &testing.T{}
-	te := makeTestEnv(t, "foo/bar")
-	f := fuzz.NewConsumer(data)
-	err := populateForFuzzing(te, f)
-	if err != nil {
-		return 0
-	}
-	noOfOps, err := f.GetInt()
-	if err != nil {
-		return 0
-	}
-	for i := 0; i < noOfOps%10; i++ {
-		opType, err := f.GetInt()
+func FuzzProxyBlobstore(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		t := &testing.T{}
+		te := makeTestEnv(t, "foo/bar")
+		fdp := fuzz.NewConsumer(data)
+		err := populateForFuzzing(te, f)
 		if err != nil {
-			return 0
+			return
 		}
-		switch opType % 3 {
-		case 0:
-			// Get
-			if len(te.inRemote) > 0 {
-				for i := 0; i < len(te.inRemote); i++ {
-					_, _ = te.store.Get(context.Background(), te.inRemote[i].Digest)
-				}
+		noOfOps, err := fdp.GetInt()
+		if err != nil {
+			return
+		}
+		for i := 0; i < noOfOps%10; i++ {
+			opType, err := fdp.GetInt()
+			if err != nil {
+				return
 			}
-		case 1:
-			if len(te.inRemote) > 0 {
-				for _, d := range te.inRemote {
-					_, _ = te.store.Stat(context.Background(), d.Digest)
+			switch opType % 3 {
+			case 0:
+				// Get
+				if len(te.inRemote) > 0 {
+					for i := 0; i < len(te.inRemote); i++ {
+						_, _ = te.store.Get(context.Background(), te.inRemote[i].Digest)
+					}
 				}
-			}
-		case 2:
-			for _, dr := range te.inRemote {
-				w := httptest.NewRecorder()
-				r, err := http.NewRequest("GET", "", nil)
-				if err != nil {
-					return 0
+			case 1:
+				if len(te.inRemote) > 0 {
+					for _, d := range te.inRemote {
+						_, _ = te.store.Stat(context.Background(), d.Digest)
+					}
 				}
+			case 2:
+				for _, dr := range te.inRemote {
+					w := httptest.NewRecorder()
+					r, err := http.NewRequest("GET", "", nil)
+					if err != nil {
+						return
+					}
 
-				err = te.store.ServeBlob(context.Background(), w, r, dr.Digest)
-				if err != nil {
-					return 0
-				}
+					err = te.store.ServeBlob(context.Background(), w, r, dr.Digest)
+					if err != nil {
+						return
+					}
 
-				dl := digest.FromBytes(w.Body.Bytes())
-				if dl != dr.Digest {
-					panic("Mismatching blob fetch from proxy")
+					dl := digest.FromBytes(w.Body.Bytes())
+					if dl != dr.Digest {
+						panic("Mismatching blob fetch from proxy")
+					}
 				}
 			}
 		}
-	}
-	return 1
+	})
 }
-
-func populateForFuzzing(te *testEnv, f *fuzz.ConsumeFuzzer) error {
+func populateForFuzzing(te *testEnv, fdp *fuzz.ConsumeFuzzer) error {
 	var inRemote []distribution.Descriptor
 
-	numUnique, err := f.GetInt()
+	numUnique, err := fdp.GetInt()
 	if err != nil {
 		return err
 	}
-	blobCount, err := f.GetInt()
+	blobCount, err := fdp.GetInt()
 	if err != nil {
 		return err
 	}
 
 	for i := 0; i < numUnique%30; i++ {
-		blobBytes, err := f.GetBytes()
+		blobBytes, err := fdp.GetBytes()
 		if err != nil {
 			return err
 		}
@@ -123,21 +123,23 @@ func populateForFuzzing(te *testEnv, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func FuzzProxyManifestStore(data []byte) int {
-	name := "foo/bar"
-	f := fuzz.NewConsumer(data)
-	env, err := newManifestStoreTestEnvFuzz(f, name, "latest")
-	if err != nil {
-		return 0
-	}
-	dBytes, err := f.GetBytes()
-	if err != nil {
-		return 0
-	}
-	d1 := digest.FromBytes(dBytes)
-	_, _ = env.manifests.Exists(context.Background(), d1)
-	_, _ = env.manifests.Get(context.Background(), d1)
-	return 1
+func FuzzProxyManifestStore(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		name := "foo/bar"
+		f := fuzz.NewConsumer(data)
+		env, err := newManifestStoreTestEnvFuzz(f, name, "latest")
+		if err != nil {
+			return 0
+		}
+		dBytes, err := f.GetBytes()
+		if err != nil {
+			return 0
+		}
+		d1 := digest.FromBytes(dBytes)
+		_, _ = env.manifests.Exists(context.Background(), d1)
+		_, _ = env.manifests.Get(context.Background(), d1)
+		return 1
+	})
 }
 
 func newManifestStoreTestEnvFuzz(f *fuzz.ConsumeFuzzer, name, tag string) (*manifestStoreTestEnv, error) {
