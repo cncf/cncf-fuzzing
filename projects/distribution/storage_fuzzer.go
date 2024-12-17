@@ -40,10 +40,6 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func init() {
-	testing.Init()
-}
-
 func FuzzFR(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		dir, err := ioutil.TempDir(".", "test-dir-")
