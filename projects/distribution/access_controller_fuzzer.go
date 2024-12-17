@@ -21,109 +21,110 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/distribution/distribution/v3/registry/auth"
 )
 
-func FuzzAccessController(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	testHtpasswdContent, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	testRealm, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	testUser, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	testPassword, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-
-	tempFile, err := ioutil.TempFile("", "htpasswd-test")
-	if err != nil {
-		return 0
-	}
-	if _, err = tempFile.WriteString(testHtpasswdContent); err != nil {
-		return 0
-	}
-
-	options := map[string]interface{}{
-		"realm": testRealm,
-		"path":  tempFile.Name(),
-	}
-	ctx := context.Background()
-
-	accessController, err := newAccessController(options)
-	if err != nil {
-		return 0
-	}
-
-	tempFile.Close()
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithRequest(ctx, r)
-		authCtx, err := accessController.Authorized(ctx)
+func FuzzAccessController(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		fdp := fuzz.NewConsumer(data)
+		testHtpasswdContent, err := fdp.GetString()
 		if err != nil {
-			switch err := err.(type) {
-			case auth.Challenge:
-				err.SetHeaders(r, w)
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			default:
+			return
+		}
+		testRealm, err := fdp.GetString()
+		if err != nil {
+			return
+		}
+		testUser, err := fdp.GetString()
+		if err != nil {
+			return
+		}
+		testPassword, err := fdp.GetString()
+		if err != nil {
+			return
+		}
+
+		tempFile, err := ioutil.TempFile("", "htpasswd-test")
+		if err != nil {
+			return
+		}
+		if _, err = tempFile.WriteString(testHtpasswdContent); err != nil {
+			return
+		}
+
+		options := map[string]interface{}{
+			"realm": testRealm,
+			"path":  tempFile.Name(),
+		}
+		ctx := context.Background()
+
+		accessController, err := newAccessController(options)
+		if err != nil {
+			return
+		}
+
+		tempFile.Close()
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithRequest(ctx, r)
+			authCtx, err := accessController.Authorized(ctx)
+			if err != nil {
+				switch err := err.(type) {
+				case auth.Challenge:
+					err.SetHeaders(r, w)
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				default:
+					return
+				}
+			}
+
+			userInfo, ok := authCtx.Value(auth.UserKey).(auth.UserInfo)
+			if !ok {
 				return
 			}
+
+			if userInfo.Name != testUser {
+				return
+			}
+
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		server.URL = "http://127.0.0.1:1000"
+
+		defer server.Close()
+
+		client := &http.Client{
+			CheckRedirect: nil,
 		}
 
-		userInfo, ok := authCtx.Value(auth.UserKey).(auth.UserInfo)
-		if !ok {
+		req, _ := http.NewRequest("GET", server.URL, nil)
+		resp, err := client.Do(req)
+
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+
+		// Request should not be authorized
+		if resp.StatusCode != http.StatusUnauthorized {
+			panic(fmt.Sprintf("unexpected non-fail response status: %v != %v\n", resp.StatusCode, http.StatusUnauthorized))
+		}
+
+		req, err = http.NewRequest("GET", server.URL, nil)
+		if err != nil {
 			return
 		}
 
-		if userInfo.Name != testUser {
+		req.SetBasicAuth(testUser, testPassword)
+
+		resp, err = client.Do(req)
+		if err != nil {
 			return
 		}
-
-		w.WriteHeader(http.StatusNoContent)
-	}))
-	server.URL = "http://127.0.0.1:1000"
-
-	defer server.Close()
-
-	client := &http.Client{
-		CheckRedirect: nil,
-	}
-
-	req, _ := http.NewRequest("GET", server.URL, nil)
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-
-	// Request should not be authorized
-	if resp.StatusCode != http.StatusUnauthorized {
-		panic(fmt.Sprintf("unexpected non-fail response status: %v != %v\n", resp.StatusCode, http.StatusUnauthorized))
-	}
-
-	req, err = http.NewRequest("GET", server.URL, nil)
-	if err != nil {
-		return 0
-	}
-
-	req.SetBasicAuth(testUser, testPassword)
-
-	resp, err = client.Do(req)
-	if err != nil {
-		return 0
-	}
-	defer resp.Body.Close()
-
-	return 1
+		defer resp.Body.Close()
+	})
 }

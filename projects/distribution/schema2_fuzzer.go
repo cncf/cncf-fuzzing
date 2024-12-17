@@ -17,6 +17,7 @@ package schema2
 
 import (
 	"context"
+	"testing"
 
 	"github.com/opencontainers/go-digest"
 
@@ -25,39 +26,41 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzUnmarshalJSON(data []byte) int {
-	m := new(DeserializedManifest)
-	err := m.UnmarshalJSON(b)
-	if err != nil {
-		return 0
-	}
-	b, err := m.MarshalSON()
-	if err != nil {
-		return 0
-	}
-	return 1
+func FuzzUnmarshalJSON(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		m := new(DeserializedManifest)
+		err := m.UnmarshalJSON(b)
+		if err != nil {
+			return
+		}
+		b, err := m.MarshalSON()
+		if err != nil {
+			return
+		}
+	})
 }
 
-func FuzzNewManifestBuilder(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	annotations := make(map[string]string)
-	err := f.FuzzMap(&annotations)
-	if err != nil {
-		return 0
-	}
+func FuzzNewManifestBuilder(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		fdp := fuzz.NewConsumer(data)
+		annotations := make(map[string]string)
+		err := f.FuzzMap(&annotations)
+		if err != nil {
+			return 0
+		}
 
-	configJSON, err := f.GetBytes()
-	if err != nil {
-		return 0
-	}
+		configJSON, err := fdp.GetBytes()
+		if err != nil {
+			return
+		}
 
-	configMediaType, err := f.GetString()
-	if err != nil {
-		return 0
-	}
+		configMediaType, err := fdp.GetString()
+		if err != nil {
+			return
+		}
 
-	bs := &mockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
-	builder := NewManifestBuilder(bs, configMediaType, configJSON)
-	builder.Build(context.Background())
-	return 1
+		bs := &mockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
+		builder := NewManifestBuilder(bs, configMediaType, configJSON)
+		builder.Build(context.Background())
+	})
 }

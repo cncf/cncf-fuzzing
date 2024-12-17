@@ -17,6 +17,8 @@ package ocischema
 
 import (
 	"context"
+	"io"
+	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/opencontainers/go-digest"
@@ -39,7 +41,7 @@ func (bs *fuzzMockBlobService) Get(ctx context.Context, dgst digest.Digest) ([]b
 	panic("not implemented")
 }
 
-func (bs *fuzzMockBlobService) Open(ctx context.Context, dgst digest.Digest) (distribution.ReadSeekCloser, error) {
+func (bs *fuzzMockBlobService) Open(ctx context.Context, dgst digest.Digest) (io.ReadSeekCloser, error) {
 	panic("not implemented")
 }
 
@@ -61,35 +63,36 @@ func (bs *fuzzMockBlobService) Resume(ctx context.Context, id string) (distribut
 	panic("not implemented")
 }
 
-func FuzzManifestBuilder(data []byte) int {
-	annotations := make(map[string]string)
+func FuzzManifestBuilder(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		annotations := make(map[string]string)
 
-	f := fuzz.NewConsumer(data)
-	err := f.FuzzMap(&annotations)
-	if err != nil {
-		return 0
-	}
+		fdp := fuzz.NewConsumer(data)
+		err := fdp.FuzzMap(&annotations)
+		if err != nil {
+			return
+		}
 
-	imgJSON, err := f.GetBytes()
-	if err != nil {
-		return 0
-	}
-	configDigest := digest.FromBytes(imgJSON)
+		imgJSON, err := fdp.GetBytes()
+		if err != nil {
+			return
+		}
+		configDigest := digest.FromBytes(imgJSON)
 
-	bs := &fuzzMockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
-	builder := NewManifestBuilder(bs, imgJSON, annotations)
-	_, err = builder.Build(context.Background())
-	if err != nil {
-		return 0
-	}
-	// Check that config exists in the config store:
-	_, err = bs.Stat(context.Background(), configDigest)
-	if err != nil {
-		panic("config was not put in the blob store")
-	}
-	/*
-		TODO:
-		Get checks from: https://github.com/distribution/distribution/blob/1563384b69df9376389fe45ce949173a6383770a/manifest/ocischema/builder_test.go#L142
-	*/
-	return 1
+		bs := &fuzzMockBlobService{descriptors: make(map[digest.Digest]distribution.Descriptor)}
+		builder := NewManifestBuilder(bs, imgJSON, annotations)
+		_, err = builder.Build(context.Background())
+		if err != nil {
+			return
+		}
+		// Check that config exists in the config store:
+		_, err = bs.Stat(context.Background(), configDigest)
+		if err != nil {
+			panic("config was not put in the blob store")
+		}
+		/*
+			TODO:
+			Get checks from: https://github.com/distribution/distribution/blob/1563384b69df9376389fe45ce949173a6383770a/manifest/ocischema/builder_test.go#L142
+		*/
+	})
 }

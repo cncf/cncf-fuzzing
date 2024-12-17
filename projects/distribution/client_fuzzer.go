@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
+	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/docker/libtrust"
@@ -28,14 +29,18 @@ import (
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/manifest"
-	"github.com/distribution/distribution/v3/manifest/schema1"
+	"github.com/distribution/distribution/v3/manifest/schema2"
 	"github.com/distribution/distribution/v3/testutil"
 	"github.com/distribution/reference"
 )
 
+var (
+	fuzzRepo = "test.example.com/repo1"
+)
+
 func FuzzBlobServeBlob(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	digestBytes, err := f.GetBytes()
+	fdp := fuzz.NewConsumer(data)
+	digestBytes, err := fdp.GetBytes()
 	if err != nil {
 		return 0
 	}
@@ -55,7 +60,7 @@ func FuzzBlobServeBlob(data []byte) int {
 	defer c()
 
 	ctx := context.Background()
-	repo, _ := reference.WithName("test.example.com/repo1")
+	repo, _ := reference.WithName(fuzzRepo)
 	r, err := NewRepository(repo, e, nil)
 	if err != nil {
 		return 0
@@ -97,63 +102,40 @@ func FuzzBlobServeBlob(data []byte) int {
 }
 
 func newRandomBlobForFuzz(f *fuzz.ConsumeFuzzer) (digest.Digest, []byte, error) {
-	b, err := f.GetBytes()
+	b, err := fdp.GetBytes()
 	if err != nil {
 		return digest.FromBytes([]byte("0")), nil, err
 	}
 	return digest.FromBytes(b), b, nil
 }
 
-func newRandomSchemaV1ManifestForFuzz(f *fuzz.ConsumeFuzzer, name reference.Named, tag string) (*schema1.SignedManifest, digest.Digest, []byte, error) {
-	if name == nil {
-		return nil, digest.FromBytes([]byte("0")), nil, fmt.Errorf("invalid name")
-	}
-	blobCount, err := f.GetInt()
+func newRandomOCIManifestForFuzz(f *fuzz.ConsumeFuzzer, name reference.Named, tag string) (*schema2.SignedManifest, digest.Digest, []byte, error) {
+	blobCount, err := fdp.GetUint8()
 	if err != nil {
-		return nil, digest.FromBytes([]byte("0")), nil, err
+		return nil, digest.FromBytes([]byte("fuzz")), err
 	}
-	if blobCount == 0 {
-		return nil, digest.FromBytes([]byte("0")), nil, err
-	}
-	maxBlobCount := blobCount % 50
-	if maxBlobCount == 0 {
-		return nil, digest.FromBytes([]byte("0")), nil, err
-	}
-	blobs := make([]schema1.FSLayer, maxBlobCount)
-	history := make([]schema1.History, maxBlobCount)
-
-	for i := 0; i < maxBlobCount; i++ {
-		dgst, blob, err := newRandomBlobForFuzz(f)
-		if err != nil {
-			return nil, digest.FromBytes([]byte("0")), nil, err
+	layers := make([]v1.Descriptor, blobCount%10)
+	for i := 0; i < blobCount; i++ {
+		dgst, blob := newRandomBlobForFuzz(f)
+		layers[i] = v1.Descriptor{
+			MediaType: v1.MediaTypeImageLayer,
+			Digest:    dgst,
+			Size:      int64(len(blob)),
 		}
-
-		blobs[i] = schema1.FSLayer{BlobSum: dgst}
-		history[i] = schema1.History{V1Compatibility: fmt.Sprintf("{\"Hex\": \"%x\"}", blob)}
 	}
 
-	m := schema1.Manifest{
-		Name:         name.String(),
-		Tag:          tag,
-		Architecture: "x86",
-		FSLayers:     blobs,
-		History:      history,
-		Versioned: manifest.Versioned{
-			SchemaVersion: 1,
-		},
-	}
+	m := ocischema.Manifest{}
+	fdp.GenerateStruct(&m)
+	m.Layers = layers
 
-	pk, err := libtrust.GenerateECP256PrivateKey()
+	sm, err := ocischema.FromStruct(m)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
-	sm, err := schema1.Sign(&m, pk)
-	if err != nil {
-		panic(err)
-	}
+	_, payload, _ := sm.Payload()
 
-	return sm, digest.FromBytes(sm.Canonical), sm.Canonical, nil
+	return &m, digest.FromBytes(payload), payload
 }
 
 func testServerForFuzz(rrm testutil.RequestResponseMap) (string, func()) {
@@ -166,18 +148,13 @@ func FuzzRegistryClient(data []byte) int {
 	var m testutil.RequestResponseMap
 
 	f := fuzz.NewConsumer(data)
-	noOfRRMappings, err := f.GetInt()
+	noOfRRMappings, err := fdp.GetUint8()
 	if err != nil {
 		return 0
 	}
 
 	for i := 0; i < noOfRRMappings%10; i++ {
-		newRRMapping := testutil.RequestResponseMapping{}
-		err := f.GenerateStruct(&newRRMapping)
-		if err != nil {
-			return 0
-		}
-		m = append(m, newRRMapping)
+
 	}
 
 	e, c := testServer(m)
@@ -190,12 +167,12 @@ func FuzzRegistryClient(data []byte) int {
 		return 0
 	}
 
-	noOfOps, err := f.GetInt()
+	noOfOps, err := fdp.GetInt()
 	if err != nil {
 		return 0
 	}
 	for i := 0; i < noOfOps%10; i++ {
-		opType, err := f.GetInt()
+		opType, err := fdp.GetInt()
 		if err != nil {
 			return 0
 		}
@@ -228,9 +205,9 @@ func tagServiceAll(r distribution.Repository) {
 	_, _ = tagService.All(context.Background())
 }
 
-func tagServiceUntag(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+func tagServiceUntag(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
 	tagService := r.Tags(context.Background())
-	tag, err := f.GetString()
+	tag, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -238,9 +215,9 @@ func tagServiceUntag(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func tagServiceGet(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+func tagServiceGet(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
 	tagService := r.Tags(context.Background())
-	tag, err := f.GetString()
+	tag, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -248,7 +225,7 @@ func tagServiceGet(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func uploadBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+func uploadBlob(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
 	dgst, blob, err := newRandomBlobForFuzz(f)
 	if err != nil {
 		return err
@@ -278,7 +255,7 @@ func uploadBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func getBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+func getBlob(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
 	dgst, _, err := newRandomBlobForFuzz(f)
 	if err != nil {
 		return err
@@ -289,7 +266,7 @@ func getBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func statBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+func statBlob(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
 	dgst, _, err := newRandomBlobForFuzz(f)
 	if err != nil {
 		return err
@@ -300,16 +277,13 @@ func statBlob(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func manifestGet(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
-	referenceName, err := f.GetString()
+func manifestGet(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
+	_, dgst, pl, err := newRandomOCIManifestForFuzz(f, fuzzRepo, "other")
 	if err != nil {
 		return err
 	}
-	repo, _ := reference.WithName(referenceName)
-	_, dgst, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
-	if err != nil {
-		return err
-	}
+	var m testutil.RequestResponseMap
+	addTestManifest(repo, dgst.String(), v1.MediaTypeImageManifest, pl, &m)
 	ctx := context.Background()
 	ms, err := r.Manifests(ctx)
 	if err != nil {
@@ -319,13 +293,8 @@ func manifestGet(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func manifestDelete(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
-	referenceName, err := f.GetString()
-	if err != nil {
-		return err
-	}
-	repo, _ := reference.WithName(referenceName)
-	_, dgst, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
+func manifestDelete(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
+	_, dgst, _, err := newRandomOCIManifestForFuzz(f, fuzzRepo, "other")
 	if err != nil {
 		return err
 	}
@@ -338,22 +307,22 @@ func manifestDelete(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func manifestPut(r distribution.Repository, f *fuzz.ConsumeFuzzer) error {
+func manifestPut(r distribution.Repository, fdp *fuzz.ConsumeFuzzer) error {
 	ms, err := r.Manifests(context.Background())
 	if err != nil {
 		return nil
 	}
-	referenceName, err := f.GetString()
+	referenceName, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
 	repo, _ := reference.WithName(referenceName)
-	m1, _, _, err := newRandomSchemaV1ManifestForFuzz(f, repo, "other")
+	m1, _, _, err := newRandomOCIManifestForFuzz(f, repo, "other")
 	if err != nil || m1 == nil {
 		return nil
 	}
 
-	withTag, err := f.GetBool()
+	withTag, err := fdp.GetBool()
 	if err != nil {
 		return err
 	}

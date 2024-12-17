@@ -15,41 +15,27 @@
 
 package reference
 
-import fuzz "github.com/AdaLogics/go-fuzz-headers"
+import (
+	"testing"
+)
 
-func FuzzWithNameAndWithTag(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	name, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	named, err := WithName(name)
-	if err != nil {
-		return 0
-	}
-	tag, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	_, _ = WithTag(named, tag)
-	return 1
+func FuzzWithNameAndWithTag(f *testing.F) {
+	f.Fuzz(func(t *testing.T, name, tag string) {
+		named, err := WithName(name)
+		if err != nil {
+			return
+		}
+		_, _ = WithTag(named, tag)
+	})
 }
 
-func FuzzAllNormalizeApis(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	ref, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	n, err := ParseDockerRef(ref)
-	if err != nil {
-		return 0
-	}
-	_ = TagNameOnly(n)
-	ref, err = f.GetString()
-	if err != nil {
-		return 0
-	}
-	_, _ = ParseAnyReference(ref)
-	return 1
+func FuzzAllNormalizeApis(f *testing.F) {
+	f.Fuzz(func(t *testing.T, ref string) {
+		_, _ = ParseAnyReference(ref)
+		n, err := ParseDockerRef(ref)
+		if err != nil {
+			return
+		}
+		_ = TagNameOnly(n)
+	})
 }

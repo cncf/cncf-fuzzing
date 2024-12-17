@@ -17,65 +17,67 @@ package inmemory
 
 import (
 	"context"
+	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzInmemoryDriver(data []byte) int {
-	d := New()
-	f := fuzz.NewConsumer(data)
-	noOfExecs, err := f.GetInt()
-	if err != nil {
-		return 0
-	}
-	maxExecs := noOfExecs % 10
-	for i := 0; i < maxExecs; i++ {
-		err = doRandomOp(d, f)
+func FuzzInmemoryDriver(f *testing.F) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		d := New()
+		fdp := fuzz.NewConsumer(data)
+		noOfExecs, err := fdp.GetInt()
 		if err != nil {
-			return 0
+			return
 		}
-	}
-	return 1
+		maxExecs := noOfExecs % 10
+		for i := 0; i < maxExecs; i++ {
+			err = doRandomOp(d, fdp)
+			if err != nil {
+				return
+			}
+		}
+	})
 }
 
-func doRandomOp(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	op, err := f.GetInt()
+func doRandomOp(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	op, err := fdp.GetInt()
 	if err != nil {
 		return err
 	}
 	maxOps := 7
 	if op%maxOps == 0 {
-		err = putContent(d, f)
+		err = putContent(d, fdp)
 		if err != nil {
 			return err
 		}
 	} else if op%maxOps == 1 {
-		err = getContent(d, f)
+		err = getContent(d, fdp)
 		if err != nil {
 			return err
 		}
 	} else if op%maxOps == 2 {
-		err = write(d, f)
+		err = write(d, fdp)
 		if err != nil {
 			return err
 		}
 	} else if op%maxOps == 3 {
-		err = stat(d, f)
+		err = stat(d, fdp)
 		if err != nil {
 			return err
 		}
 	} else if op%maxOps == 4 {
-		err = list(d, f)
+		err = list(d, fdp)
 		if err != nil {
 			return err
 		}
 	} else if op%maxOps == 5 {
-		err = doMove(d, f)
+		err = doMove(d, fdp)
 		if err != nil {
 			return err
 		}
 	} else if op%maxOps == 6 {
-		err = doDelete(d, f)
+		err = doDelete(d, fdp)
 		if err != nil {
 			return err
 		}
@@ -83,12 +85,12 @@ func doRandomOp(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func putContent(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	contents, err := f.GetBytes()
+func putContent(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	contents, err := fdp.GetBytes()
 	if err != nil {
 		return err
 	}
-	path, err := f.GetString()
+	path, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -96,8 +98,8 @@ func putContent(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func getContent(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := f.GetString()
+func getContent(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -105,8 +107,8 @@ func getContent(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func write(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := f.GetString()
+func write(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func write(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	if err != nil {
 		return err
 	}
-	p, err := f.GetBytes()
+	p, err := fdp.GetBytes()
 	if err != nil {
 		return err
 	}
@@ -122,8 +124,8 @@ func write(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func stat(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := f.GetString()
+func stat(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -131,8 +133,8 @@ func stat(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func list(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := f.GetString()
+func list(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -140,12 +142,12 @@ func list(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func doMove(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	sourcePath, err := f.GetString()
+func doMove(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	sourcePath, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
-	destPath, err := f.GetString()
+	destPath, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
@@ -153,8 +155,8 @@ func doMove(d *Driver, f *fuzz.ConsumeFuzzer) error {
 	return nil
 }
 
-func doDelete(d *Driver, f *fuzz.ConsumeFuzzer) error {
-	path, err := f.GetString()
+func doDelete(d *Driver, fdp *fuzz.ConsumeFuzzer) error {
+	path, err := fdp.GetString()
 	if err != nil {
 		return err
 	}
