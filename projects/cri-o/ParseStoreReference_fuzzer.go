@@ -3,7 +3,7 @@ package containerstoragemock
 import (
 	"fmt"
 	istorage "github.com/containers/image/v5/storage"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 	"runtime"
 	"strings"
 )
