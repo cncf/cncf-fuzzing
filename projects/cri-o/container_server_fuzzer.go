@@ -30,7 +30,8 @@ import (
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
+	//"github.com/golang/mock/gomock"
 	_ "github.com/onsi/gomega"
 	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -42,6 +43,8 @@ import (
 	containerstoragemock "github.com/cri-o/cri-o/test/mocks/containerstorage"
 	criostoragemock "github.com/cri-o/cri-o/test/mocks/criostorage"
 	ocicnitypesmock "github.com/cri-o/cri-o/test/mocks/ocicni"
+	"github.com/cri-o/cri-o/internal/storage/references"
+	"github.com/cri-o/cri-o/internal/storage"
 )
 
 var (
@@ -213,16 +216,19 @@ func beforeEachFuzz() error {
 	testSandbox, err = sandbox.New(sandboxID, "", "", "", "",
 		make(map[string]string), make(map[string]string), "", "",
 		&types.PodSandboxMetadata{}, "", "", false, "", "", "",
-		[]*hostport.PortMapping{}, false, time.Now(), "")
+		[]*hostport.PortMapping{}, false, time.Now(), "", nil, nil)
 	if err != nil {
 		return err
 	}
 
-	testContainer, err = oci.NewContainer(containerID, "", "", "",
-		make(map[string]string), make(map[string]string),
-		make(map[string]string), "pauseImage", "", "",
-		&types.ContainerMetadata{}, sandboxID, false, false,
-		false, "", "", time.Now(), "")
+	imageName, _ := references.ParseRegistryImageReferenceFromOutOfProcessData("example.com/some-image:latest")
+	imageID, _ := storage.ParseStorageImageIDFromOutOfProcessData("2a03a6059f21e150ae84b0973863609494aad70f0a80eaeb64bddd8d92465812")
+	testContainer, err = oci.NewContainer("testid", "testname", "",
+                                "/container/logs", map[string]string{},
+                                map[string]string{}, map[string]string{}, "image",
+                                &imageName, &imageID, "", &types.ContainerMetadata{},
+                                "testsandboxid", false, false, false, "",
+                                "/root/for/container", time.Now(), "SIGKILL")
 	if err != nil {
 		return err
 	}

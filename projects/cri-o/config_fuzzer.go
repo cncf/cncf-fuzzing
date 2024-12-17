@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -32,7 +33,7 @@ func FuzzLoadConfig(data []byte) int {
 		return 0
 	}
 
-	if err = c.UpdateFromFile("cri-o.config"); err != nil {
+	if err = c.UpdateFromFile(context.Background(), "cri-o.config"); err != nil {
 		randomFile.Close()
 		return 0
 	}

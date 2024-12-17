@@ -47,12 +47,13 @@ git clone https://github.com/gpg/gpgme \
     && ./configure --enable-static --disable-shared --disable-doc \
     && make -j$(nproc) \
     && make install
+#exit 0
 cd $SRC/cri-o
 
 make BUILDTAGS=""
 
 mv $SRC/cncf-fuzzing/projects/cri-o/fuzz_server.go $SRC/cri-o/server/
-go get github.com/AdaLogics/go-fuzz-headers@53b129c8971380abe6fc1812bd8eb43105ed8867
+go get github.com/AdaLogics/go-fuzz-headers@latest
 make vendor
 
 function compile_crio_fuzzer() {
@@ -85,13 +86,13 @@ function compile_crio_fuzzer() {
         go-fuzz -func ${function} -o ${fuzzer}.a $path
         # Link Go code ($fuzzer.a) with fuzzing engine to produce fuzz target binary.
         
-        $CXX $CXXFLAGS $LIB_FUZZING_ENGINE ${fuzzer}.a \
-                    /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so \
+        $CXX $CXXFLAGS $LIB_FUZZING_ENGINE ${fuzzer}.a  \
+		    /src/LVM2.2.03.15/base/libbase.a \
+		    /src/libassuan/src/.libs/libassuan.a \
                     /src/gpgme/src/.libs/libgpgme.a \
                     /src/libgpg-error/src/.libs/libgpg-error.a \
-                    /src/LVM2.2.03.15/base/libbase.a \
-                    /src/libassuan/src/.libs/libassuan.a \
-                    -o $OUT/$fuzzer
+		    -o $OUT/$fuzzer
+                    /src/LVM2.2.03.15/libdm/ioctl/libdevmapper.so
     fi
 
     mkdir -p $OUT/lib

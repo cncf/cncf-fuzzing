@@ -69,7 +69,7 @@ func FuzzContainer(data []byte) int {
 	sb, err := sandbox.New("sandboxID", "", "", "", "test",
 		make(map[string]string), make(map[string]string), "", "",
 		&types.PodSandboxMetadata{}, "", "", false, "", "", "",
-		[]*hostport.PortMapping{}, false, currentTime, "")
+		[]*hostport.PortMapping{}, false, currentTime, "", nil, nil)
 
 	if err != nil {
 		return 1
@@ -80,7 +80,7 @@ func FuzzContainer(data []byte) int {
 	configStopSignal := "test"
 	imageResult := storage.ImageResult{}
 
-	err = sut.SpecAddAnnotations(context.Background(), sb, volumes, mountPoint, configStopSignal, &imageResult, false, false)
+	err = sut.SpecAddAnnotations(context.Background(), sb, volumes, mountPoint, configStopSignal, &imageResult, false, "", "")
 	if err != nil {
 		return 1
 	}

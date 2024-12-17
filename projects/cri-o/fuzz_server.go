@@ -31,14 +31,13 @@ import (
 	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/AdaLogics/go-fuzz-headers/sanitizers/logsanitizer"
 	cstorage "github.com/containers/storage"
 	"github.com/golang/mock/gomock"
 	_ "github.com/onsi/gomega"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	types "k8s.io/cri-api/pkg/apis/runtime/v1"
-	"k8s.io/kubernetes/pkg/kubelet/cri/streaming"
+	"k8s.io/kubelet/pkg/cri/streaming"
 
 	"github.com/cri-o/cri-o/internal/hostport"
 	"github.com/cri-o/cri-o/internal/lib/sandbox"
@@ -233,20 +232,6 @@ func nonLogSANInit() {
 	initFunc()
 	logrus.SetLevel(logrus.FatalLevel)
 
-}
-
-// Same as FuzzServer but with logSAN
-func FuzzServerLogSAN(data []byte) int {
-	initter.Do(nonLogSANInit)
-	if len(data) < 50 {
-		return 0
-	}
-	logSAN, err := logsanitizer.SetupLogSANForLogrus(logFileAbs)
-	if err != nil {
-		panic(err)
-	}
-	defer logSAN.RunSanitizer()
-	return fuzzServer(data)
 }
 
 func FuzzServer(data []byte) int {
