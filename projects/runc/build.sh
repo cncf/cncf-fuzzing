@@ -17,7 +17,6 @@ go get github.com/AdaLogics/go-fuzz-headers
 export RUNC_PATH=github.com/opencontainers/runc
 export RUNC_FUZZERS=/src/cncf-fuzzing/projects/runc
 
-compile_go_fuzzer $RUNC_PATH/libcontainer/userns FuzzUIDMap fuzz_uid_map
 
 mv $RUNC_FUZZERS/libcontainer_utils_fuzzer.go $SRC/runc/libcontainer/utils/
 compile_go_fuzzer $RUNC_PATH/libcontainer/utils FuzzstripRoot fuzz_strip_root
