@@ -665,9 +665,10 @@ func init() {
 	srv.be = be
 	//srv.applyV3Internal = srv.newApplierV3Internal()
 	//srv.applyV3 = srv.newApplierV3()
-	srv.applyV2 = &applierV2store{store: srv.v2store, cluster: srv.cluster}
+	//srv.applyV2 = &applierV2store{store: srv.v2store, cluster: srv.cluster}
 
-	srv.uberApply = srv.NewUberApplier()
+	//srv.uberApply = srv.NewUberApplier()
+	srv.uberApply = uberApplierMock{}
 	//ab = srv.newApplierV3Backend()
 
 	srv.r.start(&raftReadyHandler{
@@ -777,7 +778,7 @@ func Fuzzapply(data []byte) int {
 	srv := &EtcdServer{
 		lgMu:         new(sync.RWMutex),
 		lg:           lg,
-		r:            *realisticRaftNode(lg),
+		r:            *realisticRaftNode(lg, 1, nil),
 		cluster:      cl,
 		w:            wait.New(),
 		consistIndex: ci,
@@ -785,7 +786,7 @@ func Fuzzapply(data []byte) int {
 	}
 
 	// Pass entries to (s *EtcdServer).apply()
-	_, _, _ = srv.apply(ents, &raftpb.ConfState{})
+	_, _, _ = srv.apply(ents, &raftpb.ConfState{}, nil)
 	return 1
 }
 

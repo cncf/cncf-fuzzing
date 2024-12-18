@@ -40,6 +40,6 @@ func FuzzPurgeFile(data []byte) int {
 	stop, purgec := make(chan struct{}), make(chan string, 10)
 
 	// keep 3 most recent files
-	_ = purgeFile(zap.NewExample(), dir, "test", 3, time.Millisecond, stop, purgec, nil)
+	_ = purgeFile(zap.NewExample(), dir, "test", 3, time.Millisecond, stop, purgec, nil, false)
 	return 1
 }

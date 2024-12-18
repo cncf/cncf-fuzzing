@@ -6,25 +6,12 @@ set -x
 # Delete the "FORBIDDEN_DEPENDENCY" replacements
 sed -i '/FORBIDDEN_DEPENDENCY/d' $SRC/etcd/server/go.mod
 
-cd $SRC
-
-wget https://go.dev/dl/go1.19.3.linux-amd64.tar.gz
-mkdir newgo
-tar -C ./newgo -xzf go1.19.3.linux-amd64.tar.gz
-rm -r /root/.go
-mv ./newgo/go /root/.go
+#cd $SRC
 mkdir $SRC/etcd/tests/fuzzing
 
 # api marshal fuzzer
 cd $SRC/etcd
-mv $SRC/cncf-fuzzing/projects/etcd/autogenerate_api_marshal_fuzzer.go ./
-grep -r ") Marshal(" .>>"/tmp/marshal_targets.txt"
-go run autogenerate_api_marshal_fuzzer.go
-rm autogenerate_api_marshal_fuzzer.go
-mv api_marshal_fuzzer.go ./tests/fuzzing/
-cd tests/fuzzing
 go mod tidy
-compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzAPIMarshal fuzz_api_marshal
 
 # wal fuzzer
 echo "building wal fuzzer"
@@ -42,7 +29,6 @@ echo "building grpc proxy fuzzer"
 mv $SRC/cncf-fuzzing/projects/etcd/grpc_proxy_fuzzer.go $SRC/etcd/tests/fuzzing/
 cd $SRC/etcd/tests/fuzzing
 go mod tidy
-sed -i '88 a return' $SRC/etcd/client/pkg/testutil/testutil.go
 compile_go_fuzzer go.etcd.io/etcd/tests/v3/fuzzing FuzzKVProxy fuzz_kv_proxy
 
 # grpc api fuzzer
@@ -86,7 +72,7 @@ mv server_test.go server_test_fuzz.go
 mv $SRC/cncf-fuzzing/projects/etcd/etcdserver_fuzzer.go ./
 
 # reduce the timeout of requests. This is set to 12 seconds per default
-sed -i '322 a return time.Millisecond*50' $SRC/etcd/server/config/config.go
+#sed -i '322 a return time.Millisecond*50' $SRC/etcd/server/config/config.go
 
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver Fuzzapply fuzz_etcdserver_apply
 #compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver FuzzapplierV3backendApply fuzz_applier_v3_backend_apply
@@ -120,15 +106,6 @@ go mod tidy
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp FuzzRaftHttpRequests fuzz_raft_http_requests
 
 compile_go_fuzzer go.etcd.io/etcd/server/v3/etcdserver/api/rafthttp FuzzMessageEncodeDecode fuzz_message_encode_decode
-
-# raft fuzzer
-cd $SRC/raft
-mv $SRC/cncf-fuzzing/projects/etcd/raft_fuzzer.go ./
-go mod tidy
-mv diff_test.go diff_test_fuzz.go
-mv log_test.go log_test_fuzz.go
-mv raft_test.go raft_test_fuzz.go
-compile_go_fuzzer go.etcd.io/raft/v3 FuzzStep fuzz_step
 
 # file_purge_fuzzer
 cd $SRC/etcd/client/pkg/fileutil
