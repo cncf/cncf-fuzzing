@@ -239,19 +239,19 @@ func FuzzMvccIndex(data []byte) int {
 	return 1
 }
 
-func createRev(f *fuzz.ConsumeFuzzer) (revision, error) {
+func createRev(f *fuzz.ConsumeFuzzer) (Revision, error) {
 	mainInt64, err := f.GetInt()
 	if err != nil {
-		return revision{}, err
+		return Revision{}, err
 	}
 	subInt64, err := f.GetInt()
 	if err != nil {
-		return revision{}, err
+		return Revision{}, err
 	}
-	return revision{main: int64(mainInt64), sub: int64(subInt64)}, nil
+	return Revision{Main: int64(mainInt64), Sub: int64(subInt64)}, nil
 }
 
-func restoreFuzz(ti *treeIndex, key []byte, created, modified revision, ver int64) {
+func restoreFuzz(ti *treeIndex, key []byte, created, modified Revision, ver int64) {
 	keyi := &keyIndex{key: key}
 
 	ti.Lock()
@@ -263,5 +263,5 @@ func restoreFuzz(ti *treeIndex, key []byte, created, modified revision, ver int6
 		return
 	}
 	okeyi := item
-	okeyi.put(ti.lg, modified.main, modified.sub)
+	okeyi.put(ti.lg, modified.Main, modified.Sub)
 }

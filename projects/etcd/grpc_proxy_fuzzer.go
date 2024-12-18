@@ -121,7 +121,7 @@ func FuzzKVProxy(data []byte) int {
 
 	defer clus.Terminate(t1)
 
-	kvts := newKVProxyServer([]string{clus.Members[0].GRPCURL()}, t1)
+	kvts := newKVProxyServer([]string{clus.Members[0].GRPCURL}, t1)
 	defer kvts.close()
 
 	oh.kp = kvts.kp
