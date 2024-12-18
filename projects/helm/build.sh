@@ -7,9 +7,6 @@ set -x
 mv $SRC/cncf-fuzzing/projects/helm/fs_fuzzer.go \
    $SRC/helm/internal/third_party/dep/fs/
 
-mv $SRC/cncf-fuzzing/projects/helm/chart_fuzzer.go \
-   $SRC/helm/pkg/chart/
-
 mv $SRC/cncf-fuzzing/projects/helm/engine_fuzzer.go \
    $SRC/helm/pkg/engine/
 
@@ -46,6 +43,8 @@ mv $SRC/cncf-fuzzing/projects/helm/kube_fuzzer.go \
    $SRC/helm/pkg/kube/
 mv $SRC/helm/pkg/kube/client_test.go \
    $SRC/helm/pkg/kube/client_fuzz.go
+mv $SRC/helm/pkg/kube/ready_test.go \
+   $SRC/helm/pkg/kube/ready_fuzz.go
 
 mv $SRC/cncf-fuzzing/projects/helm/provenance_fuzzer.go \
    $SRC/helm/pkg/provenance/
@@ -62,16 +61,13 @@ mv $SRC/cncf-fuzzing/projects/helm/lint_fuzzer.go \
 mv $SRC/cncf-fuzzing/projects/helm/resolver_fuzzer.go \
    $SRC/helm/internal/resolver/
 
-mv $SRC/cncf-fuzzing/projects/helm/strvals_fuzzer.go \
-   $SRC/helm/pkg/strvals/
-
 mv $SRC/cncf-fuzzing/projects/helm/ignore_fuzzer_test.go \
    $SRC/helm/pkg/ignore/
 
 printf "package ignore\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > pkg/ignore/register_fuzz_pkg.go
 go mod download && go mod tidy
 compile_native_go_fuzzer helm.sh/helm/v3/pkg/ignore FuzzIgnoreParse fuzz_ignore_parse
-compile_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzStrvalsParse fuzz_strvals_parse
+compile_native_go_fuzzer helm.sh/helm/v3/pkg/strvals FuzzParse fuzz_strvals_parse
 compile_go_fuzzer helm.sh/helm/v3/internal/resolver FuzzResolve fuzz_resolve
 compile_go_fuzzer helm.sh/helm/v3/pkg/lint FuzzLintAll fuzz_lint_all
 compile_go_fuzzer helm.sh/helm/v3/pkg/releaseutil FuzzSplitManifests fuzz_split_manifests
@@ -94,8 +90,8 @@ compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzRecords fuzz_records
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzSecrets fuzz_secrets
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzMemory fuzz_memory
 compile_go_fuzzer helm.sh/helm/v3/pkg/storage/driver FuzzCfgmaps fuzz_cfgmaps
-compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzMetadataValidate fuzz_metadata_validate
-compile_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzDependencyValidate fuzz_dependency_validate
+compile_native_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzMetadataValidate fuzz_metadata_validate
+compile_native_go_fuzzer helm.sh/helm/v3/pkg/chart FuzzDependencyValidate fuzz_dependency_validate
 compile_go_fuzzer helm.sh/helm/v3/pkg/engine FuzzEngineRender fuzz_engine_render
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzActionRun fuzz_action_run
 compile_go_fuzzer helm.sh/helm/v3/pkg/action FuzzShowRun fuzz_show_run
