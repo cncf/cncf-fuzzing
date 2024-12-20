@@ -43,17 +43,16 @@ var (
 		10: "FuzzMaxUnavailable", 
 		11: "FuzzMinAvailable",
 		12: "FuzzMaxSurge",
-		13: "FuzzGetProportion",
-		14: "FuzzFindNewReplicaSet",
-		15: "FuzzFindOldReplicaSets",
-		16: "FuzzGetReplicaCountForReplicaSets",
-		17: "FuzzGetActualReplicaCountForReplicaSets",
-		18: "FuzzGetReadyReplicaCountForReplicaSets",
-		19: "FuzzGetAvailableReplicaCountForReplicaSets",
-		20: "FuzzNewRSNewReplicas",
-		21: "FuzzIsSaturated",
-		22: "FuzzResolveFenceposts",
-		23: "FuzzGetDeploymentsForReplicaSet", 
+		13: "FuzzFindNewReplicaSet",
+		14: "FuzzFindOldReplicaSets",
+		15: "FuzzGetReplicaCountForReplicaSets",
+		16: "FuzzGetActualReplicaCountForReplicaSets",
+		17: "FuzzGetReadyReplicaCountForReplicaSets",
+		18: "FuzzGetAvailableReplicaCountForReplicaSets",
+		19: "FuzzNewRSNewReplicas",
+		20: "FuzzIsSaturated",
+		21: "FuzzResolveFenceposts",
+		22: "FuzzGetDeploymentsForReplicaSet", 
 	}
 )
 
@@ -89,8 +88,6 @@ func FuzzEntireDeploymentUtil(data []byte) int {
 		return FuzzMinAvailable(data[1:])
 	case "FuzzMaxSurge":
 		return FuzzMaxSurge(data[1:])
-	case "FuzzGetProportion":
-		return FuzzGetProportion(data[1:])
 	case "FuzzFindNewReplicaSet":
 		return FuzzFindNewReplicaSet(data[1:])
 	case "FuzzFindOldReplicaSets":
@@ -299,30 +296,6 @@ func FuzzMaxSurge(data []byte) int {
 		return 0
 	}
 	_ = MaxSurge(deployment)
-	return 1
-}
-
-func FuzzGetProportion(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	rs := &apps.ReplicaSet{}
-	err := f.GenerateStruct(rs)
-	if err != nil {
-		return 0
-	}
-	deployment := apps.Deployment{}
-	err = f.GenerateStruct(&deployment)
-	if err != nil {
-		return 0
-	}
-	deploymentReplicasToAdd, err := f.GetInt()
-	if err != nil {
-		return 0
-	}
-	deploymentReplicasAdded, err := f.GetInt()
-	if err != nil {
-		return 0
-	}
-	_ = GetProportion(klog.FromContext(context.Background()), rs, deployment, int32(deploymentReplicasToAdd), int32(deploymentReplicasAdded))
 	return 1
 }
 

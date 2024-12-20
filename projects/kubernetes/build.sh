@@ -20,7 +20,6 @@ set -o errexit
 set -x
 
 cd "$SRC"
-git clone --depth=1 https://github.com/AdamKorcz/go-118-fuzz-build --branch=include-all-test-files
 cd go-118-fuzz-build
 go build .
 mv go-118-fuzz-build /root/go/bin/
