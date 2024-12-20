@@ -80,7 +80,7 @@ func FuzzNewRevisionThrottler(f *testing.F) {
 		update := revisionDestsUpdate{
 			Rev:           revName,
 			ClusterIPDest: "",
-			Dests:         sets.NewString(ip1, ip2, ip3),
+			Dests:         sets.New(ip1, ip2, ip3),
 		}
 		throttler.handleUpdate(update)
 	})

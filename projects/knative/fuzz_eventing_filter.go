@@ -31,20 +31,9 @@ func FuzzFilters(f *testing.F) {
 		ctx := context.Background()
 		switch apiCall % 2 {
 		case 0:
-			filters := make([]eventingv1.SubscriptionsAPIFilter, 0)
-			noOfFilters, err := ff.GetInt()
-			if err != nil {
-				t.Skip()
-			}
-			if noOfFilters == 0 {
-				noOfFilters = 1
-			}
-			for i := 0; i < 10%noOfFilters; i++ {
-				filt := &eventingv1.SubscriptionsAPIFilter{}
-				ff.GenerateStruct(filt)
-				filters = append(filters, *filt)
-			}
-			_ = applySubscriptionsAPIFilters(ctx, filters, *event)
+			trigger := &eventingv1.Trigger{}
+			ff.GenerateStruct(trigger)
+			_ = applySubscriptionsAPIFilters(ctx, trigger, *event)
 		case 1:
 			filter := &eventingv1.TriggerFilter{}
 			ff.GenerateStruct(filter)

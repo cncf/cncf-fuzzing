@@ -30,7 +30,6 @@ import (
 	sourcesv1 "knative.dev/eventing/pkg/apis/sources/v1"
 	sourcesv1beta2 "knative.dev/eventing/pkg/apis/sources/v1beta2"
 	autoscalingv1alpha1 "knative.dev/serving/pkg/apis/autoscaling/v1alpha1"
-	servingv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
 	servingv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 )
 
@@ -96,11 +95,6 @@ func FuzzValidation(f *testing.F) {
 			s1 := &Service{}
 			ff.GenerateStruct(s1)
 			s1.Validate(ctx)
-
-		case "v1alpha1_DomainMapping":
-			dm1 := &servingv1alpha1.DomainMapping{}
-			ff.GenerateStruct(dm1)
-			dm1.Validate(ctx)
 
 		case "v1beta1_DomainMapping":
 			dm1 := &servingv1beta1.DomainMapping{}
