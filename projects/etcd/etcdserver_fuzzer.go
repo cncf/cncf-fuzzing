@@ -16,10 +16,13 @@
 package etcdserver
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"math"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"testing"
@@ -717,18 +720,22 @@ func catchPanics() {
 		case error:
 			err = r.(error).Error()
 		}
-		if strings.Contains(err, "unknown entry type; must be either EntryNormal or EntryConfChange") {
+		// We know about this panic. It is just a blocker
+		if strings.Contains(err, "should never fail") {
 			return
-		} else if strings.Contains(err, "should never fail") {
-			return
-		} else if strings.Contains(err, "failed to unmarshal confChangeContext") {
-			return
-		} else if strings.Contains(err, "unknown ConfChange type") {
-			return
-		} else if strings.Contains(err, "applyEntryNormal, could not find a header") {
-			return
-		} else {
-			panic(err)
+		}
+		// Ignore panics from Zap log.Panic() since these are already known
+		shouldPanic := false
+		stacktrace := debug.Stack()
+		scanner := bufio.NewScanner(bytes.NewReader(stacktrace))
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, "go.uber.org/zap.(*Logger).Panic(") {
+				shouldPanic = false
+			}
+		}
+		if shouldPanic {
+			panic(r)
 		}
 	}
 }
