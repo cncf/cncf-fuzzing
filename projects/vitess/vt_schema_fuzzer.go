@@ -31,7 +31,8 @@ func FuzzOnlineDDLFromCommentedStatement(data []byte) int {
 			fmt.Println("Recovered. Error:\n", r)
 		}
 	}()
-	stmt, err := sqlparser.Parse(string(data))
+	parser := sqlparser.NewTestParser()
+	stmt, err := parser.Parse(string(data))
 	if err != nil {
 		return 0
 	}
@@ -39,8 +40,8 @@ func FuzzOnlineDDLFromCommentedStatement(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_, _ = onlineDDL.GetAction()
-	_, _, _ = onlineDDL.GetActionStr()
+	_, _ = onlineDDL.GetAction(parser)
+	_, _, _ = onlineDDL.GetActionStr(parser)
 	_ = onlineDDL.GetGCUUID()
 	return 1
 }
@@ -48,6 +49,7 @@ func FuzzOnlineDDLFromCommentedStatement(data []byte) int {
 // FuzzNewOnlineDDLs implements a fuzzer that
 // targets schema.NewOnlineDDLs
 func FuzzNewOnlineDDLs(data []byte) int {
+	parser := sqlparser.NewTestParser()
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered. Error:\n", r)
@@ -64,7 +66,7 @@ func FuzzNewOnlineDDLs(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	ddlStmt, _, err := schema.ParseOnlineDDLStatement(ddlstmtString)
+	ddlStmt, _, err := schema.ParseOnlineDDLStatement(ddlstmtString, parser)
 	if err != nil {
 		return 0
 	}
@@ -88,14 +90,13 @@ func FuzzNewOnlineDDLs(data []byte) int {
 	if err != nil {
 		return 0
 	}
-
-	onlineDDLs, err := schema.NewOnlineDDLs(keyspace, sql, ddlStmt, ddlStrategySetting, requestContext, providedUUID)
+	onlineDDLs, err := schema.NewOnlineDDLs(keyspace, sql, ddlStmt, ddlStrategySetting, requestContext, providedUUID, parser)
 	if err != nil {
 		return 0
 	}
 	for _, onlineDDL := range onlineDDLs {
-		_, _ = onlineDDL.GetAction()
-		_, _, _ = onlineDDL.GetActionStr()
+		_, _ = onlineDDL.GetAction(parser)
+		_, _, _ = onlineDDL.GetActionStr(parser)
 		_ = onlineDDL.GetGCUUID()
 	}
 	return 1

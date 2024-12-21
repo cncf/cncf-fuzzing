@@ -17,34 +17,37 @@ package operators
 
 import (
 	"vitess.io/vitess/go/vt/sqlparser"
-	"vitess.io/vitess/go/vt/vtgate/planbuilder/plancontext"
 	"vitess.io/vitess/go/vt/vtgate/semantics"
-
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"vitess.io/vitess/go/vt/vtgate/planbuilder/plancontext"
 )
 
 // FuzzAnalyse implements the fuzzer
 func FuzzAnalyse(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	query, err := f.GetSQLString()
-	if err != nil {
-		return 0
-	}
-	tree, err := sqlparser.Parse(query)
+	tree, err := sqlparser.NewTestParser().Parse(string(data))
 	if err != nil {
 		return -1
 	}
-	switch stmt := tree.(type) {
+	semTable, err := semantics.Analyze(tree, "", &semantics.FakeSI{})
+	if err != nil {
+		return 0
+	}
+	ctx := &plancontext.PlanningContext{
+                           SemTable:     semTable,
+        }
+	_ = translateQueryToOp(ctx, tree)	
+	/*switch stmt := tree.(type) {
 	case *sqlparser.Select:
 		semTable, err := semantics.Analyze(stmt, "", &semantics.FakeSI{})
 		if err != nil {
 			return 0
 		}
-		ctx := plancontext.NewPlanningContext(nil, semTable, nil, 0)
-		_, _ = createOperatorFromSelect(ctx, stmt)
+		ctx := &plancontext.PlanningContext{
+                            SemTable:     semTable,
+                }
+		_ = createOperatorFromSelect(ctx, stmt)
 
 	default:
 		return 0
-	}
+	}*/
 	return 1
 }

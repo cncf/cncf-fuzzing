@@ -13,73 +13,28 @@
 // limitations under the License.
 //
 
-package fuzzing
+package schema
 
 import (
-	"context"
 	"fmt"
-	"sync"
 	"testing"
 
-	"vitess.io/vitess/go/mysql/fakesqldb"
 	"vitess.io/vitess/go/sqltypes"
-	"vitess.io/vitess/go/vt/vttablet/tabletserver/connpool"
-	"vitess.io/vitess/go/vt/vttablet/tabletserver/schema"
-	"vitess.io/vitess/go/vt/vttablet/tabletserver/tabletenv"
-
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"vitess.io/vitess/go/mysql/fakesqldb"
 )
 
-var initter sync.Once
 
-func FuzzLoadTable(data []byte) int {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered. Error:\n", r)
-		}
-	}()
-	initter.Do(initTesting)
-	f := fuzz.NewConsumer(data)
-	tableName, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	comment, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-	query, err := f.GetSQLString()
-	if err != nil {
-		return 0
-	}
-	tableType, err := f.GetString()
-	if err != nil {
-		return 0
-	}
-
-	t := &testing.T{}
-
-	db := fakesqldb.New(t)
-	defer db.Close()
-	db.AddQuery(query, &sqltypes.Result{})
-
-	_, _ = newTestLoadTable(tableName, tableType, comment, db)
-	return 1
-}
-
-func newTestLoadTable(tableName, tableType, comment string, db *fakesqldb.DB) (*schema.Table, error) {
-	ctx := context.Background()
-	appParams := db.ConnParams()
-	dbaParams := db.ConnParams()
-	connPool := connpool.NewPool(tabletenv.NewEnv(nil, "SchemaTest"), "", tabletenv.ConnPoolConfig{
-		Size:               2,
+func FuzzLoadTable(f *testing.F) {
+	f.Fuzz(func(t *testing.T, comment, query, tableType string) {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("Recovered. Error:\n", r)
+			}
+		}()
+		db := fakesqldb.New(t)
+		defer db.Close()
+		db.AddQuery(query, &sqltypes.Result{})
+		_, _ = newTestLoadTable(tableType, comment, db)
 	})
-	connPool.Open(appParams, dbaParams, appParams)
-	conn, err := connPool.Get(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Recycle()
-
-	return schema.LoadTable(conn, "fakesqldb", tableName, tableType, comment)
+	
 }

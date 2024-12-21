@@ -543,7 +543,7 @@ func (fs *fuzzStore) callSetReplicationSource() error {
 	if err != nil {
 		return err
 	}
-	_ = fs.client.SetReplicationSource(context.Background(), tablet, parent, int64(timeCreatedNS), pos, false, false)
+	_ = fs.client.SetReplicationSource(context.Background(), tablet, parent, int64(timeCreatedNS), pos, false, false, 1.0)
 	return nil
 }
 
@@ -665,7 +665,6 @@ func FuzzGRPCTMServer(data []byte) int {
 			fmt.Println("Recovered. Error:\n", r)
 		}
 	}()
-	initter.Do(onceInit)
 	f := fuzz.NewConsumer(data)
 	fs, err := newFuzzStore(f)
 	if err != nil {

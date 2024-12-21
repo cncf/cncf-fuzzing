@@ -37,25 +37,12 @@ func FuzzNormalizer(data []byte) int {
 			fmt.Println("Recovered. Error:\n", r)
 		}
 	}()
-	stmt, reservedVars, err := sqlparser.Parse2(string(data))
+	stmt, reservedVars, err := sqlparser.NewTestParser().Parse2(string(data))
 	if err != nil {
 		return -1
 	}
 	bv := make(map[string]*querypb.BindVariable)
 	sqlparser.Normalize(stmt, sqlparser.NewReservedVars("bv", reservedVars), bv)
-	return 1
-}
-
-func FuzzParser(data []byte) int {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Recovered. Error:\n", r)
-		}
-	}()
-	_, err := sqlparser.Parse(string(data))
-	if err != nil {
-		return 0
-	}
 	return 1
 }
 
@@ -66,11 +53,11 @@ func FuzzNodeFormat(data []byte) int {
 		}
 	}()
 	f := fuzz.NewConsumer(data)
-	query, err := f.GetSQLString()
+	query, err := f.GetString()
 	if err != nil {
 		return 0
 	}
-	node, err := sqlparser.Parse(query)
+	node, err := sqlparser.NewTestParser().Parse(query)
 	if err != nil {
 		return 0
 	}
@@ -89,6 +76,6 @@ func FuzzSplitStatementToPieces(data []byte) int {
 			fmt.Println("Recovered. Error:\n", r)
 		}
 	}()
-	_, _ = sqlparser.SplitStatementToPieces(string(data))
+	_, _ = sqlparser.NewTestParser().SplitStatementToPieces(string(data))
 	return 1
 }

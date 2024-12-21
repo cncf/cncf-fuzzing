@@ -21,6 +21,8 @@ import (
 
 	binlogdatapb "vitess.io/vitess/go/vt/proto/binlogdata"
 	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
+	"vitess.io/vitess/go/vt/vtenv"
+	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
 )
 
@@ -42,7 +44,7 @@ func FuzzbuildPlan(data []byte) int {
 			"ks": &kspb,
 		},
 	}
-	vschema := vindexes.BuildVSchema(srvVSchema)
+	vschema := vindexes.BuildVSchema(srvVSchema, sqlparser.NewTestParser())
 	if err != nil {
 		return -1
 	}
@@ -67,7 +69,7 @@ func FuzzbuildPlan(data []byte) int {
 	if err != nil {
 		return -1
 	}
-	_, _ = buildPlan(t1, testLocalVSchema, &binlogdatapb.Filter{
+	_, _ = buildPlan(vtenv.NewTestEnv(), t1, testLocalVSchema, &binlogdatapb.Filter{
 		Rules: []*binlogdatapb.Rule{
 			{Match: str1, Filter: str2},
 		},
