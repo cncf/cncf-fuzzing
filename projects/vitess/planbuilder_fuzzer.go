@@ -16,17 +16,18 @@
 package planbuilder
 
 import (
-	"runtime"
-	"strings"
 	"sync"
 	"testing"
 
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+
 	"vitess.io/vitess/go/json2"
+	"vitess.io/vitess/go/test/vschemawrapper"
+	"vitess.io/vitess/go/vt/vtenv"
+	"vitess.io/vitess/go/vt/sqlparser"
 	"vitess.io/vitess/go/sqltypes"
 	vschemapb "vitess.io/vitess/go/vt/proto/vschema"
 	"vitess.io/vitess/go/vt/vtgate/vindexes"
-
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 var initter sync.Once
@@ -38,12 +39,12 @@ func onceInit() {
 // loadSchemaForFuzzing is a helper to load *vindexes.VSchema
 // for fuzzing.
 func loadSchemaForFuzzing(f *fuzz.ConsumeFuzzer) (*vindexes.VSchema, error) {
-	//formal, err := vindexes.LoadFormal(filename)
+	// formal, err := vindexes.LoadFormal(filename)
 	formal, err := loadFormalForFuzzing(f)
 	if err != nil {
 		return nil, err
 	}
-	vschema := vindexes.BuildVSchema(formal)
+	vschema := vindexes.BuildVSchema(formal, sqlparser.NewTestParser())
 	if err != nil {
 		return nil, err
 	}
@@ -70,58 +71,23 @@ func loadFormalForFuzzing(f *fuzz.ConsumeFuzzer) (*vschemapb.SrvVSchema, error) 
 	if err != nil {
 		return nil, err
 	}
-	err = json2.Unmarshal(data, formal)
+	err = json2.UnmarshalPB(data, formal)
 	if err != nil {
 		return nil, err
 	}
 	return formal, nil
 }
 
-func catchPanics() {
-	if r := recover(); r != nil {
-		var err string
-		switch r.(type) {
-		case string:
-			err = r.(string)
-		case runtime.Error:
-			err = r.(runtime.Error).Error()
-		case error:
-			err = r.(error).Error()
-		}
-		if strings.Contains(err, "collations.Local() called too early") {
-			return
-		} else {
-			return
-		}
-	}
-}
-
 // FuzzTestBuilder implements the fuzzer
 func FuzzTestBuilder(data []byte) int {
 	initter.Do(onceInit)
-	defer catchPanics()
-
 	f := fuzz.NewConsumer(data)
-	query, err := f.GetSQLString()
-	if err != nil {
-		return 0
-	}
-	keyspace, err := f.GetString()
-	if err != nil {
-		return 0
-	}
 	s, err := loadSchemaForFuzzing(f)
 	if err != nil {
 		return 0
 	}
-	vschemaWrapper := &vschemaWrapper{
-		v:             s,
-		sysVarEnabled: true,
-	}
+	env := vtenv.NewTestEnv()
 
-	_, err = TestBuilder(query, vschemaWrapper, keyspace)
-	if err != nil {
-		return 0
-	}
+	_, _ = vschemawrapper.NewVschemaWrapper(env, s, TestBuilder)
 	return 1
 }

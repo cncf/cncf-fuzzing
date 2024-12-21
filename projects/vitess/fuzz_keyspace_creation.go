@@ -38,8 +38,8 @@ func FuzzKeyspaceCreation(f *testing.F) {
 		if len(ks) < 2 {
 			return
 		}
-		ts := memorytopo.NewServer("zone1")
 		ctx := context.Background()
+		ts := memorytopo.NewServer(ctx, "zone1")
 		var createdKs []string
 		createdKs = make([]string, 0)
 		for _, k := range ks {

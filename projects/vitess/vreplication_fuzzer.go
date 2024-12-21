@@ -77,7 +77,7 @@ func makeExpectations(dbClient *binlogplayer.MockDBClient, f *fuzz.ConsumeFuzzer
 	return nil
 }
 
-func FuzzVreplicationEngine(data []byte) int {
+func FuzzEngine(data []byte) int {
 	initter.Do(initTesting)
 	t := &testing.T{}
 	f := fuzz.NewConsumer(data)
@@ -85,7 +85,7 @@ func FuzzVreplicationEngine(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	topoServer := memorytopo.NewServer("cell1")
+	topoServer := memorytopo.NewServer(context.Background(), "cell1")
 	_ = topoServer
 	defer func() { globalStats = &vrStats{} }()
 

@@ -1,17 +1,21 @@
-// Copyright 2022 ADA Logics Ltd
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
+//go:build gofuzz
+// +build gofuzz
+
+/*
+Copyright 2021 The Vitess Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 package mysql
 
@@ -26,11 +30,12 @@ import (
 	"time"
 
 	gofuzzheaders "github.com/AdaLogics/go-fuzz-headers"
-
 	"vitess.io/vitess/go/sqltypes"
 	querypb "vitess.io/vitess/go/vt/proto/query"
 	"vitess.io/vitess/go/vt/tlstest"
 	"vitess.io/vitess/go/vt/vttls"
+	"vitess.io/vitess/go/mysql/replication"
+	"vitess.io/vitess/go/vt/vtenv"
 )
 
 func createFuzzingSocketPair() (net.Listener, *Conn, *Conn) {
@@ -72,14 +77,30 @@ func createFuzzingSocketPair() (net.Listener, *Conn, *Conn) {
 	}
 
 	// Create a Conn on both sides.
-	cConn := newConn(clientConn)
-	sConn := newConn(serverConn)
+	cConn := newConn(clientConn, DefaultFlushDelay, 0)
+	sConn := newConn(serverConn, DefaultFlushDelay, 0)
 
 	return listener, sConn, cConn
 }
 
 type fuzztestRun struct {
 	UnimplementedHandler
+}
+
+func (t fuzztestRun) ComBinlogDump(c *Conn, logFile string, binlogPos uint32) error {
+	panic("implement me")
+}
+
+func (t fuzztestRun) ComBinlogDumpGTID(c *Conn, logFile string, logPos uint64, gtidSet replication.GTIDSet) error {
+	panic("implement me")
+}
+
+func (t fuzztestRun) Env() *vtenv.Environment {
+	return vtenv.NewTestEnv()
+}
+
+func (t fuzztestRun) ComRegisterReplica(c *Conn, replicaHost string, replicaPort uint16, replicaUser string, replicaPassword string) error {
+	panic("implement me")
 }
 
 func (t fuzztestRun) ComQuery(c *Conn, query string, callback func(*sqltypes.Result) error) error {
@@ -96,18 +117,6 @@ func (t fuzztestRun) ComStmtExecute(c *Conn, prepare *PrepareData, callback func
 
 func (t fuzztestRun) WarningCount(c *Conn) uint16 {
 	return 0
-}
-
-func (t fuzztestRun) ComRegisterReplica(c *Conn, replicaHost string, replicaPort uint16, replicaUser string, replicaPassword string) error {
-	return nil
-}
-
-func (t fuzztestRun) ComBinlogDump(c *Conn, logFile string, binlogPos uint32) error {
-	return nil
-}
-
-func (t fuzztestRun) ComBinlogDumpGTID(c *Conn, logFile string, logPos uint64, gtidSet GTIDSet) error {
-	return nil
 }
 
 var _ Handler = (*fuzztestRun)(nil)
@@ -204,7 +213,7 @@ func FuzzHandleNextCommand(data []byte) int {
 		writeToPass: []bool{false},
 		pos:         -1,
 		queryPacket: data,
-	})
+	}, DefaultFlushDelay, 0)
 	sConn.PrepareData = map[uint32]*PrepareData{}
 
 	handler := &fuzztestRun{}
@@ -254,6 +263,22 @@ func (th *fuzzTestHandler) Result() *sqltypes.Result {
 	return th.result
 }
 
+func (th *fuzzTestHandler) ComBinlogDump(c *Conn, logFile string, binlogPos uint32) error {
+	panic("implement me")
+}
+
+func (th *fuzzTestHandler) ComBinlogDumpGTID(c *Conn, logFile string, logPos uint64, gtidSet replication.GTIDSet) error {
+	panic("implement me")
+}
+
+func (th *fuzzTestHandler) ComRegisterReplica(c *Conn, replicaHost string, replicaPort uint16, replicaUser string, replicaPassword string) error {
+	panic("implement me")
+}
+
+func (th *fuzzTestHandler) Env() *vtenv.Environment {
+	return vtenv.NewTestEnv()
+}
+
 func (th *fuzzTestHandler) SetErr(err error) {
 	th.mu.Lock()
 	defer th.mu.Unlock()
@@ -301,18 +326,6 @@ func (th *fuzzTestHandler) WarningCount(c *Conn) uint16 {
 	return th.warnings
 }
 
-func (th *fuzzTestHandler) ComRegisterReplica(c *Conn, replicaHost string, replicaPort uint16, replicaUser string, replicaPassword string) error {
-	return nil
-}
-
-func (th *fuzzTestHandler) ComBinlogDump(c *Conn, logFile string, binlogPos uint32) error {
-	return nil
-}
-
-func (th *fuzzTestHandler) ComBinlogDumpGTID(c *Conn, logFile string, logPos uint64, gtidSet GTIDSet) error {
-	return nil
-}
-
 func (c *Conn) writeFuzzedPacket(packet []byte) {
 	c.sequence = 0
 	data, pos := c.startEphemeralPacketWithHeader(len(packet) + 1)
@@ -329,13 +342,13 @@ func FuzzTLSServer(data []byte) int {
 	totalQueries := 20
 	var queries [][]byte
 	c := gofuzzheaders.NewConsumer(data)
-	for i := 0; i < totalQueries; i++ {
+	for _ = range totalQueries {
 		query, err := c.GetBytes()
 		if err != nil {
+			if len(queries) > 2 {
+				break
+			}
 			return -1
-		}
-		if len(query) < 40 {
-			continue
 		}
 		queries = append(queries, query)
 	}
@@ -347,7 +360,7 @@ func FuzzTLSServer(data []byte) int {
 		Password: "password1",
 	}}
 	defer authServer.close()
-	l, err := NewListener("tcp", "127.0.0.1:", authServer, th, 0, 0, false, false, 0)
+	l, err := NewListener("tcp", "127.0.0.1:", authServer, th, 0, 0, false, false, 0, 0)
 	if err != nil {
 		return -1
 	}
@@ -396,7 +409,7 @@ func FuzzTLSServer(data []byte) int {
 		return -1
 	}
 
-	for i := 0; i < len(queries); i++ {
+	for i := range len(queries) {
 		conn.writeFuzzedPacket(queries[i])
 	}
 	return 1

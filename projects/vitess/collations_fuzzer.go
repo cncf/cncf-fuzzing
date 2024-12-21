@@ -13,14 +13,14 @@
 // limitations under the License.
 //
 
-package collations
+package colldata
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 var (
-	collations = []string{"utf8mb4_bin", "utf8mb4_0900_ai_ci",
+	fuzzCollations = []string{"utf8mb4_bin", "utf8mb4_0900_ai_ci",
 		"utf8mb4_0900_as_ci", "utf8mb4_0900_as_cs",
 		"utf8mb4_0900_ai_ci", "utf8mb4_0900_as_ci",
 		"utf8mb4_0900_ai_ci", "utf8mb4_0900_ai_ci",
@@ -36,7 +36,7 @@ func FuzzCollations(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	collString := collations[collIndex%len(collations)]
+	collString := fuzzCollations[collIndex%len(fuzzCollations)]
 	coll := testcollationMap[collString]
 	left, err := f.GetBytes()
 	if err != nil {

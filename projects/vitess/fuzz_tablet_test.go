@@ -35,7 +35,7 @@ func FuzzTabletCreation(f *testing.F) {
 		}
 		aliases := make([]*topodatapb.TabletAlias, 0)
 		ctx := context.Background()
-		ts := memorytopo.NewServer("cell1")
+		ts := memorytopo.NewServer(ctx, "cell1")
 		for _, tablet := range tablets {
 			err := ts.CreateTablet(ctx, tablet)
 			if err == nil {

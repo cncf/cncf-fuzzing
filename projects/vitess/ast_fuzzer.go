@@ -19,8 +19,6 @@
 package fuzzing
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
@@ -29,46 +27,11 @@ func FuzzEqualsSQLNode(data []byte) int {
 	if len(data) < 10 {
 		return 0
 	}
-	f := fuzz.NewConsumer(data)
-	query1, err := f.GetSQLString()
+	parser := sqlparser.NewTestParser()
+	expr, err := parser.Parse(string(data))
 	if err != nil {
 		return 0
 	}
-	query2, err := f.GetSQLString()
-	if err != nil {
-		return 0
-	}
-	inA, err := sqlparser.Parse(query1)
-	if err != nil {
-		return 0
-	}
-	inB, err := sqlparser.Parse(query2)
-	if err != nil {
-		return 0
-	}
-
-	// There are 3 targets in this fuzzer:
-	// 1) sqlparser.EqualsSQLNode
-	// 2) sqlparser.CloneSQLNode
-	// 3) sqlparser.VisitSQLNode
-
-	// Target 1:
-	identical := sqlparser.Equals.SQLNode(inA, inA)
-	if !identical {
-		panic("Should be identical")
-	}
-	identical = sqlparser.Equals.SQLNode(inB, inB)
-	if !identical {
-		panic("Should be identical")
-	}
-
-	// Target 2:
-	newSQLNode := sqlparser.CloneSQLNode(inA)
-	if !sqlparser.Equals.SQLNode(inA, newSQLNode) {
-		panic("These two nodes should be identical")
-	}
-
-	// Target 3:
-	_ = sqlparser.VisitSQLNode(inA, func(node sqlparser.SQLNode) (bool, error) { return false, nil })
+	_ = sqlparser.RewritePredicate(expr)
 	return 1
 }

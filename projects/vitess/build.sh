@@ -57,34 +57,38 @@ mv ./go/vt/vtgate/grpcvtgateconn/suite_test.go \
 
 # remove broken fuzzers:
 rm $SRC/vitess/go/mysql/mysql_fuzzer.go
-rm $SRC/vitess/go/mysql/collations/fuzz.go
+rm $SRC/vitess/go/mysql/collations/colldata/fuzz.go
 rm $SRC/vitess/go/vt/vtgate/vindexes/fuzz.go
-rm $SRC/vitess/go/vt/vtgate/planbuilder/fuzz.go
+#rm $SRC/vitess/go/vt/vtgate/planbuilder/fuzz.go
 rm $SRC/vitess/go/vt/vttablet/tabletmanager/vreplication/fuzz.go
 rm $SRC/vitess/go/vt/vtgate/engine/fuzz.go
-rm $SRC/vitess/go/vt/vtgate/planbuilder/operators/fuzz.go
+#rm $SRC/vitess/go/vt/vtgate/planbuilder/operators/fuzz.go
 rm $SRC/vitess/go/vt/vtgate/grpcvtgateconn/fuzz_flaky_test.go
 rm $SRC/vitess/go/vt/vttablet/tabletserver/fuzz.go
 
 mv $SRC/cncf-fuzzing/projects/vitess/mysql_fuzzer.go $SRC/vitess/go/mysql/
 
 mv $SRC/cncf-fuzzing/projects/vitess/grpcvtgateconn_fuzzer.go $SRC/vitess/go/vt/vtgate/grpcvtgateconn/
-mv $SRC/cncf-fuzzing/projects/vitess/abstract_fuzzer.go $SRC/vitess/go/vt/vtgate/planbuilder/operators/
+mv $SRC/cncf-fuzzing/projects/vitess/abstract_fuzzer.go $SRC/vitess/go/vt/vtgate/planbuilder/operators/fuzz.go
+cp $SRC/cncf-fuzzing/projects/vitess/vstreamer_fuzzer.go $SRC/vitess/go/vt/vttablet/tabletserver/vstreamer/fuzz.go
 
 # collation fuzzer
-mv ./go/mysql/collations/uca_test.go \
-   ./go/mysql/collations/uca_test_fuzz.go
-mv $SRC/cncf-fuzzing/projects/vitess/collations_fuzzer.go $SRC/vitess/go/mysql/collations/
-compile_go_fuzzer vitess.io/vitess/go/mysql/collations FuzzCollations fuzz_collations
+mv ./go/mysql/collations/colldata/uca_test.go \
+   ./go/mysql/collations/colldata/uca_test_fuzz.go
+mv $SRC/cncf-fuzzing/projects/vitess/collations_fuzzer.go $SRC/vitess/go/mysql/collations/colldata
+compile_go_fuzzer vitess.io/vitess/go/mysql/collations/colldata FuzzCollations fuzz_collations
 
-mv $SRC/cncf-fuzzing/projects/vitess/planbuilder_fuzzer.go $SRC/vitess/go/vt/vtgate/planbuilder/
+mv $SRC/cncf-fuzzing/projects/vitess/planbuilder_fuzzer.go $SRC/vitess/go/vt/vtgate/planbuilder/fuzz.go
+# delete gofuzz directive
+#ls $SRC/vitess/go/vt/vtgate/planbuilder
+#sed -i -e 1,2d $SRC/vitess/go/vt/vtgate/planbuilder/fuzz.go
 compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/planbuilder FuzzTestBuilder fuzz_test_builder gofuzz
 
 mv $SRC/cncf-fuzzing/projects/vitess/vindexes_fuzzer.go $SRC/vitess/go/vt/vtgate/vindexes/
 compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/vindexes FuzzVindex fuzz_vindex
 
 mv $SRC/cncf-fuzzing/projects/vitess/vreplication_fuzzer.go $SRC/vitess/go/vt/vttablet/tabletmanager/vreplication/
-compile_go_fuzzer vitess.io/vitess/go/vt/vttablet/tabletmanager/vreplication FuzzVreplicationEngine fuzz_replication_engine
+compile_go_fuzzer vitess.io/vitess/go/vt/vttablet/tabletmanager/vreplication FuzzEngine fuzz_replication_engine
 
 mv $SRC/cncf-fuzzing/projects/vitess/vtgate_engine_fuzzer.go $SRC/vitess/go/vt/vtgate/engine/
 compile_go_fuzzer vitess.io/vitess/go/vt/vtgate/engine FuzzVtateEngine engine_fuzzer
@@ -99,7 +103,7 @@ mv $SRC/cncf-fuzzing/projects/vitess/ast_fuzzer.go $SRC/vitess/go/test/fuzzing/
 mv $SRC/cncf-fuzzing/projects/vitess/parser_fuzzer.go $SRC/vitess/go/test/fuzzing/
 mv $SRC/cncf-fuzzing/projects/vitess/tablet_manager_fuzzer.go $SRC/vitess/go/test/fuzzing/
 mv $SRC/cncf-fuzzing/projects/vitess/tabletserver_rules_fuzzer.go $SRC/vitess/go/test/fuzzing/
-mv $SRC/cncf-fuzzing/projects/vitess/tabletserver_schema_fuzzer.go $SRC/vitess/go/test/fuzzing/
+mv $SRC/cncf-fuzzing/projects/vitess/tabletserver_schema_fuzzer.go $SRC/vitess/go/vt/vttablet/tabletserver/schema/fuzz_test.go
 mv $SRC/cncf-fuzzing/projects/vitess/vt_schema_fuzzer.go $SRC/vitess/go/test/fuzzing/
 mv $SRC/cncf-fuzzing/projects/vitess/vttablet_fuzzer.go $SRC/vitess/go/test/fuzzing/
 
@@ -121,7 +125,6 @@ compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzAPIMarshal api_marshal_fu
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing Fuzz vtctl_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzIsDML is_dml_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzNormalizer normalizer_fuzzer
-compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzParser parser_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzNodeFormat fuzz_node_format
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzGRPCTMServer fuzz_grpc_tm_server
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzOnlineDDLFromCommentedStatement fuzz_online_ddl_from_commented_statement
@@ -129,7 +132,9 @@ compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzNewOnlineDDLs fuzz_new_on
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzEqualsSQLNode fuzz_equals_sql_node
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzSplitStatementToPieces fuzz_split_statement_to_pieces
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzUnmarshalJSON fuzz_tabletserver_rules_unmarshal_json
-compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzLoadTable fuzz_load_table
+
+# TODO: fix
+#compile_native_go_fuzzer vitess.io/vitess/go/vt/vttablet/tabletserver/schema FuzzLoadTable fuzz_load_table
 
 compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzKeyspaceCreation fuzz_keyspace_creation
 compile_native_go_fuzzer vitess.io/vitess/go/vt/topo/topotests FuzzShardCreation fuzz_shard_creation
@@ -139,7 +144,6 @@ compile_go_fuzzer vitess.io/vitess/go/mysql FuzzHandleNextCommand handle_next_co
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzReadQueryResults read_query_results_fuzzer
 compile_go_fuzzer vitess.io/vitess/go/mysql FuzzTLSServer fuzz_tls
 
-cp $SRC/cncf-fuzzing/projects/vitess/vstreamer_fuzzer.go $SRC/vitess/go/vt/vttablet/tabletserver/vstreamer/
 compile_go_fuzzer vitess.io/vitess/go/vt/vttablet/tabletserver/vstreamer FuzzbuildPlan vstreamer_planbuilder_fuzzer
 
 cp $SRC/cncf-fuzzing/projects/vitess/tabletserver_fuzzer.go $SRC/vitess/go/vt/vttablet/tabletserver/

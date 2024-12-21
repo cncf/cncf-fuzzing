@@ -23,6 +23,7 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	"vitess.io/vitess/go/mysql/fakesqldb"
+	"vitess.io/vitess/go/vt/vtenv"
 	"vitess.io/vitess/go/sqltypes"
 	"vitess.io/vitess/go/vt/vttablet/tabletserver/schema"
 	"vitess.io/vitess/go/vt/vttablet/tabletserver/tabletenv"
@@ -56,15 +57,13 @@ func FuzzGetPlan(data []byte) int {
 	// Set up the environment
 	config := tabletenv.NewDefaultConfig()
 	config.DB = newDBConfigs(db)
-	env := tabletenv.NewEnv(config, "TabletServerTest")
+	env := tabletenv.NewEnv(vtenv.NewTestEnv(), config, "TabletServerTest")
 	se := schema.NewEngine(env)
 	qe := NewQueryEngine(env, se)
 	defer qe.Close()
 	qe.Open()
 
 	logStats := tabletenv.NewLogStats(context.Background(), "GetPlanStats")
-	qe.SetQueryPlanCacheCap(1024)
-
 	// Call target
 	_, _ = qe.GetPlan(context.Background(), logStats, query2, true)
 	return 1

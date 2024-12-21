@@ -32,7 +32,6 @@ func init() {
 
 var (
 	ks  = "ks1"
-	ctx = context.Background()
 )
 
 func FuzzShardCreation(f *testing.F) {
@@ -47,7 +46,8 @@ func FuzzShardCreation(f *testing.F) {
 		}
 		var createdS []string
 		createdS = make([]string, 0)
-		ts := memorytopo.NewServer("zone1")
+		ctx := context.Background()
+		ts := memorytopo.NewServer(ctx, "zone1")
 		err := ts.CreateKeyspace(ctx, ks, &topodatapb.Keyspace{})
 		if err != nil {
 			panic(err)
