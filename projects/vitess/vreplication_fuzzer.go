@@ -89,7 +89,6 @@ func FuzzEngine(data []byte) int {
 	_ = topoServer
 	defer func() { globalStats = &vrStats{} }()
 
-	resetBinlogClient()
 	dbClient := binlogplayer.NewMockDBClient(t)
 	dbClientFactory := func() binlogplayer.DBClient { return dbClient }
 	mysqld := &mysqlctl.FakeMysqlDaemon{}

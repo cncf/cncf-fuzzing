@@ -26,8 +26,6 @@ go mod vendor
 # This affects the mysql fuzzers
 sed -i '/log.Errorf/c\\/\/log.Errorf' $SRC/vitess/go/mysql/conn.go
 
-mv ./go/vt/vttablet/tabletmanager/vreplication/framework_test.go \
-   ./go/vt/vttablet/tabletmanager/vreplication/framework_fuzz.go
 
 #consistent_lookup_test.go is needed for loggingVCursor
 mv ./go/vt/vtgate/vindexes/consistent_lookup_test.go \
