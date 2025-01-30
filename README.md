@@ -7,9 +7,9 @@ Are you a CNCF project and would like to have it fuzzed? Please create an issue 
 
 
 ## Fuzzing handbook
-CNCF has a Fuzzing Handbook which introdues fuzzing in a pragmatic manner, and also has a chapter that goes into details with how to use OSS-Fuzz to establish a continuous fuzzing set up.
+CNCF has a Fuzzing Handbook which introduces fuzzing in a pragmatic manner, and also has a chapter that goes into details with how to use OSS-Fuzz to establish a continuous fuzzing set up.
 
-The handbook is available [here](https://github.com/cncf/tag-security/blob/main/security-fuzzing-handbook/handbook-fuzzing.pdf)
+The handbook is available [here](https://github.com/cncf/tag-security/blob/main/community/resources/security-fuzzing-handbook/handbook-fuzzing.pdf)
 
 
 ## CNCF projects and fuzzing
@@ -109,7 +109,7 @@ Fuzzing works best with projects that have high code complexity, e.g. parsers, d
 - Envoy has invested significantly in fuzzing and OSS-Fuzz has reported more than [700](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=proj%3Denvoy%20Type%3DBug&can=1) bugs as well as [81](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=proj%3Denvoy%20Type%3DBug-Security&can=1) security relevant bugs
 - Fluent-bit has been fuzzed for slightly more than a year, and OSS-Fuzz has reported more than [100](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=proj%3Dfluent-bit%20Type%3DBug&can=1) reliability issues and more than [50](https://bugs.chromium.org/p/oss-fuzz/issues/list?q=proj%3Dfluent-bit%20Type%3DBug-Security&can=1) security issues.
 
-For an example where fuzzing was determined to have limited effects consider [Cloud custodian](https://github.com/cloud-custodian/cloud-custodian). Cloud custodian is a project written in Python and is very horisontal in its architecture in that it does not have deep code complexities. This is an example where fuzzing will have limited results as discussed in detail in a [PR](https://github.com/cloud-custodian/cloud-custodian/pull/6832) on the Cloud Custodian repository. However, Cloud Custodian still benefited from fuzzing finding a bug in the code of Cloud Custodian where fuzzing could be applied, but, in comparison to the other projects mentioned above Cloud Custodian is not integrated into OSS-Fuzz.
+For an example where fuzzing was determined to have limited effects consider [Cloud custodian](https://github.com/cloud-custodian/cloud-custodian). Cloud custodian is a project written in Python and is very horizontal in its architecture in that it does not have deep code complexities. This is an example where fuzzing will have limited results as discussed in detail in a [PR](https://github.com/cloud-custodian/cloud-custodian/pull/6832) on the Cloud Custodian repository. However, Cloud Custodian still benefited from fuzzing finding a bug in the code of Cloud Custodian where fuzzing could be applied, but, in comparison to the other projects mentioned above Cloud Custodian is not integrated into OSS-Fuzz.
 
 The following list indicates some common software properties that means your code is likely to benefit from fuzzing
 - High code complexity
@@ -117,11 +117,11 @@ The following list indicates some common software properties that means your cod
 - Accepts untrusted input
 - If a reliability or reliability issue occur then it can have significant consequences for systems
 - Is used as a library by other applications
-- Projects in memory unsafe languages should have a high prority for being fuzzed (but fuzzing is not exclusive to memory unsafe languages)
+- Projects in memory unsafe languages should have a high priority for being fuzzed (but fuzzing is not exclusive to memory unsafe languages)
 
 ## Fuzzing hours
 
-We have montly fuzzing hours on every second Friday of each month at 2PM GMT+1.
+We have monthly fuzzing hours on every second Friday of each month at 2PM GMT+1.
 
 URL: [https://us05web.zoom.us/j/86181802116](https://us05web.zoom.us/j/86181802116)
 Passcode: LBw6fY
