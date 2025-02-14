@@ -56,7 +56,7 @@ EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_IN
 EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_QUARKUS,$EXCLUDE_REST,$EXCLUDE_THEMES,$EXCLUDE_TEST,$EXCLUDE_TEST_FRAMEWORK
 
 ## Execute maven build
-#$MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
+$MVN clean package dependency:copy-dependencies -pl "$EXCLUDE_MODULE" $MAVEN_ARGS
 
 # Dependency for Mockito and MockWebService functionality for mocking objects and web service
 mkdir -p fuzzer-dependencies
@@ -115,7 +115,7 @@ RUNTIME_CLASSPATH_DEFAULT_CRYPTO=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO:\$this_dir:\$
 $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH:$SRC -d $SRC/ $SRC/BaseHelper.java
 cp $SRC/BaseHelper*.class $OUT/
 
-for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
+for fuzzer in $(find $SRC -maxdepth 1 -name '*Fuzzer.java'); do
   if [[ "$fuzzer" == *"AuthenticatorFuzzer"* ]] || [[ "$fuzzer" == *"ValidatorFuzzer"* ]] || \
   [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]] || \
   [[ "$fuzzer" == *"SamlXmlUtilFuzzer"* ]] || [[ "$fuzzer" == *"AuthzClientFuzzer"* ]] || \
