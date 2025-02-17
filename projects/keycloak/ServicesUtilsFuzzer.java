@@ -64,7 +64,7 @@ public class ServicesUtilsFuzzer {
   public static void fuzzerTestOneInput(FuzzedDataProvider data) {
     try {
       // Randomly choose which utils method to invoke
-      Integer choice = data.consumeInt(1, 7);
+      Integer choice = data.consumeInt(1, 6);
       switch (choice) {
         case 1:
           // Create certificate and crl from random data
@@ -104,8 +104,6 @@ public class ServicesUtilsFuzzer {
           Mockito.when(groupPermissions.canView(group)).thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canManage()).thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canView()).thenReturn(data.consumeBoolean());
-          Mockito.when(groupPermissions.getGroupsWithViewPermission(group))
-              .thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canManageMembership(group))
               .thenReturn(data.consumeBoolean());
           Mockito.when(groupPermissions.canViewMembers(group)).thenReturn(data.consumeBoolean());
@@ -113,10 +111,6 @@ public class ServicesUtilsFuzzer {
           Map<String, Boolean> permissionMap = new HashMap<String, Boolean>();
           permissionMap.put(data.consumeString(data.consumeInt(0, 10000)), data.consumeBoolean());
           Mockito.when(groupPermissions.getAccess(group)).thenReturn(permissionMap);
-
-          Set<String> set = new HashSet<String>();
-          set.add(data.consumeString(data.consumeInt(0, 10000)));
-          Mockito.when(groupPermissions.getGroupsWithViewPermission()).thenReturn(set);
 
           // Create and mock RealmModel instance with default policy and random data
           RealmModel realm = Mockito.mock(RealmModel.class);
@@ -149,13 +143,9 @@ public class ServicesUtilsFuzzer {
           break;
         case 5:
           // Call target method
-          SearchQueryUtils.unescape(data.consumeRemainingAsString());
-          break;
-        case 6:
-          // Call target method
           TotpUtils.encode(data.consumeRemainingAsString());
           break;
-        case 7:
+        case 6:
           // Create and mock UserModel instance with random data
           UserModel userModel = Mockito.mock(UserModel.class);
           Mockito.when(userModel.getUsername())

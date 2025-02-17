@@ -35,20 +35,22 @@ EXCLUDE_INTEGRATION="!integration,!integration/admin-client,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-registration,!integration/client-cli,"
 EXCLUDE_INTEGRATION=$EXCLUDE_INTEGRATION"!integration/client-cli/admin-cli,!integration/client-cli/client-cli-dist"
 
-EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/keycloak-js,!js/libs/ui-shared,!js/apps/admin-ui,"
-EXCLUDE_JS=$EXCLUDE_JS"!js/apps/account-ui"
+EXCLUDE_JS="!js,!js/libs/keycloak-admin-client,!js/libs/ui-shared,!js/apps/admin-ui,"
+EXCLUDE_JS=$EXCLUDE_JS"!js/apps/account-ui,!js/themes-vendor"
 
 EXCLUDE_QUARKUS="!quarkus,!quarkus/runtime,!quarkus/deployment,"
 EXCLUDE_QUARKUS=$EXCLUDE_QUARKUS"!quarkus/server,!quarkus/dist,!quarkus/tests,!quarkus/tests/junit5"
 
 EXCLUDE_REST="!rest,!rest/admin-ui-ext"
 
-EXCLUDE_THEMES="!themes"
-EXCLUDE_TEST="!tests,!tests/base"
+EXCLUDE_THEMES="!themes,!misc/theme-verifier"
+EXCLUDE_TEST="!tests,!tests/base,!tests/utils,!tests/custom-providers"
 EXCLUDE_TEST_FRAMEWORK="!test-framework,!test-framework/bom,!test-framework/core,!test-framework/db-mariadb,"
 EXCLUDE_TEST_FRAMEWORK=$EXCLUDE_TEST_FRAMEWORK"!test-framework/db-mssql,!test-framework/db-mysql,!test-framework/db-oracle,"
 EXCLUDE_TEST_FRAMEWORK=$EXCLUDE_TEST_FRAMEWORK"!test-framework/db-postgres,!test-framework/ui,!test-framework/examples,"
-EXCLUDE_TEST_FRAMEWORK=$EXCLUDE_TEST_FRAMEWORK"!test-framework/examples/providers,!test-framework/examples/tests"
+EXCLUDE_TEST_FRAMEWORK=$EXCLUDE_TEST_FRAMEWORK"!test-framework/examples/providers,!test-framework/examples/tests,"
+EXCLUDE_TEST_FRAMEWORK=$EXCLUDE_TEST_FRAMEWORK"!test-framework/email-server,!test-framework/ui,!test-framework/oauth-nimbus-poc,"
+EXCLUDE_TEST_FRAMEWORK=$EXCLUDE_TEST_FRAMEWORK"!test-framework/remote-providers,!test-framework/remote"
 
 EXCLUDE_MODULE=$EXCLUDE_DOCS,$EXCLUDE_DEPENDENCY,$EXCLUDE_FEDERATION,$EXCLUDE_INTEGRATION,$EXCLUDE_JS
 EXCLUDE_MODULE=$EXCLUDE_MODULE,$EXCLUDE_QUARKUS,$EXCLUDE_REST,$EXCLUDE_THEMES,$EXCLUDE_TEST,$EXCLUDE_TEST_FRAMEWORK
@@ -113,7 +115,7 @@ RUNTIME_CLASSPATH_DEFAULT_CRYPTO=$RUNTIME_CLASSPATH_DEFAULT_CRYPTO:\$this_dir:\$
 $JAVA_HOME/bin/javac -cp $BUILD_CLASSPATH:$SRC -d $SRC/ $SRC/BaseHelper.java
 cp $SRC/BaseHelper*.class $OUT/
 
-for fuzzer in $(find $SRC -name '*Fuzzer.java'); do
+for fuzzer in $(find $SRC -maxdepth 1 -name '*Fuzzer.java'); do
   if [[ "$fuzzer" == *"AuthenticatorFuzzer"* ]] || [[ "$fuzzer" == *"ValidatorFuzzer"* ]] || \
   [[ "$fuzzer" == *"KeycloakUriBuilderFuzzer"* ]] || [[ "$fuzzer" == *"KeycloakModelUtilsFuzzer"* ]] || \
   [[ "$fuzzer" == *"SamlXmlUtilFuzzer"* ]] || [[ "$fuzzer" == *"AuthzClientFuzzer"* ]] || \

@@ -22,7 +22,6 @@ import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.OTPCredentialProvider;
-import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.credential.RecoveryAuthnCodesCredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialProvider;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -50,17 +49,14 @@ public class CredentialValidatorFuzzer {
       mockObject.mockInstance();
       mockObject.randomizeMockData(data);
 
-      switch (data.consumeInt(1, 4)) {
+      switch (data.consumeInt(1, 3)) {
         case 1:
           validator = new OTPCredentialProvider(mockObject.getSession());
           break;
         case 2:
-          validator = new PasswordCredentialProvider(mockObject.getSession());
-          break;
-        case 3:
           validator = new RecoveryAuthnCodesCredentialProvider(mockObject.getSession());
           break;
-        case 4:
+        case 3:
           validator =
               new WebAuthnCredentialProvider(mockObject.getSession(), new ObjectConverter());
           break;
