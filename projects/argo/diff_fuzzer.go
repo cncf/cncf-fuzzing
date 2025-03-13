@@ -22,11 +22,11 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	appstatecache "github.com/argoproj/argo-cd/v2/util/cache/appstate"
 	"github.com/argoproj/argo-cd/v2/util/argo/normalizers"
+	appstatecache "github.com/argoproj/argo-cd/v2/util/cache/appstate"
 
-	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 type diffConfigParams struct {
