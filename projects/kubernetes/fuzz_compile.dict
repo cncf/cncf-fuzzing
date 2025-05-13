@@ -1,0 +1,38 @@
+object
+in
+[1, 2, 
+[1, 2, 3]
+test()
+==
+=
++
+-
+<
+>
+>=
+<=
+true
+100
+0
+0.0
+1.0
+"\"okay\""
+.replicas
+string(test())
+string()
+string(self)
+size(self)
+fakeFunction('abc')
+has()
+.value()
+.orValue(1)
+.minReplicas
+.maxReplicas
+.startsWith('s')
+.endsWith('s')
+.all(x, x.all(y, x[y].key == x[y].key))
+.contains('keyword')
+.value
+.matches(r"""^(\*\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$""")
+.exists(f, f.type == ''RequestRedirect'')
+.filter(f, f.type == 'RequestHeaderModifier')
