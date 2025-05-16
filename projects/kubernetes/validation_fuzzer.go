@@ -17,6 +17,7 @@ package fuzzing
 
 import (
 	"context"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	v1 "k8s.io/api/core/v1"
@@ -565,7 +566,12 @@ func FuzzValidateHorizontalPodAutoscaler(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	if errs := autoscalingValidation.ValidateHorizontalPodAutoscaler(autoscaler); len(errs) > 0 {
+	opts := &autoscalingValidation.HorizontalPodAutoscalerSpecValidationOptions{}
+	err = f.GenerateStruct(opts)
+	if err != nil {
+		return 0
+	}
+	if errs := autoscalingValidation.ValidateHorizontalPodAutoscaler(autoscaler, *opts); len(errs) > 0 {
 		for _, err := range errs {
 			_ = err
 			//fmt.Println(err)
@@ -587,7 +593,12 @@ func FuzzValidateHorizontalPodAutoscalerUpdate(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	if errs := autoscalingValidation.ValidateHorizontalPodAutoscalerUpdate(autoscaler1, autoscaler2); len(errs) > 0 {
+	opts := &autoscalingValidation.HorizontalPodAutoscalerSpecValidationOptions{}
+	err = f.GenerateStruct(opts)
+	if err != nil {
+		return 0
+	}
+	if errs := autoscalingValidation.ValidateHorizontalPodAutoscalerUpdate(autoscaler1, autoscaler2, *opts); len(errs) > 0 {
 		for _, err := range errs {
 			_ = err
 			//fmt.Println(err)
