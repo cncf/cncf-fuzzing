@@ -177,3 +177,4 @@ if [ "$SANITIZER" != "coverage" ]; then
 fi
 
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCelCompile fuzz_compile
+compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCelDataCompile fuzz_compiledata
