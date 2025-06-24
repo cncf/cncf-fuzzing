@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/runtime/serializer/protobuf"
-	"k8s.io/apimachinery/pkg/util/diff"
+	"github.com/google/go-cmp/cmp"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	pkgfuzzer "knative.dev/pkg/apis/testing/fuzzer"
@@ -148,7 +148,7 @@ func roundTrip(t *stdTesting.T, scheme *runtime.Scheme, codec runtime.Codec, obj
 	object = object.DeepCopyObject()
 	name := reflect.TypeOf(object).Elem().Name()
 	if !apiequality.Semantic.DeepEqual(original, object) {
-		fmt.Printf("%v: DeepCopy altered the object, diff: %v\n", name, diff.ObjectReflectDiff(original, object))
+		fmt.Printf("%v: DeepCopy altered the object, diff: %v\n", name, cmp.Diff(original, object))
 		fmt.Printf("%s\n", spew.Sdump(original))
 		fmt.Printf("%s\n", spew.Sdump(object))
 		panic("not equal")
@@ -164,7 +164,7 @@ func roundTrip(t *stdTesting.T, scheme *runtime.Scheme, codec runtime.Codec, obj
 	// copy or conversion should alter the object
 	// TODO eliminate this global
 	if !apiequality.Semantic.DeepEqual(original, object) {
-		t.Errorf("%v: encode altered the object, diff: %v", name, diff.ObjectReflectDiff(original, object))
+		t.Errorf("%v: encode altered the object, diff: %v", name, cmp.Diff(original, object))
 		return
 	}
 
@@ -194,7 +194,7 @@ func roundTrip(t *stdTesting.T, scheme *runtime.Scheme, codec runtime.Codec, obj
 	// ensure that the object produced from decoding the encoded data is equal
 	// to the original object
 	if !apiequality.Semantic.DeepEqual(original, obj2) {
-		panic(fmt.Sprintf("%v: diff: %v\nCodec: %#v\nSource:\n\n%#v\n\nEncoded:\n\n%s\n\nFinal:\n\n%#v\n", name, diff.ObjectReflectDiff(original, obj2), codec, printer.Sprintf("%#v", original), dataAsString(data), printer.Sprintf("%#v", obj2)))
+		panic(fmt.Sprintf("%v: diff: %v\nCodec: %#v\nSource:\n\n%#v\n\nEncoded:\n\n%s\n\nFinal:\n\n%#v\n", name, cmp.Diff(original, obj2), codec, printer.Sprintf("%#v", original), dataAsString(data), printer.Sprintf("%#v", obj2)))
 	}
 
 	// decode the encoded data into a new object (instead of letting the codec
@@ -230,7 +230,7 @@ func roundTrip(t *stdTesting.T, scheme *runtime.Scheme, codec runtime.Codec, obj
 	// ensure that the new runtime object is equal to the original after being
 	// decoded into
 	if !apiequality.Semantic.DeepEqual(object, obj3) {
-		panic(fmt.Sprintf("%v: diff: %v\nCodec: %#v", name, diff.ObjectReflectDiff(object, obj3), codec))
+		panic(fmt.Sprintf("%v: diff: %v\nCodec: %#v", name, cmp.Diff(object, obj3), codec))
 	}
 
 	// do structure-preserving fuzzing of the deep-copied object. If it shares anything with the original,
@@ -238,7 +238,7 @@ func roundTrip(t *stdTesting.T, scheme *runtime.Scheme, codec runtime.Codec, obj
 	// NOTE: we use the encoding+decoding here as an alternative, guaranteed deep-copy to compare against.
 	fuzzer.ValueFuzz(object)
 	if !apiequality.Semantic.DeepEqual(original, obj3) {
-		panic(fmt.Sprintf("%v: fuzzing a copy altered the original, diff: %v", name, diff.ObjectReflectDiff(original, obj3)))
+		panic(fmt.Sprintf("%v: fuzzing a copy altered the original, diff: %v", name, cmp.Diff(original, obj3)))
 	}
 }
 
