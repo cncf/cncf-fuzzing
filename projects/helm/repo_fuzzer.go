@@ -22,9 +22,9 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/getter"
-	"helm.sh/helm/v3/pkg/helmpath"
+	"helm.sh/helm/v4/pkg/cli"
+	"helm.sh/helm/v4/pkg/getter"
+	"helm.sh/helm/v4/pkg/helmpath"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +35,7 @@ import (
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
-	"helm.sh/helm/v3/pkg/chart"
+	chart "helm.sh/helm/v4/pkg/chart/v2"
 )
 
 func FuzzIndex(data []byte) int {
@@ -232,31 +232,6 @@ func verifyLocalChartsFileFuzz(chartsContent []byte, indexContent *IndexFile) {
 	if strings.Join(expected, " ") != strings.Join(real, " ") {
 		panic(fmt.Sprintf("Cached charts file content unexpected. Expected:\n%s\ngot:\n%s", expected, real))
 	}
-}
-
-func FuzzChartRepositoryLoad(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	testRepository := "fuzzDir"
-	err := os.Mkdir(testRepository, 0755)
-	if err != nil {
-		return 0
-	}
-	defer os.RemoveAll(testRepository)
-	err = f.CreateFiles(testRepository)
-	if err != nil {
-		return 0
-	}
-	testURL := "http://example-charts.com"
-
-	r, err := NewChartRepository(&Entry{
-		Name: testRepository,
-		URL:  testURL,
-	}, getter.All(&cli.EnvSettings{}))
-	if err != nil {
-		return 0
-	}
-	_ = r.Load()
-	return 1
 }
 
 func FuzzRepoFileUtils(data []byte) int {

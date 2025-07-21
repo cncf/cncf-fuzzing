@@ -16,25 +16,9 @@
 // limitations under the License.
 //
 
-package releaseutil
-
-import (
-	"helm.sh/helm/v3/pkg/chartutil"
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-)
+package util
 
 func FuzzSplitManifests(data []byte) int {
 	_ = SplitManifests(string(data))
-	return 1
-}
-
-func FuzzSortManifests(data []byte) int {
-	f := fuzz.NewConsumer(data)
-	files := make(map[string]string)
-	err := f.FuzzMap(&files)
-	if err != nil {
-		return 0
-	}
-	_, _, _ = SortManifests(files, chartutil.VersionSet{"v1", "v1beta1"}, InstallOrder)
 	return 1
 }

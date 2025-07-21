@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"os"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"helm.sh/helm/v3/pkg/chart"
-	kubefake "helm.sh/helm/v3/pkg/kube/fake"
-	"helm.sh/helm/v3/pkg/release"
+	chart "helm.sh/helm/v4/pkg/chart/v2"
+	kubefake "helm.sh/helm/v4/pkg/kube/fake"
+	release "helm.sh/helm/v4/pkg/release/v1"
 	"testing"
 )
 
@@ -61,7 +61,6 @@ func FuzzActionRun(data []byte) int {
 	failer.WaitError = fmt.Errorf("I timed out")
 	failer.DeleteError = fmt.Errorf("I tried to delete nil")
 	upAction.cfg.KubeClient = failer
-	upAction.Wait = true
 	upAction.CleanupOnFail = true
 	vals := map[string]interface{}{}
 
@@ -69,7 +68,7 @@ func FuzzActionRun(data []byte) int {
 	return 1
 }
 
-func FuzzShowRun(data []byte) int {
+/*func FuzzShowRun(data []byte) int {
 	client := NewShow(ShowAll)
 	newChart := &chart.Chart{}
 
@@ -82,7 +81,7 @@ func FuzzShowRun(data []byte) int {
 	client.chart = newChart
 	_, _ = client.Run("")
 	return 1
-}
+}*/
 
 func FuzzDependencyList(data []byte) int {
 	f := fuzz.NewConsumer(data)
@@ -146,7 +145,6 @@ func FuzzActionUninstall(data []byte) int {
 	unAction := uninstallAction(t)
 	unAction.DisableHooks = true
 	unAction.DryRun = false
-	unAction.Wait = false
 	unAction.KeepHistory = true
 
 	if err = unAction.cfg.Releases.Create(rls1); err != nil {
