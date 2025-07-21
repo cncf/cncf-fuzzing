@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"helm.sh/helm/v3/pkg/storage/driver"
-	rspb "helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v4/pkg/storage/driver"
+	rspb "helm.sh/helm/v4/pkg/release/v1"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 

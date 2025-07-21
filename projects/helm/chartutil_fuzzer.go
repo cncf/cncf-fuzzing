@@ -16,11 +16,11 @@
 // limitations under the License.
 //
 
-package chartutil
+package util
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"helm.sh/helm/v3/pkg/chart"
+	chart "helm.sh/helm/v4/pkg/chart/v2"
 	"os"
 )
 

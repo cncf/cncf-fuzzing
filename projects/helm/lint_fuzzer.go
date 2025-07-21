@@ -36,6 +36,6 @@ func FuzzLintAll(data []byte) int {
 		return 0
 	}
 	var values map[string]interface{}
-	_ = All("fuzzDir", values, "fuzzNamespace", false)
+	_ = RunAll("fuzzDir", values, "fuzzNamespace")
 	return 1
 }
