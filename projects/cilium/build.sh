@@ -41,7 +41,4 @@ rm $SRC/cilium/pkg/lock/lock_debug.go
 mv $SRC/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
 compile_go_fuzzer github.com/cilium/cilium/pkg/bgp/config FuzzConfigParse fuzz_config_parse
 
-mv $CILIUM/policy_fuzzer.go $SRC/cilium/pkg/policy/
-compile_go_fuzzer github.com/cilium/cilium/pkg/policy FuzzNewVisibilityPolicy fuzz_NewVisibilityPolicy
-
 mv $CILIUM/fuzz_config_parse.options $OUT/
