@@ -3,7 +3,6 @@ cd $SRC/cilium
 
 export CILIUM=$SRC/cncf-fuzzing/projects/cilium
 
-cp $CILIUM/elf_fuzzer.go $SRC/cilium/pkg/elf/
 cp $CILIUM/bpf_fuzzer.go $SRC/cilium/pkg/bpf/
 cp $CILIUM/matchpattern_fuzzer.go $SRC/cilium/pkg/fqdn/matchpattern/
 cp $CILIUM/hubble_parser_fuzzer.go $SRC/cilium/pkg/hubble/parser/
@@ -14,7 +13,7 @@ mv $CILIUM/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
 printf "package v2\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/cilium/pkg/k8s/apis/cilium.io/v2/registerfuzzdep.go
 go mod tidy && go mod vendor
 
-# Disablo logging
+# Disable logging
 sed -i 's/logrus\.InfoLevel/logrus.PanicLevel/g' $SRC/cilium/pkg/logging/logging.go
 
 compile_native_go_fuzzer github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2 FuzzCiliumNetworkPolicyParse FuzzCiliumNetworkPolicyParse
@@ -27,8 +26,6 @@ compile_go_fuzzer github.com/cilium/cilium/pkg/labelsfilter FuzzLabelsfilterPkg 
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor FuzzDecodeTraceNotify fuzz_DecodeTraceNotify
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/format FuzzFormatEvent fuzz_FormatEvent
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/payload FuzzPayloadEncodeDecode FuzzPayloadEncodeDecode
-compile_go_fuzzer github.com/cilium/cilium/pkg/elf FuzzElfOpen fuzz_elf_open
-compile_go_fuzzer github.com/cilium/cilium/pkg/elf FuzzElfWrite fuzz_elf_write
 compile_go_fuzzer github.com/cilium/cilium/pkg/bpf FuzzBpf fuzz_bpf
 compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatternValidate fuzz_matchpattern_validate
 compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatternValidateWithoutCache fuzz_matchpattern_validate_without_cache
