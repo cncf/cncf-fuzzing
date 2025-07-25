@@ -211,6 +211,6 @@ func FuzzMakeEnvironmentVariables(data []byte) int {
 	}
 	kl := newTestKubelet(t, false /* controllerAttachDetachEnabled */)
 	defer kl.Cleanup()
-	_, _ = kl.kubelet.makeEnvironmentVariables(testPod, container, podIP, podIPs)
+	_, _ = kl.kubelet.makeEnvironmentVariables(testPod, container, podIP, podIPs, kubecontainer.VolumeMap{})
 	return 1
 }

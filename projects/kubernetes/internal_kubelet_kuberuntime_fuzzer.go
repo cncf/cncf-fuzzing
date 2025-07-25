@@ -35,7 +35,7 @@ func FuzzKubeRuntime(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_, _, m, err := createTestRuntimeManager()
+	_, _, m, err := createTestRuntimeManager(context.Background())
 	if err != nil {
 		return 0
 	}
