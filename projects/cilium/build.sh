@@ -9,7 +9,6 @@ cp $CILIUM/hubble_parser_fuzzer.go $SRC/cilium/pkg/hubble/parser/
 cp $CILIUM/labels_fuzzer.go $SRC/cilium/pkg/k8s/slim/k8s/apis/labels/
 mv $CILIUM/format_fuzzer.go $SRC/cilium/pkg/monitor/format
 mv $CILIUM/labelsfilter_fuzzer.go $SRC/cilium/pkg/labelsfilter/
-mv $CILIUM/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
 printf "package v2\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/cilium/pkg/k8s/apis/cilium.io/v2/registerfuzzdep.go
 go mod tidy && go mod vendor
 
@@ -34,8 +33,3 @@ compile_go_fuzzer github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/labels FuzzLabe
 compile_go_fuzzer github.com/cilium/cilium/proxylib/cassandra FuzzMultipleParsers fuzz_multiple_parsers
 
 rm $SRC/cilium/pkg/lock/lock_debug.go
-
-mv $SRC/config_fuzzer.go $SRC/cilium/pkg/bgp/config/
-compile_go_fuzzer github.com/cilium/cilium/pkg/bgp/config FuzzConfigParse fuzz_config_parse
-
-mv $CILIUM/fuzz_config_parse.options $OUT/
