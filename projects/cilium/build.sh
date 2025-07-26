@@ -27,6 +27,7 @@ compile_go_fuzzer github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/labels FuzzLabe
 
 rm $SRC/cilium/pkg/lock/lock_debug.go
 
+ln -s $SRC/proxy $GOPATH/src/github.com/cilium/proxy
 cd $SRC/proxy
 mv $CILIUM/OnData_fuzzer.go $SRC/proxy/proxylib/cassandra/
 mv $SRC/proxy/proxylib/cassandra/cassandraparser_test.go $SRC/proxy/proxylib/cassandra/cassandraparser_test_fuzz.go
