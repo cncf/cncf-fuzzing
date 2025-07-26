@@ -28,6 +28,12 @@ compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatter
 compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatternValidateWithoutCache fuzz_matchpattern_validate_without_cache
 compile_go_fuzzer github.com/cilium/cilium/pkg/hubble/parser FuzzParserDecode fuzz_parser_decode
 compile_go_fuzzer github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/labels FuzzLabelsParse fuzz_labels_parse
-compile_go_fuzzer github.com/cilium/cilium/proxylib/cassandra FuzzMultipleParsers fuzz_multiple_parsers
 
 rm $SRC/cilium/pkg/lock/lock_debug.go
+
+cd $SRC/proxy
+mv $CILIUM/OnData_fuzzer.go $SRC/proxy/proxylib/cassandra/
+mv $SRC/proxy/proxylib/cassandra/cassandraparser_test.go $SRC/proxy/proxylib/cassandra/cassandraparser_test_fuzz.go
+go mod tidy && go mod vendor
+CXXFLAGS="${CXXFLAGS} -lpthread -lresolv" compile_go_fuzzer github.com/cilium/proxy/proxylib/cassandra FuzzMultipleParsers fuzz_multiple_parsers
+cd -
