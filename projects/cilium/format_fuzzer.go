@@ -16,6 +16,7 @@
 package format
 
 import (
+	"os"
 	"runtime"
 
 	"github.com/cilium/cilium/pkg/monitor/payload"
@@ -48,7 +49,7 @@ func FuzzFormatEvent(data []byte) int {
 		runtime.GC()
 	}()
 
-	mf := NewMonitorFormatter(0, nil)
+	mf := NewMonitorFormatter(0, nil, os.Stdout)
 
 	mf.FormatEvent(pl)
 	return 1
