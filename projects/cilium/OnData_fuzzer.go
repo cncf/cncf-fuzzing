@@ -21,9 +21,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/cilium/cilium/proxylib/accesslog"
-	"github.com/cilium/cilium/proxylib/proxylib"
-	"github.com/cilium/cilium/proxylib/test"
+	"github.com/cilium/proxy/proxylib/accesslog"
+	"github.com/cilium/proxy/proxylib/proxylib"
+	"github.com/cilium/proxy/proxylib/test"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 

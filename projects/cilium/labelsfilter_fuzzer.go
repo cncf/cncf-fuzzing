@@ -1,4 +1,4 @@
-// Copyright 2022 ADA Logics Ltd
+// Copyright 2023 ADA Logics Ltd
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ func FuzzLabelsfilterPkg(data []byte) int {
 		return 0
 	}
 
-	err = ParseLabelPrefixCfg(prefixes, "file")
+	err = ParseLabelPrefixCfg(nil, prefixes, nil, "file")
 	if err != nil {
 		fmt.Println(err)
 		return 0

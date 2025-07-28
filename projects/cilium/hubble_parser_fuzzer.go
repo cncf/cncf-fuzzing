@@ -16,16 +16,12 @@
 package parser
 
 import (
-	"io"
-
 	observerTypes "github.com/cilium/cilium/pkg/hubble/observer/types"
-	"github.com/sirupsen/logrus"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 var (
-	log      *logrus.Logger
 	payloads = map[int]string{
 		0: "PerfEvent",
 		1: "AgentEvent",
@@ -33,13 +29,8 @@ var (
 	}
 )
 
-func init() {
-	log = logrus.New()
-	log.SetOutput(io.Discard)
-}
-
 func FuzzParserDecode(data []byte) int {
-	p, err := New(log, nil, nil, nil, nil, nil, nil, nil)
+	p, err := New(nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		return 0
 	}
