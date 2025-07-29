@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/cilium/proxy/proxylib/accesslog"
@@ -44,6 +45,9 @@ func init() {
 	s.logServer = test.StartAccessLogServer("access_log.sock", 10)
 	s.ins = proxylib.NewInstance("node1", accesslog.NewClient(s.logServer.Path))
 	logrus.SetLevel(logrus.PanicLevel)
+	proxylib.LogFatal = func(format string, args ...interface{}) {
+		fmt.Sprintf(format, args...)
+	}
 }
 
 // Sets the parser type
