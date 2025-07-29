@@ -18,6 +18,8 @@ package labelsfilter
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
@@ -67,7 +69,8 @@ func FuzzLabelsfilterPkg(data []byte) int {
 		return 0
 	}
 
-	err = ParseLabelPrefixCfg(nil, prefixes, nil, "file")
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	err = ParseLabelPrefixCfg(logger, prefixes, nil, "file")
 	if err != nil {
 		fmt.Println(err)
 		return 0
