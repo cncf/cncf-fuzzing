@@ -14,10 +14,6 @@ go mod tidy && go mod vendor
 # Disable logging
 sed -i 's/logrus\.InfoLevel/logrus.PanicLevel/g' $SRC/cilium/pkg/logging/logging.go
 
-compile_native_go_fuzzer github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2 FuzzCiliumNetworkPolicyParse FuzzCiliumNetworkPolicyParse
-compile_native_go_fuzzer github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2 FuzzCiliumClusterwideNetworkPolicyParse FuzzCiliumClusterwideNetworkPolicyParse
-
-compile_native_go_fuzzer github.com/cilium/cilium/pkg/policy FuzzTest Fuzz_resolveEgressPolicy
 compile_go_fuzzer github.com/cilium/cilium/pkg/labelsfilter FuzzLabelsfilterPkg fuzz_labelsfilter_pkg
 compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/format FuzzFormatEvent fuzz_FormatEvent
 compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatternValidate fuzz_matchpattern_validate
@@ -27,7 +23,6 @@ compile_go_fuzzer github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/labels FuzzLabe
 
 rm $SRC/cilium/pkg/lock/lock_debug.go
 
-ln -s $SRC/proxy $GOPATH/src/github.com/cilium/proxy
 cd $SRC/proxy
 mv $CILIUM/OnData_fuzzer.go $SRC/proxy/proxylib/cassandra/
 mv $SRC/proxy/proxylib/cassandra/cassandraparser_test.go $SRC/proxy/proxylib/cassandra/cassandraparser_test_fuzz.go
