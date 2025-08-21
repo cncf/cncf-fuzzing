@@ -6,7 +6,6 @@ export CILIUM=$SRC/cncf-fuzzing/projects/cilium
 cp $CILIUM/matchpattern_fuzzer.go $SRC/cilium/pkg/fqdn/matchpattern/
 cp $CILIUM/hubble_parser_fuzzer.go $SRC/cilium/pkg/hubble/parser/
 cp $CILIUM/labels_fuzzer.go $SRC/cilium/pkg/k8s/slim/k8s/apis/labels/
-mv $CILIUM/format_fuzzer.go $SRC/cilium/pkg/monitor/format
 mv $CILIUM/labelsfilter_fuzzer.go $SRC/cilium/pkg/labelsfilter/
 printf "package v2\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n" > $SRC/cilium/pkg/k8s/apis/cilium.io/v2/registerfuzzdep.go
 go mod tidy && go mod vendor
@@ -15,7 +14,6 @@ go mod tidy && go mod vendor
 sed -i 's/logrus\.InfoLevel/logrus.PanicLevel/g' $SRC/cilium/pkg/logging/logging.go
 
 compile_go_fuzzer github.com/cilium/cilium/pkg/labelsfilter FuzzLabelsfilterPkg fuzz_labelsfilter_pkg
-compile_go_fuzzer github.com/cilium/cilium/pkg/monitor/format FuzzFormatEvent fuzz_FormatEvent
 compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatternValidate fuzz_matchpattern_validate
 compile_go_fuzzer github.com/cilium/cilium/pkg/fqdn/matchpattern FuzzMatchpatternValidateWithoutCache fuzz_matchpattern_validate_without_cache
 compile_go_fuzzer github.com/cilium/cilium/pkg/hubble/parser FuzzParserDecode fuzz_parser_decode
