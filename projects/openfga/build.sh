@@ -39,8 +39,7 @@ pushd cmd/addStdLibCorpusToFuzzer
 popd
 cd $SRC/openfga
 
-cp $SRC/cncf-fuzzing/projects/openfga/authorization_models_advanced_fuzz_test.go $SRC/openfga/tests/
-cp $SRC/cncf-fuzzing/projects/openfga/authorization_models_extensive_test.go $SRC/openfga/tests/
+cp $SRC/cncf-fuzzing/projects/openfga/*.go $SRC/openfga/tests/
 
 fuzz_targets1=(
  FuzzCheckWithExclusion
@@ -51,6 +50,12 @@ fuzz_targets1=(
  FuzzCheckWithConditions
  FuzzCheckWithParentChild
  FuzzCheck_AllModels
+ FuzzWildcardTupleset
+ FuzzUsersetFromClause
+ FuzzRandomAPI
+ FuzzPublicUsersetConfusion
+ FuzzModelUpdateBypass
+ FuzzListObjectsMemoryLeak
 )
 
 PKG="github.com/openfga/openfga/tests"
