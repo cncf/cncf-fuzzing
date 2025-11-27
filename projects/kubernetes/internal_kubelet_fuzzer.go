@@ -114,11 +114,16 @@ func FuzzconvertToAPIContainerStatuses(data []byte) int {
 		return 0
 	}
 
+	podRestarting, err := f.GetBool()
+	if err != nil {
+		return 0
+	}
+
 	testKubelet := newTestKubelet(t, false)
 	defer testKubelet.Cleanup()
 	kl := testKubelet.kubelet
 
-	_ = kl.convertToAPIContainerStatuses(pod, currentStatus, previousStatus, containers, hasInitContainers, isInitContainer)
+	_ = kl.convertToAPIContainerStatuses(pod, currentStatus, previousStatus, containers, hasInitContainers, isInitContainer, podRestarting)
 	return 1
 }
 

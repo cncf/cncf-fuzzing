@@ -34,7 +34,7 @@ func FuzzCelDataCompile(data []byte) int {
 		return 0
 	}
 
-	compositionEnvTemplate, err := admissioncel.NewCompositionEnv(admissioncel.VariablesTypeName, environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion(), false))
+	compositionEnvTemplate, err := admissioncel.NewCompositionEnv(admissioncel.VariablesTypeName, environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion()))
 	if err != nil {
 		//fmt.Println("Error creating composition env:", err)
 		return 0

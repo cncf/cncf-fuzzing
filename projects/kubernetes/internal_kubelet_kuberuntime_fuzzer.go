@@ -39,6 +39,10 @@ func FuzzKubeRuntime(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	_ = m.computePodActions(context.Background(), pod, status)
+	restartAll, err := f.GetBool()
+	if err != nil {
+		restartAll = false
+	}
+	_ = m.computePodActions(context.Background(), pod, status, restartAll)
 	return 1
 }

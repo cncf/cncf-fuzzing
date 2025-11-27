@@ -35,7 +35,7 @@ func FuzzCelCompile(data []byte) int {
 	}
 
 	// Include the test library, which includes the test() function in the storage environment during test
-	base := environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion(), true)
+	base := environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion())
 	extended, err := base.Extend(environment.VersionedOptions{
 		IntroducedVersion: version.MajorMinor(1, 999),
 		EnvOptions:        []celgo.EnvOption{library.Test()},
