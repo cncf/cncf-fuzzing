@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
+
 	//ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -46,7 +47,7 @@ var (
 	fakeSchemeForFuzzing = runtime.NewScheme()
 	//env                  *envtest.Environment
 	//ctx                  = ctrl.SetupSignalHandler()
-	fuzzCtx     = context.Background()
+	fuzzCtx = context.Background()
 	initter sync.Once
 )
 
@@ -98,7 +99,7 @@ func validateUnstructured(unstr *unstructured.Unstructured) error {
 }
 
 func FuzzClusterReconcile(f *testing.F) {
-    f.Fuzz(func (t *testing.T, data []byte){
+	f.Fuzz(func(t *testing.T, data []byte) {
 		fdp := fuzz.NewConsumer(data)
 		unstr, err := GetUnstructured(fdp)
 		if err != nil {
