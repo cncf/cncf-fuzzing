@@ -47,10 +47,10 @@ cp "$CNCF_KUBEVIRT/fuzz_helpers.go" pkg/virt-controller/watch/testutils/fuzz_hel
 cp "$CNCF_KUBEVIRT/clone_utils_fuzz.go" pkg/virt-controller/watch/clone/utils_fuzz.go
 
 # Copy noop validator for fuzzing (avoids 111s OpenAPI initialization)
-cp "$CNCF_KUBEVIRT/validator_fuzz.go" pkg/virt-api/definitions/validator_fuzz.go
+cp "$CNCF_KUBEVIRT/validator_fuzz.go" pkg/virt-api/definitions/validator.go
 
 # Add build tag to validator.go to exclude it when using gofuzz_libfuzzer
-sed -i '1i//go:build !gofuzz_libfuzzer\n' pkg/virt-api/definitions/validator.go
+#sed -i '1i//go:build !gofuzz_libfuzzer\n' pkg/virt-api/definitions/validator.go
 
 # Copy utility files that expose private controller fields
 cp "$CNCF_KUBEVIRT/pool_util.go" pkg/virt-controller/watch/pool/util.go
