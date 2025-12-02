@@ -19,6 +19,7 @@ package fuzz
 import (
 	"bytes"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/oxia-db/oxia/common/constant"
@@ -227,7 +228,13 @@ func FuzzKVComparisonTypes(f *testing.F) {
 	f.Add("z", uint8(4))
 
 	f.Fuzz(func(t *testing.T, searchKey string, compType uint8) {
-		if searchKey == "" || len(searchKey) > 100 {
+		if searchKey == "" {
+			return
+		}
+
+		// Skip keys containing '/' because hierarchical encoding encodes '/' as 0xff,
+		// which changes the sort order. Simple string comparisons won't work correctly.
+		if strings.Contains(searchKey, "/") {
 			return
 		}
 

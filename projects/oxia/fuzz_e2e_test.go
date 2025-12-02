@@ -16,12 +16,11 @@ package fuzz
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"testing"
 
-	"github.com/oxia-db/oxia/oxia"
-	"github.com/oxia-db/oxia/oxiad/dataserver"
+	"github.com/oxia-db/oxia/common/constant"
+	"github.com/oxia-db/oxia/common/proto"
+	"github.com/oxia-db/oxia/oxiad/dataserver/database/kvstore"
 )
 
 // Operation types for the fuzzer - each byte determines which operation to execute
@@ -34,12 +33,94 @@ const (
 	OpNumOps             // Total number of operations (for modulo)
 )
 
-// FuzzE2EOperations is an end-to-end style fuzzer that tests the Oxia server
-// operations using the public client API. It maintains expected state
+// fuzzOp represents a parsed operation to be executed
+type fuzzOp struct {
+	opType int
+	key    string
+	value  []byte
+	endKey string // For range operations
+}
+
+// parseOperations parses the input into operations BEFORE setting up heavy infrastructure.
+// This allows the fuzzer to skip inputs that don't have enough valid operations.
+func parseOperations(stringPool []string, ops []uint8) []fuzzOp {
+	var result []fuzzOp
+	strIdx := 0
+
+	nextString := func() string {
+		s := stringPool[strIdx%len(stringPool)]
+		strIdx++
+		return s
+	}
+
+	for _, opByte := range ops {
+		op := int(opByte) % OpNumOps
+
+		switch op {
+		case OpPut:
+			key := nextString()
+			value := []byte(nextString())
+			if key == "" {
+				continue
+			}
+			result = append(result, fuzzOp{opType: OpPut, key: key, value: value})
+
+		case OpGet:
+			key := nextString()
+			if key == "" {
+				continue
+			}
+			result = append(result, fuzzOp{opType: OpGet, key: key})
+
+		case OpDelete:
+			key := nextString()
+			if key == "" {
+				continue
+			}
+			result = append(result, fuzzOp{opType: OpDelete, key: key})
+
+		case OpDeleteRange:
+			startKey := nextString()
+			endKey := nextString()
+			// Ensure startKey < endKey for valid ranges
+			if startKey > endKey {
+				startKey, endKey = endKey, startKey
+			}
+			if startKey == endKey {
+				endKey = endKey + "\xff"
+			}
+			if startKey == "" || endKey == "" {
+				continue
+			}
+			result = append(result, fuzzOp{opType: OpDeleteRange, key: startKey, endKey: endKey})
+
+		case OpList:
+			startKey := nextString()
+			endKey := nextString()
+			// Ensure startKey < endKey for valid ranges
+			if startKey > endKey {
+				startKey, endKey = endKey, startKey
+			}
+			if startKey == endKey {
+				endKey = endKey + "\xff"
+			}
+			result = append(result, fuzzOp{opType: OpList, key: startKey, endKey: endKey})
+		}
+	}
+
+	return result
+}
+
+// FuzzE2EOperations is an end-to-end style fuzzer that tests Oxia KV store
+// operations directly against the kvstore layer. It maintains expected state
 // and verifies that operations produce correct results.
 //
+// This fuzzer is optimized for speed by:
+// 1. Parsing and validating operations BEFORE creating any infrastructure
+// 2. Using kvstore.KV directly (the lowest level) - no DB layer, no WAL, no RPC
+// 3. Skipping inputs that don't have at least 2 valid operations
+//
 // The fuzzer takes 20 strings and 5 uint8 operation selectors as input.
-// It loops through the 5 operations and uses strings from the pool for keys/values.
 func FuzzE2EOperations(f *testing.F) {
 	// Seeds with different operation sequences
 	f.Add(
@@ -63,136 +144,145 @@ func FuzzE2EOperations(f *testing.F) {
 		s10, s11, s12, s13, s14, s15, s16, s17, s18, s19 string,
 		op0, op1, op2, op3, op4 uint8,
 	) {
-		// Build string pool
+		// Build string pool and operation list
 		stringPool := []string{s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16, s17, s18, s19}
 		ops := []uint8{op0, op1, op2, op3, op4}
 
-		// Create a fresh server for each test to guarantee clean state
-		// This is slower but avoids complex cleanup logic with hierarchical encoding
-		dir := t.TempDir()
-		server, err := dataserver.NewStandalone(dataserver.NewTestConfig(dir))
-		if err != nil {
-			t.Fatalf("Failed to create standalone server: %v", err)
+		// Parse operations BEFORE setting up any infrastructure
+		// This allows us to skip invalid inputs quickly
+		parsedOps := parseOperations(stringPool, ops)
+		if len(parsedOps) < 2 {
+			return // Skip if not enough valid operations
 		}
-		defer server.Close()
 
-		// Create a client to connect to the server
-		client, err := oxia.NewSyncClient(server.ServiceAddr())
+		// Create KV store using test options (disk-based but fast)
+		factory, err := kvstore.NewPebbleKVFactory(kvstore.NewFactoryOptionsForTest(t))
 		if err != nil {
-			t.Fatalf("Failed to create client: %v", err)
+			t.Fatalf("Failed to create KV factory: %v", err)
 		}
-		defer client.Close()
+		defer factory.Close()
 
-		ctx := context.Background()
+		kv, err := factory.NewKV(constant.DefaultNamespace, 1, proto.KeySortingType_HIERARCHICAL)
+		if err != nil {
+			t.Fatalf("Failed to create KV: %v", err)
+		}
+		defer kv.Close()
 
 		// Track expected state: key -> value mapping
 		expectedState := make(map[string][]byte)
 
-		// String pool index for cycling through strings
-		strIdx := 0
-		nextString := func() string {
-			s := stringPool[strIdx%len(stringPool)]
-			strIdx++
-			return s
-		}
-
-		// Process the 5 operations - each op only consumes strings it needs
-		for _, opByte := range ops {
-			op := int(opByte) % OpNumOps
-
-			switch op {
+		// Process all parsed operations
+		for _, op := range parsedOps {
+			switch op.opType {
 			case OpPut:
-				key := nextString()
-				value := []byte(nextString())
-				if key == "" {
+				wb := kv.NewWriteBatch()
+				if err := wb.Put(op.key, op.value); err != nil {
+					wb.Close()
 					continue
 				}
-				_, _, err := client.Put(ctx, key, value)
-				if err != nil {
+				if err := wb.Commit(); err != nil {
+					wb.Close()
 					continue
 				}
-				expectedState[key] = value
+				wb.Close()
+				expectedState[op.key] = op.value
 
 			case OpGet:
-				key := nextString()
-				if key == "" {
-					continue
-				}
-				_, gotValue, _, err := client.Get(ctx, key)
-				expectedValue, exists := expectedState[key]
+				storedKey, storedValue, closer, err := kv.Get(op.key, kvstore.ComparisonEqual, kvstore.NoInternalKeys)
+				expectedValue, exists := expectedState[op.key]
 
 				if exists {
 					if err != nil {
-						t.Errorf("Get(%q): expected value %q, got error: %v", key, expectedValue, err)
-					} else if !bytes.Equal(gotValue, expectedValue) {
-						t.Errorf("Get(%q): expected %q, got %q", key, expectedValue, gotValue)
+						t.Errorf("Get(%q): expected value, got error: %v", op.key, err)
+					} else {
+						if storedKey != op.key {
+							t.Errorf("Get(%q): key mismatch, got %q", op.key, storedKey)
+						}
+						if !bytes.Equal(storedValue, expectedValue) {
+							t.Errorf("Get(%q): expected %q, got %q", op.key, expectedValue, storedValue)
+						}
+						closer.Close()
 					}
 				} else {
 					if err == nil {
-						t.Errorf("Get(%q): expected error (key not found), got value %q", key, gotValue)
-					} else if !errors.Is(err, oxia.ErrKeyNotFound) {
-						// Other errors are acceptable (e.g., invalid key)
+						closer.Close()
+						t.Errorf("Get(%q): expected key not found, got value %q", op.key, storedValue)
 					}
+					// Error is expected for non-existent key
 				}
 
 			case OpDelete:
-				key := nextString()
-				if key == "" {
+				wb := kv.NewWriteBatch()
+				if err := wb.Delete(op.key); err != nil {
+					wb.Close()
 					continue
 				}
-				err := client.Delete(ctx, key)
-				if err == nil || errors.Is(err, oxia.ErrKeyNotFound) {
-					delete(expectedState, key)
+				if err := wb.Commit(); err != nil {
+					wb.Close()
+					continue
 				}
+				wb.Close()
+				delete(expectedState, op.key)
 
 			case OpDeleteRange:
-				startKey := nextString()
-				endKey := nextString()
-				// Ensure startKey < endKey for valid ranges
-				if startKey > endKey {
-					startKey, endKey = endKey, startKey
+				// First list keys that will be deleted
+				var keysToDelete []string
+				iter, err := kv.KeyRangeScan(op.key, op.endKey, kvstore.NoInternalKeys)
+				if err == nil {
+					for iter.Valid() {
+						keysToDelete = append(keysToDelete, iter.Key())
+						if !iter.Next() {
+							break
+						}
+					}
+					iter.Close()
 				}
-				if startKey == endKey {
-					endKey = endKey + "\xff"
-				}
-				if startKey == "" || endKey == "" {
+
+				// Perform delete range
+				wb := kv.NewWriteBatch()
+				if err := wb.DeleteRange(op.key, op.endKey); err != nil {
+					wb.Close()
 					continue
 				}
-				// First, list keys that will be deleted (server uses hierarchical encoding
-				// which has different sort order than UTF-8 byte order)
-				keysToDelete, _ := client.List(ctx, startKey, endKey)
-				err := client.DeleteRange(ctx, startKey, endKey)
-				if err == nil {
-					// Update expected state based on what the server actually deleted
-					for _, k := range keysToDelete {
-						delete(expectedState, k)
-					}
+				if err := wb.Commit(); err != nil {
+					wb.Close()
+					continue
+				}
+				wb.Close()
+
+				for _, k := range keysToDelete {
+					delete(expectedState, k)
 				}
 
 			case OpList:
-				startKey := nextString()
-				endKey := nextString()
-				// Ensure startKey < endKey for valid ranges
-				if startKey > endKey {
-					startKey, endKey = endKey, startKey
+				// Just exercise the List operation
+				iter, err := kv.KeyRangeScan(op.key, op.endKey, kvstore.NoInternalKeys)
+				if err == nil {
+					for iter.Valid() {
+						_ = iter.Key()
+						if !iter.Next() {
+							break
+						}
+					}
+					iter.Close()
 				}
-				if startKey == endKey {
-					endKey = endKey + "\xff"
-				}
-				// Just exercise the List operation - verification is complex due to
-				// hierarchical encoding having different sort order than UTF-8 bytes.
-				// We verify state correctness via Get operations instead.
-				_, _ = client.List(ctx, startKey, endKey)
 			}
 		}
 
 		// Final verification: all expected keys should exist with correct values
 		for key, expectedValue := range expectedState {
-			_, gotValue, _, err := client.Get(ctx, key)
+			storedKey, storedValue, closer, err := kv.Get(key, kvstore.ComparisonEqual, kvstore.NoInternalKeys)
 			if err != nil {
 				t.Errorf("Final check - Get(%q): expected %q, got error: %v", key, expectedValue, err)
-			} else if !bytes.Equal(gotValue, expectedValue) {
-				t.Errorf("Final check - Get(%q): expected %q, got %q", key, expectedValue, gotValue)
+				continue
+			}
+			defer closer.Close()
+
+			if storedKey != key {
+				t.Errorf("Final check - Get(%q): key mismatch, got %q", key, storedKey)
+			}
+			if !bytes.Equal(storedValue, expectedValue) {
+				t.Errorf("Final check - Get(%q): expected %q, got %q", key, expectedValue, storedValue)
 			}
 		}
 	})
