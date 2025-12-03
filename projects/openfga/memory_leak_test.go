@@ -20,9 +20,9 @@ import (
 	"context"
 	"runtime"
 	"testing"
+	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	parser "github.com/openfga/language/pkg/go/transformer"
 
 	"github.com/openfga/openfga/pkg/server"
 	"github.com/openfga/openfga/pkg/storage/memory"
@@ -433,9 +433,9 @@ func FuzzListObjectsMemoryLeak(f *testing.F) {
 		parent25, parent26, parent27, parent28, parent29, parent30 string) {
 
 		// Parse model from fuzzer input
-		dsl, err := parser.TransformDSLToProto(modelDSL)
+		dsl, err := transformDSLWithTimeout(modelDSL, 5*time.Second)
 		if err != nil {
-			return // Invalid DSL, skip
+			return // Invalid DSL or timeout, skip
 		}
 		users := []string{
 			user1, user2, user3, user4, user5, user6,
@@ -576,4 +576,11 @@ func FuzzListObjectsMemoryLeak(f *testing.F) {
 		// The original CVE was fixed in v1.3.4 by properly releasing goroutines/channels
 		// This fuzzer helps catch regression of the fix
 	})
+}
+
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen]
 }

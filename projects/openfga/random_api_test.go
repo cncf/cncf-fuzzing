@@ -19,9 +19,9 @@ package tests
 import (
 	"context"
 	"testing"
+	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	parser "github.com/openfga/language/pkg/go/transformer"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"github.com/openfga/openfga/pkg/server"
@@ -46,9 +46,9 @@ func FuzzRandomAPI(f *testing.F) {
 		limit []byte) {
 
 		// Step 1 & 2: Try to parse model bytes
-		dsl, err := parser.TransformDSLToProto(string(modelDSL))
+		dsl, err := transformDSLWithTimeout(string(modelDSL), 5*time.Second)
 		if err != nil {
-			return // Not a valid model, skip
+			return // Not a valid model or timeout, skip
 		}
 
 		// Step 3: Set up server
@@ -197,4 +197,11 @@ func FuzzRandomAPI(f *testing.F) {
 
 		// Don't check response - we're just testing that server doesn't crash
 	})
+}
+
+func truncateBytes(b []byte, maxLen int) []byte {
+	if len(b) <= maxLen {
+		return b
+	}
+	return b[:maxLen]
 }

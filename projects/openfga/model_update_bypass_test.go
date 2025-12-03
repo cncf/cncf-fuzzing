@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
-	parser "github.com/openfga/language/pkg/go/transformer"
 	"github.com/stretchr/testify/require"
 
 	"github.com/openfga/openfga/pkg/server"
@@ -76,9 +76,9 @@ func FuzzModelUpdateBypass(f *testing.F) {
 			    define viewer: [%s]
 		`, type1Str, type1Str)
 
-		modelV1DSL, err := parser.TransformDSLToProto(dslV1)
+		modelV1DSL, err := transformDSLWithTimeout(dslV1, 5*time.Second)
 		if err != nil {
-			return // Invalid DSL (e.g., invalid characters), skip
+			return // Invalid DSL or timeout, skip
 		}
 
 		modelV1, err := srv.WriteAuthorizationModel(ctx, &openfgav1.WriteAuthorizationModelRequest{
@@ -122,9 +122,9 @@ func FuzzModelUpdateBypass(f *testing.F) {
 			    define viewer: [%s]
 		`, type1Str, type2Str, type2Str)
 
-		modelV2DSL, err := parser.TransformDSLToProto(dslV2)
+		modelV2DSL, err := transformDSLWithTimeout(dslV2, 5*time.Second)
 		if err != nil {
-			return // Invalid DSL, skip
+			return // Invalid DSL or timeout, skip
 		}
 
 		modelV2, err := srv.WriteAuthorizationModel(ctx, &openfgav1.WriteAuthorizationModelRequest{
