@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype resource\n  relations\n    define public: [user:*]\n    define restricted: [user]\n    define viewer: public but not restricted")
+uint8(4)
+[]byte("store_34")
+[]byte("resource:34")
+[]byte("editor")
+[]byte("user:eve")
+[]byte("org:134")
+[]byte("admin")
+[]byte("user:jack")
+[]byte("")
+[]byte("12")

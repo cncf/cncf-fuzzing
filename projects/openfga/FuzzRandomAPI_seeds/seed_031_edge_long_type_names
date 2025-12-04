@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype very_long_type_name_with_many_underscores_to_test_parsing\n  relations\n    define very_long_relation_name_with_many_underscores: [user]\n    define viewer: very_long_relation_name_with_many_underscores")
+uint8(1)
+[]byte("store_31")
+[]byte("folder:31")
+[]byte("contributor")
+[]byte("user:bob")
+[]byte("resource:131")
+[]byte("writer")
+[]byte("user:grace")
+[]byte("")
+[]byte("98")

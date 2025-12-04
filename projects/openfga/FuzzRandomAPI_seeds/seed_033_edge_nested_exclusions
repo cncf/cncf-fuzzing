@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype document\n  relations\n    define all_users: [user]\n    define banned: [user]\n    define restricted: [user]\n    define allowed: all_users but not banned\n    define viewer: allowed but not restricted")
+uint8(3)
+[]byte("store_33")
+[]byte("issue:33")
+[]byte("writer")
+[]byte("user:dave")
+[]byte("project:133")
+[]byte("owner")
+[]byte("user:iris")
+[]byte("")
+[]byte("9")

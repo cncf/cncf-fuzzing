@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype document\n  relations\n    define rel01: [user]\n    define rel02: [user]\n    define rel03: [user]\n    define rel04: [user]\n    define rel05: [user]\n    define rel06: [user]\n    define rel07: [user]\n    define rel08: [user]\n    define rel09: [user]\n    define rel10: [user]\n    define rel11: [user]\n    define rel12: [user]\n    define rel13: [user]\n    define rel14: [user]\n    define rel15: [user]\n    define rel16: [user]\n    define rel17: [user]\n    define rel18: [user]\n    define rel19: [user]\n    define rel20: [user]")
+uint8(4)
+[]byte("store_22")
+[]byte("repo:22")
+[]byte("reader")
+[]byte("user:charlie")
+[]byte("file:122")
+[]byte("viewer")
+[]byte("user:henry")
+[]byte("")
+[]byte("71")

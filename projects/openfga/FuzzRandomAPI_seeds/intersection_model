@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype resource\n  relations\n    define allowed_viewer: [user]\n    define approved_user: [user]\n    define viewer: allowed_viewer and approved_user")
+uint8(2)
+[]byte("01J0PK4TNWZQXQXQXQXQXQXU")
+[]byte("resource:secure")
+[]byte("allowed_viewer")
+[]byte("user:eve")
+[]byte("resource:secure")
+[]byte("viewer")
+[]byte("user:eve")
+[]byte("")
+[]byte("25")

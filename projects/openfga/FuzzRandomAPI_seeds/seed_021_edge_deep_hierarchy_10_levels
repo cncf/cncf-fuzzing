@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype level0\n  relations\n    define member: [user]\ntype level1\n  relations\n    define parent: [level0]\n    define member: [user] or member from parent\ntype level2\n  relations\n    define parent: [level1]\n    define member: [user] or member from parent\ntype level3\n  relations\n    define parent: [level2]\n    define member: [user] or member from parent\ntype level4\n  relations\n    define parent: [level3]\n    define member: [user] or member from parent\ntype level5\n  relations\n    define parent: [level4]\n    define member: [user] or member from parent\ntype level6\n  relations\n    define parent: [level5]\n    define member: [user] or member from parent\ntype level7\n  relations\n    define parent: [level6]\n    define member: [user] or member from parent\ntype level8\n  relations\n    define parent: [level7]\n    define member: [user] or member from parent\ntype level9\n  relations\n    define parent: [level8]\n    define member: [user] or member from parent")
+uint8(3)
+[]byte("store_21")
+[]byte("folder:21")
+[]byte("member")
+[]byte("user:bob")
+[]byte("resource:121")
+[]byte("contributor")
+[]byte("user:grace")
+[]byte("")
+[]byte("68")

@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype team\n  relations\n    define member: [user]\ntype project\n  relations\n    define team: [team]\n    define viewer: [user] or member from team\ntype issue\n  relations\n    define project: [project]\n    define viewer: [user] or viewer from project")
+uint8(4)
+[]byte("01J0PK4TNWZQXQXQXQXQXQXV")
+[]byte("issue:bug-123")
+[]byte("project")
+[]byte("project:openfga")
+[]byte("issue:bug-123")
+[]byte("viewer")
+[]byte("user:frank")
+[]byte("")
+[]byte("30")

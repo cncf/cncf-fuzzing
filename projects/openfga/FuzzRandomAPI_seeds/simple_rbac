@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype role\n  relations\n    define assignee: [user]\ntype resource\n  relations\n    define admin: [role#assignee]\n    define viewer: [role#assignee] or admin")
+uint8(3)
+[]byte("01J0PK4TNWZQXQXQXQXQXQXY")
+[]byte("resource:file")
+[]byte("admin")
+[]byte("role:manager#assignee")
+[]byte("resource:file")
+[]byte("viewer")
+[]byte("user:iris")
+[]byte("")
+[]byte("35")

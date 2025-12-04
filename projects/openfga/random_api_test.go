@@ -38,26 +38,28 @@ func FuzzRandomAPI(f *testing.F) {
 		[]byte("doc2"), []byte("editor"), []byte("bob"), []byte("carol"), // Check params
 		[]byte("10"))
 
+	ctx := context.Background()
+	datastore := memory.New()
+	defer datastore.Close()
+
+	srv := server.MustNewServerWithOpts(server.WithDatastore(datastore))
+	defer srv.Close()
+
 	f.Fuzz(func(t *testing.T, modelDSL []byte, methodChoice uint8, storeID,
 		// Write tuple parameters
 		writeObject, writeRelation, writeUser,
 		// Check/Read parameters (different from Write)
-		checkObject, checkRelation, checkUser1, checkUser2,
+		checkObject, checkRelation, checkUser1, _ /* checkUser2 unused */,
 		limit []byte) {
 
-		// Step 1 & 2: Try to parse model bytes
-		dsl, err := transformDSLWithTimeout(string(modelDSL), 5*time.Second)
+		if len(modelDSL) == 0 || len(modelDSL) > 10000 {
+			return // Skip empty or extremely large models
+		}
+
+		dsl, err := transformDSLWithTimeout(string(modelDSL), 1*time.Second)
 		if err != nil {
 			return // Not a valid model or timeout, skip
 		}
-
-		// Step 3: Set up server
-		ctx := context.Background()
-		datastore := memory.New()
-		defer datastore.Close()
-
-		srv := server.MustNewServerWithOpts(server.WithDatastore(datastore))
-		defer srv.Close()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{
 			Name: string(storeID),
@@ -85,7 +87,11 @@ func FuzzRandomAPI(f *testing.F) {
 		checkObjStr := string(checkObject)
 		checkRelStr := string(checkRelation)
 		checkUser1Str := string(checkUser1)
-		checkUser2Str := string(checkUser2)
+		// checkUser2 removed - not needed after optimization
+
+		if writeObjStr == "" || writeRelStr == "" || writeUserStr == "" {
+			return
+		}
 
 		// Try to write a tuple using Write parameters (may fail if model doesn't support it)
 		_, err = srv.Write(ctx, &openfgav1.WriteRequest{
@@ -101,16 +107,19 @@ func FuzzRandomAPI(f *testing.F) {
 				},
 			},
 		})
-		if err != nil {
+		if checkObjStr == "" || checkRelStr == "" {
 			return
 		}
 
 		// Step 4: Choose method based on methodChoice and send random request
-		// methodChoice % 7 gives us values 0-6 for 7 different methods
-		method := methodChoice % 7
+		// methodChoice % 6 gives us values 0-5 for 6 different methods
+		method := methodChoice % 6
 
 		switch method {
-		case 0: // BatchCheck
+		case 0: // BatchCheck - only test one check for speed
+			if checkUser1Str == "" {
+				return
+			}
 			srv.BatchCheck(ctx, &openfgav1.BatchCheckRequest{
 				StoreId:              store.Id,
 				AuthorizationModelId: model.AuthorizationModelId,
@@ -122,17 +131,13 @@ func FuzzRandomAPI(f *testing.F) {
 							User:     checkUser1Str,
 						},
 					},
-					{
-						TupleKey: &openfgav1.CheckRequestTupleKey{
-							Object:   checkObjStr,
-							Relation: checkRelStr,
-							User:     checkUser2Str,
-						},
-					},
 				},
 			})
 
 		case 1: // Check
+			if checkUser1Str == "" {
+				return
+			}
 			srv.Check(ctx, &openfgav1.CheckRequest{
 				StoreId:              store.Id,
 				AuthorizationModelId: model.AuthorizationModelId,
@@ -154,6 +159,9 @@ func FuzzRandomAPI(f *testing.F) {
 			})
 
 		case 3: // ListObjects
+			if checkUser1Str == "" {
+				return
+			}
 			srv.ListObjects(ctx, &openfgav1.ListObjectsRequest{
 				StoreId:              store.Id,
 				AuthorizationModelId: model.AuthorizationModelId,

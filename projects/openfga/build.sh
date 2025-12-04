@@ -62,3 +62,13 @@ PKG="github.com/openfga/openfga/tests"
 for f in "${fuzz_targets1[@]}"; do
   compile_native_go_fuzzer_v2 "$PKG" "$f" "$f"
 done
+
+# Add seed corpus for FuzzRandomAPI with diverse authorization models
+# Note: Using || true and manual copy to work around cross-device link error in addStdLibCorpusToFuzzer
+addStdLibCorpusToFuzzer -fuzzer_name FuzzRandomAPI -dir $SRC/cncf-fuzzing/projects/openfga/FuzzRandomAPI_seeds || {
+  # If tool fails due to cross-device link, manually copy the zip
+  if [ -f /tmp/FuzzRandomAPI_seed_corpus.zip ]; then
+    cp /tmp/FuzzRandomAPI_seed_corpus.zip $OUT/FuzzRandomAPI_seed_corpus.zip
+    echo "Manually copied FuzzRandomAPI_seed_corpus.zip to \$OUT"
+  fi
+}

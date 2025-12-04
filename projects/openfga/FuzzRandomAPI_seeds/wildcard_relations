@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype group\n  relations\n    define member: [user, group#member]\ntype resource\n  relations\n    define viewer: [user, group#member]")
+uint8(0)
+[]byte("01J0PK4TNWZQXQXQXQXQXQXX")
+[]byte("resource:data")
+[]byte("viewer")
+[]byte("group:admins#member")
+[]byte("resource:data")
+[]byte("viewer")
+[]byte("user:henry")
+[]byte("")
+[]byte("40")
