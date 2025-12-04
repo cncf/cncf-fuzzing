@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype org\n  relations\n    define member: [user, org#member]\ntype repo\n  relations\n    define owner: [org#member]\n    define reader: [user] or owner")
+uint8(1)
+[]byte("01J0PK4TNWZQXQXQXQXQXQXZ")
+[]byte("repo:awesome-project")
+[]byte("owner")
+[]byte("org:acme#member")
+[]byte("repo:awesome-project")
+[]byte("reader")
+[]byte("user:jack")
+[]byte("")
+[]byte("45")

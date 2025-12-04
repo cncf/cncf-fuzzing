@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype document\n  relations\n    define owner: [user with role_check]\n    define viewer: owner\n\ncondition role_check(role: string) {\n  role == \"admin\"\n}")
+uint8(2)
+[]byte("store_cond3")
+[]byte("doc:3")
+[]byte("owner")
+[]byte("user:charlie")
+[]byte("doc:3")
+[]byte("viewer")
+[]byte("user:charlie")
+[]byte("")
+[]byte("100")

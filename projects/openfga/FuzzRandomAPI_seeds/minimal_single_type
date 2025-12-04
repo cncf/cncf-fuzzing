@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user")
+uint8(0)
+[]byte("store_min1")
+[]byte("user:u1")
+[]byte("owner")
+[]byte("user:u2")
+[]byte("user:u1")
+[]byte("member")
+[]byte("user:u2")
+[]byte("")
+[]byte("10")

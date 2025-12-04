@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype group\n  relations\n    define member: [user, group#member] but not blocked\n    define blocked: [user, group#member]")
+uint8(2)
+[]byte("store_excl")
+[]byte("group:g1")
+[]byte("blocked")
+[]byte("group:g1#member")
+[]byte("group:g1")
+[]byte("member")
+[]byte("user:jack")
+[]byte("")
+[]byte("55")

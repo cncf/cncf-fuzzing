@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype group\n  relations\n    define member: [user, group#member]\n    define admin: [user] or member")
+uint8(2)
+[]byte("store_26")
+[]byte("project:26")
+[]byte("editor")
+[]byte("user:grace")
+[]byte("group:126")
+[]byte("admin")
+[]byte("user:bob")
+[]byte("")
+[]byte("83")

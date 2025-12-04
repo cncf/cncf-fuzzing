@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\n\ntype folder\n  relations\n    define writer: [user]\n    define editor: [user]\n    define viewer: writer or editor\n\ntype document\n  relations\n    define parent: [folder]\n    define viewer: viewer from parent")
+uint8(2)
+[]byte("store_14")
+[]byte("repo:14")
+[]byte("editor")
+[]byte("user:charlie")
+[]byte("issue:24")
+[]byte("owner")
+[]byte("user:eve")
+[]byte("")
+[]byte("30")

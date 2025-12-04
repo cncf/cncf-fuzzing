@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype document\n  relations\n    define owner: [user]\n    define editor: [user] or owner\n    define viewer: [user] or editor\n    define can_view: viewer\n    define can_edit: editor\n    define can_delete: owner")
+uint8(5)
+[]byte("01J0PK4TNWZQXQXQXQXQXQXW")
+[]byte("document:contract")
+[]byte("owner")
+[]byte("user:grace")
+[]byte("document:contract")
+[]byte("can_delete")
+[]byte("user:grace")
+[]byte("")
+[]byte("15")

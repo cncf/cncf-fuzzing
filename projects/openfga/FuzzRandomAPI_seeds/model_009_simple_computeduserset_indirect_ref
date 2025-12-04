@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype folder\n  relations\n    define parent: [folder]\n    define viewer: [user] or viewer from parent\n    define can_view: viewer")
+uint8(3)
+[]byte("store_09")
+[]byte("issue:9")
+[]byte("owner")
+[]byte("user:dave")
+[]byte("resource:19")
+[]byte("admin")
+[]byte("user:frank")
+[]byte("")
+[]byte("55")

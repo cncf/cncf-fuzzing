@@ -1,0 +1,12 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype group\n  relations\n    define member: [user]\ntype document\n  relations\n    define viewer: [group#member with ts_check]\n\ncondition ts_check(ts: timestamp) {\n  ts < timestamp(\"2024-01-01T00:00:00Z\")\n}")
+uint8(1)
+[]byte("store_cond2")
+[]byte("doc:2")
+[]byte("viewer")
+[]byte("group:eng#member")
+[]byte("doc:2")
+[]byte("viewer")
+[]byte("user:bob")
+[]byte("")
+[]byte("75")
