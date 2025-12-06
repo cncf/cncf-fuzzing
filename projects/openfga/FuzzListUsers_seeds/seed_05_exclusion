@@ -1,0 +1,7 @@
+go test fuzz v1
+[]byte("model\n  schema 1.2\ntype user\ntype document\n  relations\n    define potential_viewer: [user]\n    define banned: [user]\n    define viewer: potential_viewer but not banned")
+[]byte("store5")
+[]byte("document:doc5")
+[]byte("viewer")
+[]byte("user")
+uint8(0)

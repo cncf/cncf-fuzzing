@@ -1,0 +1,5 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype folder\n  relations\n    define parent: [folder]\n    define viewer: [user] or viewer from parent\ntype document\n  relations\n    define parent: [folder]\n    define viewer: viewer from parent")
+[]byte("store3")
+[]byte("document:doc3")
+[]byte("viewer")

@@ -1,0 +1,5 @@
+go test fuzz v1
+[]byte("model\n  schema 1.2\ntype user\ntype document\n  relations\n    define owner: [user]\n    define editor: [user]\n    define viewer: owner and editor")
+[]byte("store4")
+[]byte("document:doc4")
+[]byte("viewer")

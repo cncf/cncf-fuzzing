@@ -1,0 +1,10 @@
+go test fuzz v1
+[]byte("model\n  schema 1.1\ntype user\ntype document\n  relations\n    define viewer: [user]")
+[]byte("store5")
+[]byte("document:doc1")
+[]byte("viewer")
+[]byte("user:eve")
+[]byte("document:doc2")
+[]byte("viewer")
+[]byte("user:eve")
+uint8(5)

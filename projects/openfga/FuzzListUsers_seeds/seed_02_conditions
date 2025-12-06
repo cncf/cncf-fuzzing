@@ -1,0 +1,7 @@
+go test fuzz v1
+[]byte("model\n  schema 1.2\ntype user\ntype document\n  relations\n    define viewer: [user with condition1]\ncondition condition1(ip_address: ipaddress) {\n  ip_address.in_cidr(\"192.168.0.0/16\")\n}")
+[]byte("store2")
+[]byte("document:doc2")
+[]byte("viewer")
+[]byte("user")
+uint8(1)
