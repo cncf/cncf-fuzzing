@@ -12064,7 +12064,7 @@ func runModelTest(t *testing.T, model ModelTestCase, checkUser, checkObj, checkR
 	// Initialize server
 	_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 	defer ds.Close()
-	s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+	s := newEnhancedFuzzServer(ds)
 	defer s.Close()
 
 	// Create store

@@ -24,7 +24,6 @@ import (
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/transformer"
 
-	"github.com/openfga/openfga/pkg/server"
 	"github.com/openfga/openfga/pkg/storage/memory"
 	"github.com/openfga/openfga/pkg/typesystem"
 )
@@ -52,7 +51,7 @@ func FuzzPublicUsersetConfusion(f *testing.F) {
 		datastore := memory.New()
 		defer datastore.Close()
 
-		srv := server.MustNewServerWithOpts(server.WithDatastore(datastore))
+		srv := newEnhancedFuzzServer(datastore)
 		defer srv.Close()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz"})

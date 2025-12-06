@@ -22,7 +22,43 @@ import (
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/transformer"
+	"github.com/openfga/openfga/pkg/featureflags"
+	"github.com/openfga/openfga/pkg/server"
+	"github.com/openfga/openfga/pkg/storage"
 )
+
+// mockFeatureFlagClient is a mock implementation that returns true for all feature flags
+// This enables all experimental features and unlocks code paths blocked by feature gates
+// Implements featureflags.Client interface
+type mockFeatureFlagClient struct{}
+
+// Ensure mockFeatureFlagClient implements featureflags.Client
+var _ featureflags.Client = (*mockFeatureFlagClient)(nil)
+
+func (m *mockFeatureFlagClient) Boolean(flagName string, storeID string) bool {
+	return true // Enable all experimental features
+}
+
+// newEnhancedFuzzServer creates an OpenFGA server with all features enabled for comprehensive fuzzing
+// This configuration unlocks blocked code paths including:
+// - Pipeline ListObjects (via feature flags)
+// - Shadow resolver (A/B testing)
+// - All caching layers
+// - Dispatch throttling
+// - Iterator caching
+func newEnhancedFuzzServer(datastore storage.OpenFGADatastore) *server.Server {
+	return server.MustNewServerWithOpts(
+		server.WithDatastore(datastore),
+		server.WithFeatureFlagClient(&mockFeatureFlagClient{}),
+		server.WithCheckQueryCacheEnabled(true),
+		server.WithCacheControllerEnabled(true),
+		server.WithCheckIteratorCacheEnabled(true),
+		server.WithListObjectsIteratorCacheEnabled(true),
+		server.WithDispatchThrottlingCheckResolverEnabled(true),
+		// Note: Shadow resolver requires additional mock implementation, skip for now
+		// server.WithShadowResolverEnabled(true),
+	)
+}
 
 // transformDSLWithTimeout wraps TransformDSLToProto with a timeout to prevent
 // infinite loops in the ANTLR parser when processing pathological inputs
