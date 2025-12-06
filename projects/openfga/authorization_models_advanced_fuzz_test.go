@@ -26,7 +26,6 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/openfga/openfga/cmd/util"
-	"github.com/openfga/openfga/pkg/server"
 	"github.com/openfga/openfga/pkg/tuple"
 )
 
@@ -87,7 +86,7 @@ func FuzzCheckWithExclusion(f *testing.F) {
 
 		// Initialize server with datastore
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store
@@ -350,7 +349,7 @@ func FuzzCheckWithIntersection(f *testing.F) {
 		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store via server API
@@ -594,7 +593,7 @@ func FuzzCheckWithComputedUserset(f *testing.F) {
 		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store via server API
@@ -808,7 +807,7 @@ func FuzzCheckWithPublicAccess(f *testing.F) {
 		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store via server API
@@ -1029,7 +1028,7 @@ func FuzzCheckWithMultipleRestrictions(f *testing.F) {
 		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store via server API
@@ -1278,7 +1277,7 @@ func FuzzCheckWithConditions(f *testing.F) {
 		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store via server API
@@ -1553,7 +1552,7 @@ func FuzzCheckWithParentChild(f *testing.F) {
 		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
-		s := server.MustNewServerWithOpts(server.WithDatastore(ds))
+		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
 		// Create store via server API

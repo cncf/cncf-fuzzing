@@ -72,3 +72,11 @@ addStdLibCorpusToFuzzer -fuzzer_name FuzzRandomAPI -dir $SRC/cncf-fuzzing/projec
     echo "Manually copied FuzzRandomAPI_seed_corpus.zip to \$OUT"
   fi
 }
+
+# Add seed corpus for FuzzListObjectsMemoryLeak with schema 1.1 and 1.2 models
+addStdLibCorpusToFuzzer -fuzzer_name FuzzListObjectsMemoryLeak -dir $SRC/cncf-fuzzing/projects/openfga/FuzzListObjectsMemoryLeak_seeds || {
+  if [ -f /tmp/FuzzListObjectsMemoryLeak_seed_corpus.zip ]; then
+    cp /tmp/FuzzListObjectsMemoryLeak_seed_corpus.zip $OUT/FuzzListObjectsMemoryLeak_seed_corpus.zip
+    echo "Manually copied FuzzListObjectsMemoryLeak_seed_corpus.zip to \$OUT"
+  fi
+}

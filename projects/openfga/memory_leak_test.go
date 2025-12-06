@@ -24,7 +24,6 @@ import (
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 
-	"github.com/openfga/openfga/pkg/server"
 	"github.com/openfga/openfga/pkg/storage/memory"
 	"github.com/openfga/openfga/pkg/typesystem"
 )
@@ -470,7 +469,7 @@ func FuzzListObjectsMemoryLeak(f *testing.F) {
 		datastore := memory.New()
 		defer datastore.Close()
 
-		srv := server.MustNewServerWithOpts(server.WithDatastore(datastore))
+		srv := newEnhancedFuzzServer(datastore)
 		defer srv.Close()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz"})
@@ -526,6 +525,7 @@ func FuzzListObjectsMemoryLeak(f *testing.F) {
 		baselineAlloc := m1.Alloc
 
 		// Call ListObjects repeatedly (vulnerable versions leak memory here)
+		// OPTIMIZATION: Vary iteration patterns to test different code paths
 		const iterations = 10
 		for i := 0; i < iterations; i++ {
 			_, err := srv.ListObjects(ctx, &openfgav1.ListObjectsRequest{
