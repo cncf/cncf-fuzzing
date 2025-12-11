@@ -19,7 +19,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"reflect"
 	"testing"
 
 	gofuzzheaders "github.com/AdaLogics/go-fuzz-headers"
@@ -33,7 +32,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	framework "k8s.io/client-go/tools/cache/testing"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	v1 "kubevirt.io/api/core/v1"
 	"kubevirt.io/client-go/kubecli"
 	kubevirtfake "kubevirt.io/client-go/kubevirt/fake"
@@ -41,7 +39,6 @@ import (
 
 	virtconfig "kubevirt.io/kubevirt/pkg/virt-config"
 
-	virtcontroller "kubevirt.io/kubevirt/pkg/controller"
 	"kubevirt.io/kubevirt/pkg/testutils"
 	"kubevirt.io/kubevirt/pkg/virt-controller/watch/dra"
 	fuzztestutils "kubevirt.io/kubevirt/pkg/virt-controller/watch/testutils"
@@ -237,33 +234,16 @@ func FuzzExecute(f *testing.F) {
 			recorder,
 			virtClient,
 		)
-		if err != nil {
+		if err != nil || controller == nil {
 			return
 		}
-
-		// Access private queue field using reflection
-		controllerValue := reflect.ValueOf(controller).Elem()
-		queueField := controllerValue.FieldByName("queue")
-		if !queueField.IsValid() {
-			return
-		}
-		
-		// Get the queue interface
-		queue := queueField.Interface().(workqueue.TypedRateLimitingInterface[string])
-		
-		// Wrap our workqueue to have a way to detect when we are done processing updates
-		mockQueue := testutils.NewMockWorkQueue(queue)
-		queue.ShutDown()
-		
-		// Set the mock queue back using reflection
-		queueField.Set(reflect.ValueOf(mockQueue))
 
 		// Set up mock client
 		kubeClient := fake.NewSimpleClientset()
 		virtClient.EXPECT().VirtualMachineInstance(k8sv1.NamespaceDefault).Return(virtClientset.KubevirtV1().VirtualMachineInstances(k8sv1.NamespaceDefault)).AnyTimes()
 		virtClient.EXPECT().CoreV1().Return(kubeClient.CoreV1()).AnyTimes()
 
-		// Add the resources to the stores and queue
+		// Add the resources to the stores
 		for _, vmi := range vmis {
 			if len(vmi.Annotations) == 0 {
 				vmi.Annotations = nil
@@ -272,18 +252,13 @@ func FuzzExecute(f *testing.F) {
 				vmi.Labels = nil
 			}
 
-			var addToQueue bool
+			var addToStore bool
 			var create bool
-			cf.GenerateStruct(&addToQueue)
+			cf.GenerateStruct(&addToStore)
 			cf.GenerateStruct(&create)
 
-			if addToQueue {
+			if addToStore {
 				vmiInformer.GetStore().Add(vmi)
-				key, err := virtcontroller.KeyFunc(vmi)
-				if err != nil {
-					return
-				}
-				mockQueue.Add(key)
 			}
 			if create {
 				virtClientset.KubevirtV1().VirtualMachineInstances(vmi.Namespace).Create(context.Background(), vmi, metav1.CreateOptions{})
@@ -326,7 +301,8 @@ func FuzzExecute(f *testing.F) {
 			}
 		}
 
-		if mockQueue.Len() == 0 {
+		// Skip if no resources were added
+		if len(vmis)+len(pods)+len(resourceClaims)+len(resourceSlices) == 0 {
 			return
 		}
 

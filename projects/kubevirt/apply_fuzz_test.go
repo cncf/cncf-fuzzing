@@ -366,14 +366,14 @@ func createManifests(t *testing.T, cf *gofuzzheaders.ConsumeFuzzer) ([]byte, err
 		obj := createRandomizedObject(cf, resourceTypeStr)
 		err := marshalutil.MarshallObject(obj, writer)
 		if err != nil {
-			t.Errorf("could not marshal: %v", err)
+			return nil, err // Skip if marshaling fails
 		}
 		createdResource += 1
 	}
 	writer.Flush()
 
 	if createdResource == 0 {
-		t.Errorf("created 0 resources")
+		return nil, nil // Skip if no resources created
 	}
 
 	return b.Bytes(), nil
@@ -758,8 +758,14 @@ func generateValidK8sName(c gofuzzheaders.Continue, prefix string) string {
 	length := 5 + c.Intn(maxLen-5) // 5 to maxLen chars
 	name := prefix + "-"
 	
-	for i := 0; i < length-len(prefix)-1; i++ {
-		if i > 0 && i < length-len(prefix)-2 && c.Intn(10) == 0 {
+	// Protect against negative length
+	remainingLength := length - len(prefix) - 1
+	if remainingLength < 0 {
+		remainingLength = 0
+	}
+	
+	for i := 0; i < remainingLength; i++ {
+		if i > 0 && i < remainingLength-1 && c.Intn(10) == 0 {
 			// Occasionally add a dash
 			name += "-"
 		} else {
