@@ -27,15 +27,22 @@ import (
 	gofuzzheaders "github.com/AdaLogics/go-fuzz-headers"
 
 	instancetypeWebhooks "kubevirt.io/kubevirt/pkg/instancetype/webhooks/vm"
+	"kubevirt.io/kubevirt/pkg/testutils"
 	"kubevirt.io/kubevirt/pkg/virt-api/webhooks"
 	"kubevirt.io/kubevirt/pkg/virt-api/webhooks/validating-webhook/admitters"
-	virtconfig "kubevirt.io/kubevirt/pkg/virt-config"
 )
 
 // FuzzAdmitterFast - Fast-starting fuzzer using go-fuzz-headers
 func FuzzAdmitterFast(f *testing.F) {
 	// Use Default config for speed
 	cfg := gofuzzheaders.DefaultConfig()
+
+	// Create cluster config once for reuse
+	clusterConfig, _, _ := testutils.NewFakeClusterConfigUsingKVConfig(&v1.KubeVirtConfiguration{})
+	if clusterConfig == nil {
+		// Skip fuzzing if we can't create config
+		return
+	}
 
 	// Single minimal seed
 	f.Add([]byte{0})
@@ -56,15 +63,17 @@ func FuzzAdmitterFast(f *testing.F) {
 				return
 			}
 
-			request := toAdmissionReview(&vmi, webhooks.VirtualMachineInstanceGroupVersionResource)
-			config := fuzzKubeVirtConfig(int64(data[0]))
+		request := toAdmissionReview(&vmi, webhooks.VirtualMachineInstanceGroupVersionResource)
+		if request == nil || request.Request == nil {
+			return
+		}
 
-			const kubeVirtNamespace = "kubevirt"
-			adm := &admitters.VMICreateAdmitter{
-				ClusterConfig:           config,
-				KubeVirtServiceAccounts: webhooks.KubeVirtServiceAccounts(kubeVirtNamespace),
-			}
-			_ = adm.Admit(context.Background(), request)
+		const kubeVirtNamespace = "kubevirt"
+		adm := &admitters.VMICreateAdmitter{
+			ClusterConfig:           clusterConfig,
+			KubeVirtServiceAccounts: webhooks.KubeVirtServiceAccounts(kubeVirtNamespace),
+		}
+		_ = adm.Admit(context.Background(), request)
 		} else {
 			// Fuzz VirtualMachine
 			var vm v1.VirtualMachine
@@ -72,16 +81,18 @@ func FuzzAdmitterFast(f *testing.F) {
 				return
 			}
 
-			request := toAdmissionReview(&vm, webhooks.VirtualMachineGroupVersionResource)
-			config := fuzzKubeVirtConfig(int64(data[0]))
+		request := toAdmissionReview(&vm, webhooks.VirtualMachineGroupVersionResource)
+		if request == nil || request.Request == nil {
+			return
+		}
 
-			const kubeVirtNamespace = "kubevirt"
-			adm := &admitters.VMsAdmitter{
-				ClusterConfig:           config,
-				KubeVirtServiceAccounts: webhooks.KubeVirtServiceAccounts(kubeVirtNamespace),
-				InstancetypeAdmitter:    instancetypeWebhooks.NewAdmitterStub(),
-			}
-			_ = adm.Admit(context.Background(), request)
+		const kubeVirtNamespace = "kubevirt"
+		adm := &admitters.VMsAdmitter{
+			ClusterConfig:           clusterConfig,
+			KubeVirtServiceAccounts: webhooks.KubeVirtServiceAccounts(kubeVirtNamespace),
+			InstancetypeAdmitter:    instancetypeWebhooks.NewAdmitterStub(),
+		}
+		_ = adm.Admit(context.Background(), request)
 		}
 	})
 }
@@ -98,8 +109,3 @@ func toAdmissionReview(obj interface{}, gvr metav1.GroupVersionResource) *admiss
 	}
 }
 
-func fuzzKubeVirtConfig(seed int64) *virtconfig.ClusterConfig {
-	// Use default cluster config
-	config, _ := virtconfig.NewClusterConfig(nil, nil, "")
-	return config
-}

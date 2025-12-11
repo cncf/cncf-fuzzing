@@ -32,13 +32,13 @@ import (
 )
 
 const (
-	validChars       = "abcdefghijklmnopqrstuvwxyz0123456789"
-	validStartChars  = "abcdefghijklmnopqrstuvwxyz"
-	validLabelChars  = "abcdefghijklmnopqrstuvwxyz0123456789-_."
-	minNameLength    = 5
-	maxNameLength    = 63
-	minLabelLength   = 3
-	maxLabelLength   = 63
+	validChars      = "abcdefghijklmnopqrstuvwxyz0123456789"
+	validStartChars = "abcdefghijklmnopqrstuvwxyz"
+	validLabelChars = "abcdefghijklmnopqrstuvwxyz0123456789-_."
+	minNameLength   = 5
+	maxNameLength   = 63
+	minLabelLength  = 3
+	maxLabelLength  = 63
 )
 
 // generateValidK8sName generates a DNS-1123 subdomain compliant name
@@ -46,22 +46,56 @@ const (
 // and must start and end with an alphanumeric character
 func generateValidK8sName(c gofuzzheaders.Continue, prefix string) string {
 	length := minNameLength + c.Intn(maxNameLength-minNameLength)
-	
+
+	// Ensure length is positive
+	if length <= 0 {
+		length = minNameLength
+	}
+
+	// If prefix is too long, truncate it to fit within the length
+	if len(prefix) >= length {
+		// Ensure we don't try to slice with negative or out of bounds index
+		if length > len(prefix) {
+			length = len(prefix)
+		}
+		if length < 0 {
+			length = 0
+		}
+		return prefix[:length]
+	}
+
 	// Start with prefix and a valid start character
 	name := prefix + "-"
 	startIdx := c.Intn(len(validStartChars))
+	if startIdx < 0 || startIdx >= len(validStartChars) {
+		startIdx = 0
+	}
 	name += string(validStartChars[startIdx])
-	
+
+	// Calculate remaining length, accounting for the final character we'll add
+	remainingLength := length - len(prefix) - 2
+	if remainingLength < 0 {
+		remainingLength = 0
+	}
+
 	// Add random valid characters
-	for i := 0; i < length-len(prefix)-2; i++ {
+	for i := 0; i < remainingLength; i++ {
 		idx := c.Intn(len(validChars))
+		if idx < 0 || idx >= len(validChars) {
+			idx = 0
+		}
 		name += string(validChars[idx])
 	}
-	
-	// End with alphanumeric (not hyphen)
-	endIdx := c.Intn(len(validChars))
-	name += string(validChars[endIdx])
-	
+
+	// Only add final character if we have room
+	if len(name) < length {
+		endIdx := c.Intn(len(validChars))
+		if endIdx < 0 || endIdx >= len(validChars) {
+			endIdx = 0
+		}
+		name += string(validChars[endIdx])
+	}
+
 	return name
 }
 
@@ -73,26 +107,60 @@ func generateValidK8sLabel(c gofuzzheaders.Continue, prefix string) string {
 	if c.Intn(10) == 0 {
 		return ""
 	}
-	
+
 	length := minLabelLength + c.Intn(maxLabelLength-minLabelLength)
-	
+
+	// Ensure length is positive
+	if length <= 0 {
+		length = minLabelLength
+	}
+
+	// If prefix is already longer than or equal to desired length, just return it truncated
+	if len(prefix) >= length {
+		// Ensure we don't try to slice with negative or out of bounds index
+		if length > len(prefix) {
+			length = len(prefix)
+		}
+		if length < 0 {
+			length = 0
+		}
+		return prefix[:length]
+	}
+
 	// Start with valid character
 	label := prefix
 	if len(prefix) == 0 {
 		startIdx := c.Intn(len(validStartChars))
+		if startIdx < 0 || startIdx >= len(validStartChars) {
+			startIdx = 0
+		}
 		label = string(validStartChars[startIdx])
 	}
-	
+
+	// Calculate remaining length needed, accounting for the final character we'll add
+	remainingLength := length - len(label) - 1
+	if remainingLength < 0 {
+		remainingLength = 0
+	}
+
 	// Add random valid characters
-	for i := 0; i < length-len(label)-1; i++ {
+	for i := 0; i < remainingLength; i++ {
 		idx := c.Intn(len(validLabelChars))
+		if idx < 0 || idx >= len(validLabelChars) {
+			idx = 0
+		}
 		label += string(validLabelChars[idx])
 	}
-	
-	// End with alphanumeric (not special char)
-	endIdx := c.Intn(len(validChars))
-	label += string(validChars[endIdx])
-	
+
+	// Only add final character if we have room
+	if len(label) < length {
+		endIdx := c.Intn(len(validChars))
+		if endIdx < 0 || endIdx >= len(validChars) {
+			endIdx = 0
+		}
+		label += string(validChars[endIdx])
+	}
+
 	return label
 }
 
@@ -102,20 +170,20 @@ func CustomObjectMetaFuzzer(namespace string) func(*metav1.ObjectMeta, gofuzzhea
 	return func(objectMeta *metav1.ObjectMeta, c gofuzzheaders.Continue) {
 		objectMeta.Name = generateValidK8sName(c, "resource")
 		objectMeta.Namespace = namespace
-		
+
 		// Generate valid labels
 		objectMeta.Labels = map[string]string{
 			"app.kubernetes.io/name":      generateValidK8sLabel(c, "kubevirt"),
 			"app.kubernetes.io/component": generateValidK8sLabel(c, "virt"),
 			"kubevirt.io/test":            "fuzzer",
 		}
-		
+
 		// Generate valid annotations
 		objectMeta.Annotations = map[string]string{
 			"kubevirt.io/latest-observed-api-version": virtv1.ApiLatestVersion,
-			"description":                              generateValidK8sLabel(c, "test"),
+			"description": generateValidK8sLabel(c, "test"),
 		}
-		
+
 		// Set generation and resource version
 		objectMeta.Generation = c.Int63()
 		objectMeta.ResourceVersion = fmt.Sprintf("%d", c.Int63())
@@ -151,7 +219,7 @@ func CustomPodFuzzer() func(*k8sv1.Pod, gofuzzheaders.Continue) {
 				}
 			}
 		}
-		
+
 		// Ensure valid restart policy
 		if pod.Spec.RestartPolicy == "" {
 			restartPolicies := []k8sv1.RestartPolicy{
@@ -173,7 +241,7 @@ func CustomPVCFuzzer() func(*k8sv1.PersistentVolumeClaim, gofuzzheaders.Continue
 				k8sv1.ResourceStorage: resource.MustParse("1Gi"),
 			}
 		}
-		
+
 		// Ensure valid access modes
 		if len(pvc.Spec.AccessModes) == 0 {
 			accessModes := []k8sv1.PersistentVolumeAccessMode{
@@ -203,7 +271,7 @@ func CustomDataVolumeFuzzer() func(*cdiv1.DataVolume, gofuzzheaders.Continue) {
 				},
 			}
 		}
-		
+
 		// Ensure valid source
 		if dv.Spec.Source == nil {
 			registryURL := "docker://kubevirt/fedora-cloud-container-disk-demo"
@@ -226,7 +294,7 @@ func CustomVMIFuzzer(namespace string) func(*virtv1.VirtualMachineInstance, gofu
 				k8sv1.ResourceMemory: resource.MustParse("64Mi"),
 			}
 		}
-		
+
 		// Ensure at least one disk and volume
 		if len(vmi.Spec.Domain.Devices.Disks) == 0 {
 			vmi.Spec.Domain.Devices.Disks = []virtv1.Disk{
@@ -240,7 +308,7 @@ func CustomVMIFuzzer(namespace string) func(*virtv1.VirtualMachineInstance, gofu
 				},
 			}
 		}
-		
+
 		if len(vmi.Spec.Volumes) == 0 {
 			vmi.Spec.Volumes = []virtv1.Volume{
 				{
@@ -253,7 +321,7 @@ func CustomVMIFuzzer(namespace string) func(*virtv1.VirtualMachineInstance, gofu
 				},
 			}
 		}
-		
+
 		// Ensure network is set
 		if len(vmi.Spec.Networks) == 0 {
 			vmi.Spec.Networks = []virtv1.Network{
@@ -265,7 +333,7 @@ func CustomVMIFuzzer(namespace string) func(*virtv1.VirtualMachineInstance, gofu
 				},
 			}
 		}
-		
+
 		if len(vmi.Spec.Domain.Devices.Interfaces) == 0 {
 			vmi.Spec.Domain.Devices.Interfaces = []virtv1.Interface{
 				{
@@ -323,12 +391,12 @@ func CustomVMFuzzer(namespace string) func(*virtv1.VirtualMachine, gofuzzheaders
 				},
 			}
 		}
-		
+
 		// Apply VMI fuzzer to template spec
 		CustomVMIFuzzer(namespace)(&virtv1.VirtualMachineInstance{
 			Spec: vm.Spec.Template.Spec,
 		}, c)
-		
+
 		// Set running state randomly
 		running := c.RandBool()
 		vm.Spec.Running = &running
@@ -342,14 +410,14 @@ func CustomNodeFuzzer() func(*k8sv1.Node, gofuzzheaders.Continue) {
 		if node.Name == "" {
 			node.Name = generateValidK8sName(c, "node")
 		}
-		
+
 		// Ensure standard node labels
 		if node.Labels == nil {
 			node.Labels = make(map[string]string)
 		}
 		node.Labels["kubernetes.io/hostname"] = node.Name
 		node.Labels["kubernetes.io/os"] = "linux"
-		
+
 		// Add capacity and allocatable if missing
 		if node.Status.Capacity == nil {
 			node.Status.Capacity = k8sv1.ResourceList{
@@ -358,7 +426,7 @@ func CustomNodeFuzzer() func(*k8sv1.Node, gofuzzheaders.Continue) {
 				k8sv1.ResourcePods:   resource.MustParse("110"),
 			}
 		}
-		
+
 		if node.Status.Allocatable == nil {
 			node.Status.Allocatable = k8sv1.ResourceList{
 				k8sv1.ResourceCPU:    resource.MustParse("4"),
@@ -366,7 +434,7 @@ func CustomNodeFuzzer() func(*k8sv1.Node, gofuzzheaders.Continue) {
 				k8sv1.ResourcePods:   resource.MustParse("110"),
 			}
 		}
-		
+
 		// Set node to ready
 		node.Status.Conditions = []k8sv1.NodeCondition{
 			{
@@ -398,7 +466,7 @@ func CustomPodDisruptionBudgetFuzzer() func(*policyv1.PodDisruptionBudget, gofuz
 				},
 			}
 		}
-		
+
 		// Ensure valid min available
 		if pdb.Spec.MinAvailable == nil && pdb.Spec.MaxUnavailable == nil {
 			minAvailable := intstr.FromInt(1)
@@ -412,7 +480,7 @@ func CustomNodeWithTaintsFuzzer() func(*k8sv1.Node, gofuzzheaders.Continue) {
 	return func(node *k8sv1.Node, c gofuzzheaders.Continue) {
 		// First apply standard node fuzzer
 		CustomNodeFuzzer()(node, c)
-		
+
 		// Add evacuation taints randomly
 		if c.RandBool() {
 			taintEffects := []k8sv1.TaintEffect{
@@ -435,12 +503,12 @@ func CustomVMPoolFuzzer(namespace string) func(*poolv1.VirtualMachinePool, gofuz
 	return func(pool *poolv1.VirtualMachinePool, c gofuzzheaders.Continue) {
 		// Set namespace and name manually
 		pool.Namespace = namespace
-		
+
 		// Ensure valid name
 		if pool.Name == "" {
 			pool.Name = generateValidK8sName(c, "vmpool")
 		}
-		
+
 		// Set basic ObjectMeta fields
 		if pool.UID == "" {
 			pool.UID = "test-uid"
@@ -448,13 +516,13 @@ func CustomVMPoolFuzzer(namespace string) func(*poolv1.VirtualMachinePool, gofuz
 		if pool.ResourceVersion == "" {
 			pool.ResourceVersion = "1"
 		}
-		
+
 		// Ensure valid replicas
 		if pool.Spec.Replicas == nil {
 			replicas := int32(1 + c.Intn(3))
 			pool.Spec.Replicas = &replicas
 		}
-		
+
 		// Ensure valid selector
 		if pool.Spec.Selector == nil {
 			pool.Spec.Selector = &metav1.LabelSelector{
@@ -463,7 +531,7 @@ func CustomVMPoolFuzzer(namespace string) func(*poolv1.VirtualMachinePool, gofuz
 				},
 			}
 		}
-		
+
 		// Ensure valid VM template
 		if pool.Spec.VirtualMachineTemplate == nil {
 			running := false
@@ -503,7 +571,7 @@ func CustomVMCloneFuzzer(namespace string) func(*clonev1.VirtualMachineClone, go
 				Name:     generateValidK8sName(c, "source-vm"),
 			}
 		}
-		
+
 		// Ensure valid target name
 		if vmClone.Spec.Target == nil {
 			vmClone.Spec.Target = &k8sv1.TypedLocalObjectReference{
@@ -525,30 +593,30 @@ func CustomVMIReplicaSetFuzzer(namespace string) func(*virtv1.VirtualMachineInst
 			rs.Labels = make(map[string]string)
 		}
 		rs.Labels["app"] = generateValidK8sLabel(c, "app")
-		
+
 		// Ensure replicas is reasonable
 		if rs.Spec.Replicas == nil {
 			replicas := int32(c.Intn(10))
 			rs.Spec.Replicas = &replicas
 		}
-		
+
 		// Ensure template is not nil
 		if rs.Spec.Template == nil {
 			rs.Spec.Template = &virtv1.VirtualMachineInstanceTemplateSpec{}
 		}
-		
+
 		// Ensure template has valid labels
 		if rs.Spec.Template.ObjectMeta.Labels == nil {
 			rs.Spec.Template.ObjectMeta.Labels = make(map[string]string)
 		}
 		rs.Spec.Template.ObjectMeta.Labels["app"] = generateValidK8sLabel(c, "app")
-		
+
 		// Ensure selector matches template labels
 		if rs.Spec.Selector == nil {
 			rs.Spec.Selector = &metav1.LabelSelector{}
 		}
 		rs.Spec.Selector.MatchLabels = rs.Spec.Template.ObjectMeta.Labels
-		
+
 		// Ensure template spec is valid
 		if rs.Spec.Template.Spec.Domain.Devices.Disks == nil {
 			rs.Spec.Template.Spec.Domain.Devices.Disks = []virtv1.Disk{
@@ -562,7 +630,7 @@ func CustomVMIReplicaSetFuzzer(namespace string) func(*virtv1.VirtualMachineInst
 				},
 			}
 		}
-		
+
 		if rs.Spec.Template.Spec.Volumes == nil {
 			rs.Spec.Template.Spec.Volumes = []virtv1.Volume{
 				{
@@ -587,7 +655,7 @@ func CustomVMSnapshotFuzzer(namespace string) func(*snapshotv1.VirtualMachineSna
 		if vmSnapshot.Labels == nil {
 			vmSnapshot.Labels = make(map[string]string)
 		}
-		
+
 		// Ensure valid source reference
 		if vmSnapshot.Spec.Source.Name == "" {
 			vmSnapshot.Spec.Source.Name = generateValidK8sName(c, "vm")
@@ -599,7 +667,7 @@ func CustomVMSnapshotFuzzer(namespace string) func(*snapshotv1.VirtualMachineSna
 			apiGroup := virtv1.SchemeGroupVersion.Group
 			vmSnapshot.Spec.Source.APIGroup = &apiGroup
 		}
-		
+
 		// Set deletion policy if nil
 		if vmSnapshot.Spec.DeletionPolicy == nil {
 			deletionPolicy := snapshotv1.VirtualMachineSnapshotContentDelete
@@ -617,12 +685,12 @@ func CustomVMSnapshotContentFuzzer(namespace string) func(*snapshotv1.VirtualMac
 		if content.Labels == nil {
 			content.Labels = make(map[string]string)
 		}
-		
+
 		// Ensure valid source reference
 		if content.Spec.Source.VirtualMachine != nil && content.Spec.Source.VirtualMachine.Name == "" {
 			content.Spec.Source.VirtualMachine.Name = generateValidK8sName(c, "vm")
 		}
-		
+
 		// Ensure valid snapshot reference
 		if content.Spec.VirtualMachineSnapshotName == nil {
 			snapshotName := generateValidK8sName(c, "snapshot")

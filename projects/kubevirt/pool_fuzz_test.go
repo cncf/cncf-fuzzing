@@ -79,137 +79,148 @@ func FuzzExecute(f *testing.F) {
 			if vm != nil {
 				vms = append(vms, vm)
 			}
-
-			vmis := make([]*v1.VirtualMachineInstance, 0)
-			for _ = range int(numberOfVMs) % maxResources {
-				vmi := &v1.VirtualMachineInstance{}
-				if err := cf.GenerateStruct(vmi); err != nil {
-					continue
-				}
-				if vmi != nil {
-					vmis = append(vmis, vmi)
-				}
-			}
-
-			vmPools := make([]*poolv1.VirtualMachinePool, 0)
-			for _ = range int(numberOfVMs) % maxResources {
-				vmPool := &poolv1.VirtualMachinePool{}
-				if err := cf.GenerateStruct(vmPool); err != nil {
-					continue
-				}
-				if vmPool != nil {
-					vmPools = append(vmPools, vmPool)
-				}
-			}
-			// There is no point in continuing
-			// if we have not created any resources.
-			if len(vms)+len(vms)+len(vmis)+len(vmPools) < 3 {
-				return
-			}
-
-			virtClient := kubecli.NewMockKubevirtClient(gomock.NewController(t))
-
-			vmiInformer, _ := testutils.NewFakeInformerFor(&v1.VirtualMachineInstance{})
-			vmInformer, _ := testutils.NewFakeInformerFor(&v1.VirtualMachine{})
-			poolInformer, _ := testutils.NewFakeInformerFor(&poolv1.VirtualMachinePool{})
-			pvcInformer, _ := testutils.NewFakeInformerFor(&k8sv1.PersistentVolumeClaim{})
-			dvInformer, _ := testutils.NewFakeInformerFor(&cdiv1.DataVolume{})
-			recorder := record.NewFakeRecorder(100)
-			recorder.IncludeObject = true
-
-			crInformer, _ := testutils.NewFakeInformerWithIndexersFor(&appsv1.ControllerRevision{}, cache.Indexers{
-				"vmpool": func(obj interface{}) ([]string, error) {
-					cr := obj.(*appsv1.ControllerRevision)
-					for _, ref := range cr.OwnerReferences {
-						if ref.Kind == "VirtualMachinePool" {
-							return []string{string(ref.UID)}, nil
-						}
-					}
-					return nil, nil
-				},
-			})
-
-			controller, _ := pool.NewController(virtClient,
-				vmiInformer,
-				vmInformer,
-				poolInformer,
-				pvcInformer,
-				dvInformer,
-				crInformer,
-				recorder,
-				uint(10))
-			fakeVirtClient := kubevirtfake.NewSimpleClientset()
-			mockQueue := testutils.NewMockWorkQueue(pool.GetQueue(controller))
-			// Add the resources to the context
-			for _, cr := range crs {
-				if cr == nil {
-					continue
-				}
-				crInformer.GetIndexer().Add(cr)
-				key, err := virtcontroller.KeyFunc(cr)
-				if err != nil {
-					return
-				}
-				mockQueue.Add(key)
-			}
-			for _, vm := range vms {
-				if vm == nil {
-					continue
-				}
-				vmInformer.GetIndexer().Add(vm)
-				key, err := virtcontroller.KeyFunc(vm)
-				if err != nil {
-					return
-				}
-				mockQueue.Add(key)
-			}
-			for _, vmi := range vmis {
-				if vmi == nil {
-					continue
-				}
-				vmiInformer.GetStore().Add(vmi)
-				key, err := virtcontroller.KeyFunc(vmi)
-				if err != nil {
-					return
-				}
-				mockQueue.Add(key)
-			}
-			for _, vmPool := range vmPools {
-				if vmPool == nil {
-					continue
-				}
-				poolInformer.GetIndexer().Add(vmPool)
-				key, err := virtcontroller.KeyFunc(vmPool)
-				if err != nil {
-					return
-				}
-				mockQueue.Add(key)
-				// Don't mock VirtualMachinePool - it causes type mismatch errors
-				// The controller will work with objects from the informer store
-
-			}
-			if mockQueue.Len() == 0 {
-				return
-			}
-			pool.ShutdownCtrlQueue(controller)
-			pool.SetQueue(controller, mockQueue)
-
-			// Set up mock client
-			virtClient.EXPECT().VirtualMachineInstance(gomock.Any()).Return(fakeVirtClient.KubevirtV1().VirtualMachineInstances(metav1.NamespaceDefault)).AnyTimes()
-			virtClient.EXPECT().VirtualMachine(gomock.Any()).Return(fakeVirtClient.KubevirtV1().VirtualMachines(metav1.NamespaceDefault)).AnyTimes()
-			virtClient.EXPECT().VirtualMachinePool(gomock.Any()).Return(fakeVirtClient.PoolV1beta1().VirtualMachinePools(metav1.NamespaceDefault)).AnyTimes()
-			fakeVirtClient.Fake.PrependReactor("*", "*", func(action k8sTesting.Action) (handled bool, obj runtime.Object, err error) {
-				return true, nil, nil
-			})
-
-			k8sClient := k8sfake.NewSimpleClientset()
-			k8sClient.Fake.PrependReactor("*", "*", func(action k8sTesting.Action) (handled bool, obj runtime.Object, err error) {
-				return true, nil, nil
-			})
-			virtClient.EXPECT().AppsV1().Return(k8sClient.AppsV1()).AnyTimes()
-
-			// Run the controller
-			controller.Execute()
 		}
+
+		vmis := make([]*v1.VirtualMachineInstance, 0)
+		for _ = range int(numberOfVMs) % maxResources {
+			vmi := &v1.VirtualMachineInstance{}
+			if err := cf.GenerateStruct(vmi); err != nil {
+				continue
+			}
+			if vmi != nil {
+				vmis = append(vmis, vmi)
+			}
+		}
+
+		vmPools := make([]*poolv1.VirtualMachinePool, 0)
+		for _ = range int(numberOfVMs) % maxResources {
+			vmPool := &poolv1.VirtualMachinePool{}
+			if err := cf.GenerateStruct(vmPool); err != nil {
+				continue
+			}
+			if vmPool != nil {
+				vmPools = append(vmPools, vmPool)
+			}
+		}
+		
+		// There is no point in continuing
+		// if we have not created any resources.
+		if len(vms)+len(vmis)+len(vmPools) < 3 {
+			return
+		}
+
+		virtClient := kubecli.NewMockKubevirtClient(gomock.NewController(t))
+
+		vmiInformer, _ := testutils.NewFakeInformerFor(&v1.VirtualMachineInstance{})
+		vmInformer, _ := testutils.NewFakeInformerFor(&v1.VirtualMachine{})
+		poolInformer, _ := testutils.NewFakeInformerFor(&poolv1.VirtualMachinePool{})
+		pvcInformer, _ := testutils.NewFakeInformerFor(&k8sv1.PersistentVolumeClaim{})
+		dvInformer, _ := testutils.NewFakeInformerFor(&cdiv1.DataVolume{})
+		recorder := record.NewFakeRecorder(100)
+		recorder.IncludeObject = true
+
+		crInformer, _ := testutils.NewFakeInformerWithIndexersFor(&appsv1.ControllerRevision{}, cache.Indexers{
+			"vmpool": func(obj interface{}) ([]string, error) {
+				cr := obj.(*appsv1.ControllerRevision)
+				for _, ref := range cr.OwnerReferences {
+					if ref.Kind == "VirtualMachinePool" {
+						return []string{string(ref.UID)}, nil
+					}
+				}
+				return nil, nil
+			},
+		})
+
+		controller, _ := pool.NewController(virtClient,
+			vmiInformer,
+			vmInformer,
+			poolInformer,
+			pvcInformer,
+			dvInformer,
+			crInformer,
+			recorder,
+			uint(10))
+		
+		// Check if controller is nil before proceeding
+		if controller == nil {
+			return
+		}
+		
+		fakeVirtClient := kubevirtfake.NewSimpleClientset()
+		mockQueue := testutils.NewMockWorkQueue(pool.GetQueue(controller))
+		
+		// Add the resources to the context
+		for _, cr := range crs {
+			if cr == nil {
+				continue
+			}
+			crInformer.GetIndexer().Add(cr)
+			key, err := virtcontroller.KeyFunc(cr)
+			if err != nil || key == "" {
+				return
+			}
+			mockQueue.Add(key)
+		}
+		
+		for _, vm := range vms {
+			if vm == nil {
+				continue
+			}
+			vmInformer.GetIndexer().Add(vm)
+			key, err := virtcontroller.KeyFunc(vm)
+			if err != nil || key == "" {
+				return
+			}
+			mockQueue.Add(key)
+		}
+		
+		for _, vmi := range vmis {
+			if vmi == nil {
+				continue
+			}
+			vmiInformer.GetStore().Add(vmi)
+			key, err := virtcontroller.KeyFunc(vmi)
+			if err != nil || key == "" {
+				return
+			}
+			mockQueue.Add(key)
+		}
+		
+		for _, vmPool := range vmPools {
+			if vmPool == nil {
+				continue
+			}
+			poolInformer.GetIndexer().Add(vmPool)
+			key, err := virtcontroller.KeyFunc(vmPool)
+			if err != nil || key == "" {
+				return
+			}
+			mockQueue.Add(key)
+		}
+		
+		if mockQueue.Len() == 0 {
+			return
+		}
+		
+		pool.ShutdownCtrlQueue(controller)
+		pool.SetQueue(controller, mockQueue)
+
+		// Set up mock client
+		virtClient.EXPECT().VirtualMachineInstance(gomock.Any()).Return(fakeVirtClient.KubevirtV1().VirtualMachineInstances(metav1.NamespaceDefault)).AnyTimes()
+		virtClient.EXPECT().VirtualMachine(gomock.Any()).Return(fakeVirtClient.KubevirtV1().VirtualMachines(metav1.NamespaceDefault)).AnyTimes()
+		virtClient.EXPECT().VirtualMachinePool(gomock.Any()).Return(fakeVirtClient.PoolV1beta1().VirtualMachinePools(metav1.NamespaceDefault)).AnyTimes()
+		fakeVirtClient.Fake.PrependReactor("*", "*", func(action k8sTesting.Action) (handled bool, obj runtime.Object, err error) {
+			return true, nil, nil
+		})
+
+		k8sClient := k8sfake.NewSimpleClientset()
+		k8sClient.Fake.PrependReactor("*", "*", func(action k8sTesting.Action) (handled bool, obj runtime.Object, err error) {
+			return true, nil, nil
+		})
+		virtClient.EXPECT().AppsV1().Return(k8sClient.AppsV1()).AnyTimes()
+
+		// Run the controller - ignore any errors from invalid queue items
+		// The fuzzer may generate invalid data that causes execute to fail
+		_ = controller.Execute()
 	})
 }

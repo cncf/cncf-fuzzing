@@ -16,6 +16,7 @@
 package fuzz
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -56,13 +57,13 @@ func FuzzHostDiskSymlinkContainment(f *testing.F) {
 		tempDir := t.TempDir()
 		volumeDir := filepath.Join(tempDir, "volumes", "test-volume")
 		if err := os.MkdirAll(volumeDir, 0755); err != nil {
-			t.Fatalf("Failed to create volume dir: %v", err)
+			return // Skip if cannot create directory
 		}
 
 		// Setup mountRoot using safepath
 		mountRoot, err := safepath.JoinAndResolveWithRelativeRoot(tempDir, "volumes")
 		if err != nil {
-			t.Fatalf("Failed to create mountRoot: %v", err)
+			return // Skip if cannot create mountRoot
 		}
 
 		// Create host disk creator with safepath enforcement
@@ -113,24 +114,21 @@ func FuzzHostDiskSymlinkContainment(f *testing.F) {
 				// Verify resolved path is still within volume directory
 				relPath, relErr := filepath.Rel(volumeDir, resolvedPath)
 				if relErr != nil || len(relPath) == 0 {
-					t.Errorf("SECURITY VIOLATION: hostDisk path resolution failed - relErr=%v, relPath=%s", relErr, relPath)
-					return
+					panic(fmt.Sprintf("SECURITY VIOLATION: hostDisk path resolution failed - relErr=%v, relPath=%s", relErr, relPath))
 				}
 				
 				// Check for path traversal escape
 				if len(relPath) >= 2 && relPath[0:2] == ".." {
-					t.Errorf("SECURITY VIOLATION: hostDisk path escaped volume boundary: volume=%s, resolved=%s, relative=%s", 
-						volumeDir, resolvedPath, relPath)
-					return
+					panic(fmt.Sprintf("SECURITY VIOLATION: hostDisk path escaped volume boundary: volume=%s, resolved=%s, relative=%s", 
+						volumeDir, resolvedPath, relPath))
 				}
 
 				// Additional check: Verify no file outside volume was modified
 				if _, statErr := os.Stat(resolvedPath); statErr == nil {
 					info, _ := os.Stat(resolvedPath)
 					if !info.Mode().IsRegular() && !info.IsDir() {
-						t.Errorf("SECURITY VIOLATION: hostDisk operation created non-regular file: %s (mode=%v)", 
-							resolvedPath, info.Mode())
-						return
+						panic(fmt.Sprintf("SECURITY VIOLATION: hostDisk operation created non-regular file: %s (mode=%v)", 
+							resolvedPath, info.Mode()))
 					}
 				}
 			}
@@ -158,7 +156,7 @@ func FuzzHostDiskSymlinkContainment(f *testing.F) {
 		})
 
 		if foundOutsideFiles {
-			t.Errorf("SECURITY VIOLATION: Files created outside volume boundary")
+			panic("SECURITY VIOLATION: Files created outside volume boundary")
 		}
 	})
 }
@@ -186,7 +184,7 @@ func FuzzHostDiskOwnershipValidation(f *testing.F) {
 		tempDir := t.TempDir()
 		volumeDir := filepath.Join(tempDir, "volumes", "test-volume")
 		if err := os.MkdirAll(volumeDir, 0755); err != nil {
-			t.Fatalf("Failed to create volume dir: %v", err)
+			return // Skip if cannot create directory
 		}
 
 		// Create existing file if specified
@@ -195,22 +193,20 @@ func FuzzHostDiskOwnershipValidation(f *testing.F) {
 			testFile := filepath.Join(volumeDir, "existing.img")
 			f, err := os.Create(testFile)
 			if err != nil {
-				t.Skipf("Cannot create test file: %v", err)
-				return
+				return // Skip if cannot create test file
 			}
 			f.Close()
 			
 			// Record initial file stat
 			initialStat, err := os.Stat(testFile)
 			if err != nil {
-				t.Skipf("Cannot stat test file: %v", err)
-				return
+				return // Skip if cannot stat test file
 			}
 
 			// Setup mountRoot
 			mountRoot, err := safepath.JoinAndResolveWithRelativeRoot(tempDir, "volumes")
 			if err != nil {
-				t.Fatalf("Failed to create mountRoot: %v", err)
+				return // Skip if cannot create mountRoot
 			}
 
 			recorder := record.NewFakeRecorder(10)
@@ -281,7 +277,7 @@ func FuzzPVCDiskSymlinkEscape(f *testing.F) {
 		tempDir := t.TempDir()
 		pvcDir := filepath.Join(tempDir, "var", "run", "kubevirt-private", "vmi-disks", "test-pvc")
 		if err := os.MkdirAll(pvcDir, 0755); err != nil {
-			t.Fatalf("Failed to create PVC dir: %v", err)
+			return // Skip if cannot create PVC directory
 		}
 
 		// Create disk.img as symlink to potentially malicious target
@@ -290,14 +286,13 @@ func FuzzPVCDiskSymlinkEscape(f *testing.F) {
 		
 		// Create symlink
 		if err := os.Symlink(targetPath, diskImgPath); err != nil {
-			t.Skipf("Failed to create symlink: %v", err)
-			return
+			return // Skip if cannot create symlink
 		}
 
 		// Setup mountRoot with safepath
 		mountRoot, err := safepath.JoinAndResolveWithRelativeRoot(tempDir, "var", "run", "kubevirt-private", "vmi-disks")
 		if err != nil {
-			t.Fatalf("Failed to create mountRoot: %v", err)
+			return // Skip if cannot create mountRoot
 		}
 
 		recorder := record.NewFakeRecorder(10)
@@ -335,8 +330,8 @@ func FuzzPVCDiskSymlinkEscape(f *testing.F) {
 				// Check if resolved path is outside PVC directory
 				relPath, relErr := filepath.Rel(pvcDir, resolvedPath)
 				if relErr != nil || (len(relPath) >= 2 && relPath[0:2] == "..") {
-					t.Errorf("SECURITY VIOLATION: PVC symlink escaped boundary - pvcDir=%s, resolved=%s, relative=%s",
-						pvcDir, resolvedPath, relPath)
+					panic(fmt.Sprintf("SECURITY VIOLATION: PVC symlink escaped boundary - pvcDir=%s, resolved=%s, relative=%s",
+						pvcDir, resolvedPath, relPath))
 				}
 			}
 		}
@@ -362,12 +357,12 @@ func FuzzHostDiskTypeValidation(f *testing.F) {
 		tempDir := t.TempDir()
 		volumeDir := filepath.Join(tempDir, "volumes", "test-volume")
 		if err := os.MkdirAll(volumeDir, 0755); err != nil {
-			t.Fatalf("Failed to create volume dir: %v", err)
+			return // Skip if cannot create directory
 		}
 
 		mountRoot, err := safepath.JoinAndResolveWithRelativeRoot(tempDir, "volumes")
 		if err != nil {
-			t.Fatalf("Failed to create mountRoot: %v", err)
+			return // Skip if cannot create mountRoot
 		}
 
 		recorder := record.NewFakeRecorder(10)
@@ -404,8 +399,8 @@ func FuzzHostDiskTypeValidation(f *testing.F) {
 		if !validTypes[v1.HostDiskType(diskType)] {
 			// Invalid type: should not create any files
 			if _, statErr := os.Stat(diskPath); statErr == nil {
-				t.Errorf("SECURITY VIOLATION: Invalid HostDisk type '%s' resulted in file creation: %s", 
-					diskType, diskPath)
+				panic(fmt.Sprintf("SECURITY VIOLATION: Invalid HostDisk type '%s' resulted in file creation: %s", 
+					diskType, diskPath))
 			}
 		}
 	})

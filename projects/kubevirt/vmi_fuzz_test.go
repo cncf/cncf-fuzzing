@@ -92,25 +92,6 @@ func NewFakeClusterConfigUsingKVConfig(kv *virtv1.KubeVirt) (*virtconfig.Cluster
 	return NewFakeClusterConfigUsingKV(kv)
 }
 
-func catchKnownPanics() {
-	if r := recover(); r != nil {
-		var err string
-		switch r.(type) {
-		case string:
-			err = r.(string)
-		case stdruntime.Error:
-			err = r.(stdruntime.Error).Error()
-		case error:
-			err = r.(error).Error()
-		}
-		if err == "String must not be empty" {
-			return
-		} else {
-			panic(err)
-		}
-	}
-}
-
 // FuzzExecute add up to 3 virtual machine instances,
 // pods, persistent volume claims and data volumes
 // to the context and then runs the controller.
@@ -473,7 +454,6 @@ func FuzzExecute(f *testing.F) {
 		}
 
 		// Run the controller
-		defer catchKnownPanics()
 		for i := controller.Queue.Len(); i > 0; i-- {
 			controller.Execute()
 		}
