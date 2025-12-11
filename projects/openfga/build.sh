@@ -56,6 +56,11 @@ fuzz_targets1=(
  FuzzPublicUsersetConfusion
  FuzzModelUpdateBypass
  FuzzListObjectsMemoryLeak
+ FuzzExpand
+ FuzzListUsers
+ FuzzRead
+ FuzzBatchCheck
+ FuzzStorageBackends
 )
 
 PKG="github.com/openfga/openfga/tests"
@@ -78,5 +83,45 @@ addStdLibCorpusToFuzzer -fuzzer_name FuzzListObjectsMemoryLeak -dir $SRC/cncf-fu
   if [ -f /tmp/FuzzListObjectsMemoryLeak_seed_corpus.zip ]; then
     cp /tmp/FuzzListObjectsMemoryLeak_seed_corpus.zip $OUT/FuzzListObjectsMemoryLeak_seed_corpus.zip
     echo "Manually copied FuzzListObjectsMemoryLeak_seed_corpus.zip to \$OUT"
+  fi
+}
+
+# Add seed corpus for FuzzExpand with various relation patterns
+addStdLibCorpusToFuzzer -fuzzer_name FuzzExpand -dir $SRC/cncf-fuzzing/projects/openfga/FuzzExpand_seeds || {
+  if [ -f /tmp/FuzzExpand_seed_corpus.zip ]; then
+    cp /tmp/FuzzExpand_seed_corpus.zip $OUT/FuzzExpand_seed_corpus.zip
+    echo "Manually copied FuzzExpand_seed_corpus.zip to \$OUT"
+  fi
+}
+
+# Add seed corpus for FuzzListUsers with filtering patterns
+addStdLibCorpusToFuzzer -fuzzer_name FuzzListUsers -dir $SRC/cncf-fuzzing/projects/openfga/FuzzListUsers_seeds || {
+  if [ -f /tmp/FuzzListUsers_seed_corpus.zip ]; then
+    cp /tmp/FuzzListUsers_seed_corpus.zip $OUT/FuzzListUsers_seed_corpus.zip
+    echo "Manually copied FuzzListUsers_seed_corpus.zip to \$OUT"
+  fi
+}
+
+# Add seed corpus for FuzzRead with pagination and filtering
+addStdLibCorpusToFuzzer -fuzzer_name FuzzRead -dir $SRC/cncf-fuzzing/projects/openfga/FuzzRead_seeds || {
+  if [ -f /tmp/FuzzRead_seed_corpus.zip ]; then
+    cp /tmp/FuzzRead_seed_corpus.zip $OUT/FuzzRead_seed_corpus.zip
+    echo "Manually copied FuzzRead_seed_corpus.zip to \$OUT"
+  fi
+}
+
+# Add seed corpus for FuzzBatchCheck with multiple check scenarios
+addStdLibCorpusToFuzzer -fuzzer_name FuzzBatchCheck -dir $SRC/cncf-fuzzing/projects/openfga/FuzzBatchCheck_seeds || {
+  if [ -f /tmp/FuzzBatchCheck_seed_corpus.zip ]; then
+    cp /tmp/FuzzBatchCheck_seed_corpus.zip $OUT/FuzzBatchCheck_seed_corpus.zip
+    echo "Manually copied FuzzBatchCheck_seed_corpus.zip to \$OUT"
+  fi
+}
+
+# Add seed corpus for FuzzStorageBackends with SQL injection and encoding tests
+addStdLibCorpusToFuzzer -fuzzer_name FuzzStorageBackends -dir $SRC/cncf-fuzzing/projects/openfga/FuzzStorageBackends_seeds || {
+  if [ -f /tmp/FuzzStorageBackends_seed_corpus.zip ]; then
+    cp /tmp/FuzzStorageBackends_seed_corpus.zip $OUT/FuzzStorageBackends_seed_corpus.zip
+    echo "Manually copied FuzzStorageBackends_seed_corpus.zip to \$OUT"
   fi
 }
