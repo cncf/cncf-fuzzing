@@ -20,9 +20,28 @@ set -o errexit
 set -x
 
 cd "$SRC"
-cd go-118-fuzz-build
-go build .
-mv go-118-fuzz-build /root/go/bin/
+cd /tmp
+export GOROOT=/root/.go
+wget https://go.dev/dl/go1.25.3.linux-amd64.tar.gz
+
+mkdir temp-go
+tar -C temp-go/ -xzf go1.25.3.linux-amd64.tar.gz
+
+rm -r /root/.go
+mkdir /root/.go/
+mv temp-go/go/* /root/.go/
+rm -rf temp-go
+
+
+cd $SRC/go-118-fuzz-build
+go build
+mv go-118-fuzz-build $GOPATH/bin/go-118-fuzz-build_v2
+pushd cmd/convertLibFuzzerTestcaseToStdLibGo
+  go build . && mv convertLibFuzzerTestcaseToStdLibGo $GOPATH/bin/
+popd
+pushd cmd/addStdLibCorpusToFuzzer
+  go build . && mv addStdLibCorpusToFuzzer $GOPATH/bin/
+popd
 
 # Add more sanitizers
 #############################################################################
@@ -76,6 +95,7 @@ mv $KUBE_FUZZERS/deployment_util_fuzzer.go \
 
 mv $KUBE_FUZZERS/api_roundtrip_fuzzer.go \
    $SRC/kubernetes/test/fuzz/fuzzing/
+
 # Done moving fuzzers and tests
 #############################################################################
 
@@ -91,29 +111,31 @@ mkdir native_fuzzing && cd native_fuzzing
 go install github.com/AdamKorcz/go-118-fuzz-build@latest
 printf "package main\nimport ( \n _ \"github.com/AdamKorcz/go-118-fuzz-build/testing\"\n )\n" > register.go
 
-go mod tidy
+# Run from kubernetes root to preserve workspace context
+cd $SRC/kubernetes
+go mod tidy -e
 go work vendor
 
 # Delete broken fuzzer in 3rd-party dependency.
 #find $SRC/kubernetes/vendor/github.com/cilium/ebpf/internal/btf -name "fuzz.go" -exec rm -rf {} \;
 
 # Build the fuzzers
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQuantity fuzz_parse_quantity
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzMeta1ParseToLabelSelector fuzz_meta1_parse_to_label_selector
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseSelector fuzz_parse_selector
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzLabelsParse fuzz_labels_parse
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseGroupVersion fuzz_parse_group_version
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseResourceArg fuzz_parse_resource_arg
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseVersion fuzz_parse_version
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParsePrivateKeyPEM fuzz_parse_private_pem
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParsePublicKeysPEM fuzz_parse_public_keys_pem
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseHostPort fuzz_parse_host_port
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzUrlsMatch fuzz_urls_match
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseCSR fuzz_parse_csr
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseEnv fuzz_parse_env
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQOSReserve fuzz_parse_qos_reserve
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseCPUSet fuzz_parse_cpu_set
-compile_native_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseImageName fuzz_parse_image_name
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQuantity fuzz_parse_quantity
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzMeta1ParseToLabelSelector fuzz_meta1_parse_to_label_selector
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseSelector fuzz_parse_selector
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzLabelsParse fuzz_labels_parse
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseGroupVersion fuzz_parse_group_version
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseResourceArg fuzz_parse_resource_arg
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseVersion fuzz_parse_version
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParsePrivateKeyPEM fuzz_parse_private_pem
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParsePublicKeysPEM fuzz_parse_public_keys_pem
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseHostPort fuzz_parse_host_port
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzUrlsMatch fuzz_urls_match
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseCSR fuzz_parse_csr
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseEnv fuzz_parse_env
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseQOSReserve fuzz_parse_qos_reserve
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseCPUSet fuzz_parse_cpu_set
+compile_native_go_fuzzer_v2 k8s.io/kubernetes/test/fuzz/fuzzing FuzzParseImageName fuzz_parse_image_name
 # Done building Go 1.18 fuzzers
 #############################################################################
 
@@ -178,3 +200,4 @@ fi
 
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCelCompile fuzz_compile
 compile_go_fuzzer k8s.io/kubernetes/test/fuzz/fuzzing FuzzCelDataCompile fuzz_compiledata
+

@@ -16,6 +16,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -49,7 +50,7 @@ func FuzzRequest(data []byte) int {
 		return 0
 	}
 	defer ss.testHTTPServer.Close()
-	fw := newServerTestWithDebug(true, ss)
+	fw := newServerTestWithDebug(context.Background(), true, ss.Server)
 	defer fw.testHTTPServer.Close()
 
 	url := fw.testHTTPServer.URL + urlString
