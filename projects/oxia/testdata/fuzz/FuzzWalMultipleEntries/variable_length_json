@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\x0f\x15{\"key1\":\"applications/services/auth/config\",\"value1\":\"production-database-connection-string\"}\x1e\x12{\"key2\":\"metrics/requests/total\",\"value2\":12345}\x08\x18{\"key3\":\"cache/sessions/user-tokens\",\"value3\":\"encrypted-payload-data\"}\x05\x0a{\"key4\":\"logs/errors/critical\",\"value4\":\"stack-trace-information\"}\x14\x20{\"key5\":\"api/endpoints/v2/resources\",\"value5\":\"response-data\"}")

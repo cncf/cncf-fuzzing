@@ -1,0 +1,4 @@
+go test fuzz v1
+string("data/streams/processing/")
+string("data/streams/processing/pipeline-1")
+string("data/streams/processing0")

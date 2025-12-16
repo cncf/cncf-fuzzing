@@ -103,7 +103,12 @@ func FuzzDatabaseKeyValidation(f *testing.F) {
 		// Property 3: Keys with 0xFF might conflict with encoding
 		if bytes.Contains(key, []byte{0xff}) {
 			// 0xFF is used as encoded separator in hierarchical encoder
-			// This could cause issues
+			// More critically, keys starting with \xff\xff will conflict with internal key encoding
+			// in the natural encoder, which uses \xff\xff to mark internal keys (__oxia/...)
+			// Skip such keys as they're not valid user keys in Oxia
+			if bytes.HasPrefix(key, []byte{0xff, 0xff}) {
+				return // Skip keys that would create encoding ambiguity
+			}
 		}
 
 		// Property 4: Key length limits

@@ -1,0 +1,4 @@
+go test fuzz v1
+string("normal")
+string("__oxia/internal")
+uint8(0)

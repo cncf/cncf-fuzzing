@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("data/streams/processing/pipeline")
+[]byte("data/streams/processing/pipeline/stage-1")
+int32(50)

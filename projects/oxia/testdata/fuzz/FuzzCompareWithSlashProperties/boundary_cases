@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("resources/compute/instances/")
+[]byte("resources/compute/instances/instance-001")
+[]byte("resources/compute/instances0")

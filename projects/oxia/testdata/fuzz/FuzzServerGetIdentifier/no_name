@@ -1,0 +1,5 @@
+go test fuzz v1
+bool(false)
+string("")
+string("localhost:6648")
+string("localhost:6649")

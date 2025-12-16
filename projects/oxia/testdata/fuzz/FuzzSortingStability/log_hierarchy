@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("logs/application/errors/2024/december")
+[]byte("logs/application/info/2024/december")
+[]byte("logs/system/audit/2024/december")

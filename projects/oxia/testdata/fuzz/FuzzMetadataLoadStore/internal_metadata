@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"namespace\":\"__oxia/internal/metadata\",\"shard\":999,\"leader\":\"coordinator-node-primary\",\"followers\":[],\"term\":5000,\"status\":\"initializing\"}")

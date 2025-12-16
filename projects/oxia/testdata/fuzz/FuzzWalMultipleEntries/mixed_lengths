@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\x05short\x28medium-length-key-with-dashes\x50very-long-key-name-that-exceeds-normal-limits-and-tests-large-storage\x03abc\x40another-substantial-key-for-testing-purposes")

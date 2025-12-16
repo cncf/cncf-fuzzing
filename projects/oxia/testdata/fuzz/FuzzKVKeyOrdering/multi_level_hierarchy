@@ -1,0 +1,4 @@
+go test fuzz v1
+string("projects/frontend/components/navigation/header")
+string("projects/frontend/components/navigation/sidebar")
+string("projects/frontend/components/forms/inputs")

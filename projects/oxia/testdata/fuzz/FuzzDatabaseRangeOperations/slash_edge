@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("cache/sessions/user-tokens/")
+[]byte("cache/sessions/user-tokens0")
+int32(100)

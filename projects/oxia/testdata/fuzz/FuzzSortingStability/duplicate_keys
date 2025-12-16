@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("clusters/kubernetes/namespaces/production")
+[]byte("clusters/kubernetes/namespaces/production")
+[]byte("clusters/kubernetes/namespaces/staging")

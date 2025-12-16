@@ -1,0 +1,9 @@
+go test fuzz v1
+string("cache/sessions/")
+string("cache/sessions0")
+string("cache/sessions/user1")
+string("cache/sessions/user2")
+string("cache/data/item")
+string("cache/temp")
+string("config/app")
+string("logs/error")
