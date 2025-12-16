@@ -44,6 +44,13 @@ echo building fuzzers
 mkdir -p $SRC/oxia/oxia/fuzz
 cp $SRC/cncf-fuzzing/projects/oxia/*.go $SRC/oxia/oxia/fuzz/
 
+# Copy seed corpus to the fuzz directory
+echo "Setting up seed corpus"
+if [ -d "$SRC/cncf-fuzzing/projects/oxia/testdata" ]; then
+  cp -r $SRC/cncf-fuzzing/projects/oxia/testdata $SRC/oxia/oxia/fuzz/
+  echo "Copied seed corpus from cncf-fuzzing to oxia/fuzz"
+fi
+
 fuzz_targets1=(
 	FuzzKVPutGet
 	FuzzKVRangeScan
@@ -72,3 +79,30 @@ PKG="github.com/oxia-db/oxia/oxia/fuzz"
 for f in "${fuzz_targets1[@]}"; do
   compile_native_go_fuzzer_v2 "$PKG" "$f" "$f"
 done
+
+# Copy .options files if they exist
+echo "Copying fuzzer options files"
+for f in "${fuzz_targets1[@]}"; do
+  if [ -f "$SRC/cncf-fuzzing/projects/oxia/${f}.options" ]; then
+    cp "$SRC/cncf-fuzzing/projects/oxia/${f}.options" "$OUT/${f}.options"
+    echo "Copied ${f}.options to \$OUT"
+  fi
+done
+
+# Convert native Go seed corpus to libFuzzer format using go-118-fuzz-build tool
+echo "Converting seed corpus to libFuzzer format"
+for f in "${fuzz_targets1[@]}"; do
+  # Check if seed corpus exists for this fuzzer
+  if [ -d "$SRC/cncf-fuzzing/projects/oxia/testdata/fuzz/$f" ]; then
+    echo "Processing corpus for $f"
+    addStdLibCorpusToFuzzer -fuzzer_name "$f" -dir "$SRC/cncf-fuzzing/projects/oxia/testdata/fuzz/$f" || {
+      echo "Warning: addStdLibCorpusToFuzzer failed for $f, checking for manual corpus"
+      if [ -f "/tmp/${f}_seed_corpus.zip" ]; then
+        cp "/tmp/${f}_seed_corpus.zip" "$OUT/${f}_seed_corpus.zip"
+        echo "Manually copied ${f}_seed_corpus.zip to \$OUT"
+      fi
+    }
+  fi
+done
+
+echo "Seed corpus setup complete"

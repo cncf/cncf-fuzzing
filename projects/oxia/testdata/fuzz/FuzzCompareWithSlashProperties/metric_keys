@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("monitoring/metrics/application/response-time")
+[]byte("monitoring/metrics/application/throughput")
+[]byte("monitoring/metrics/database/connections")

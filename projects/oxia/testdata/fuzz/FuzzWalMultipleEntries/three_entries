@@ -1,0 +1,4 @@
+go test fuzz v1
+[]byte("entry1")
+[]byte("entry2")
+[]byte("entry3")

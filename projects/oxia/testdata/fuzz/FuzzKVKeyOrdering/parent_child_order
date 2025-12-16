@@ -1,0 +1,4 @@
+go test fuzz v1
+string("documents/legal/contracts")
+string("documents/legal/contracts/2024")
+string("documents/legal/contracts/2024/december")

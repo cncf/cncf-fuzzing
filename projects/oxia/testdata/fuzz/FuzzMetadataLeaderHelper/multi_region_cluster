@@ -1,0 +1,6 @@
+go test fuzz v1
+int64(1)
+string("primary-leader-datacenter-us-west-2")
+string("follower-1-datacenter-us-east-1")
+string("follower-2-datacenter-eu-central-1")
+string("follower-3-datacenter-ap-southeast-1")

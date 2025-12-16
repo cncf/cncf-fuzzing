@@ -1,0 +1,9 @@
+go test fuzz v1
+string("k")
+string("z")
+string("")
+string("key")
+string("/")
+string("test/")
+string("\x00")
+string("\xff")

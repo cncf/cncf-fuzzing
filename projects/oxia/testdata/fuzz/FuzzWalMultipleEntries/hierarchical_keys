@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\x18users/alice/profile-data\x1ametrics/cpu/usage/current\x1cconfig/database/connection\x16api/v2/users/list-all\x14logs/2024/12/errors")

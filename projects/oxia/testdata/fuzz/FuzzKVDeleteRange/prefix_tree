@@ -1,0 +1,9 @@
+go test fuzz v1
+string("app/")
+string("app0")
+string("app/users/alice")
+string("app/users/bob")
+string("app/config/db")
+string("app/config/cache")
+string("app/data/logs")
+string("app/temp")

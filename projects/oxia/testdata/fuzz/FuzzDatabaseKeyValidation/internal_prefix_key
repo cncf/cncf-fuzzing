@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("__oxia/internal/cluster/coordinator/shards/metadata")

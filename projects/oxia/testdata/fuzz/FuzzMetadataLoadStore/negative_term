@@ -1,0 +1,6 @@
+go test fuzz v1
+int64(-1)
+uint16(3)
+bool(true)
+string("node-1.oxia:6648")
+string("node-1.oxia:6649")

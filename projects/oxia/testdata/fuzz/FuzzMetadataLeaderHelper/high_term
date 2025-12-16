@@ -1,0 +1,6 @@
+go test fuzz v1
+int64(100)
+string("leader-node-alpha-coordinator-primary")
+string("follower-node-beta-coordinator-secondary")
+string("follower-node-gamma-coordinator-tertiary")
+string("follower-node-delta-coordinator-backup")

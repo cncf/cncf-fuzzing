@@ -1,0 +1,9 @@
+go test fuzz v1
+string("a")
+string("z")
+string("apple")
+string("banana")
+string("cherry")
+string("date")
+string("elder")
+string("fig")

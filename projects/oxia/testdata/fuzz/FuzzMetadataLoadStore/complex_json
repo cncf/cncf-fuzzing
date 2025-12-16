@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("{\"namespace\":\"production-cluster\",\"shard\":42,\"leader\":\"node-alpha-7\",\"followers\":[\"node-beta-3\",\"node-gamma-9\"],\"term\":1024,\"status\":\"active\",\"lastHeartbeat\":1702857600}")

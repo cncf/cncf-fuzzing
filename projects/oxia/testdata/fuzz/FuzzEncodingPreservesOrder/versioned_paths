@@ -1,0 +1,3 @@
+go test fuzz v1
+string("services/backend/api-gateway/routes/v2/endpoints")
+string("services/backend/api-gateway/routes/v3/endpoints")
