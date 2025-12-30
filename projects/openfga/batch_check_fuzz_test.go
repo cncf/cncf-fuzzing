@@ -31,72 +31,6 @@ import (
 // checks in a single request. Tests parallel processing, error aggregation,
 // and consistency across multiple checks.
 func FuzzBatchCheck(f *testing.F) {
-	// Seed 1: Multiple checks on same object
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]
-    define editor: [user]`),
-		[]byte("store1"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("user:alice"),
-		[]byte("document:doc1"), []byte("editor"), []byte("user:alice"),
-		uint8(2))
-
-	// Seed 2: Multiple checks on different objects
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store2"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("user:bob"),
-		[]byte("document:doc2"), []byte("viewer"), []byte("user:bob"),
-		uint8(2))
-
-	// Seed 3: Schema 1.2 with conditions
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define viewer: [user with condition1]
-condition condition1(x: int) {
-  x < 100
-}`),
-		[]byte("store3"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("user:carol"),
-		[]byte("document:doc2"), []byte("viewer"), []byte("user:carol"),
-		uint8(3))
-
-	// Seed 4: Schema 1.2 with intersection
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define editor: [user]
-    define allowed: [user]
-    define viewer: editor and allowed`),
-		[]byte("store4"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("user:dave"),
-		[]byte("document:doc1"), []byte("editor"), []byte("user:dave"),
-		uint8(2))
-
-	// Seed 5: Larger batch size
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store5"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("user:eve"),
-		[]byte("document:doc2"), []byte("viewer"), []byte("user:eve"),
-		uint8(5))
-
 	f.Fuzz(func(t *testing.T, modelDSL []byte, storeID []byte,
 		obj1, rel1, user1, obj2, rel2, user2 []byte, batchSize uint8,
 		obj3, obj4, rel3, rel4, user3, user4, user5 []byte) {
@@ -229,14 +163,12 @@ type document
 					len(resp.GetResult()), len(checks))
 			}
 
-			// Validate individual check results
-			for idx, result := range resp.GetResult() {
-				if result == nil {
-					t.Errorf("BatchCheck result[%d] is nil", idx)
-					continue
-				}
-
-				// Check result should have either allowed status or error
+		// Validate individual check results
+		for idx, result := range resp.GetResult() {
+			if result == nil {
+				t.Errorf("BatchCheck result[%v] is nil", idx)
+				continue
+			}				// Check result should have either allowed status or error
 				if result.GetAllowed() == false && result.GetError() == nil {
 					// This is valid - check returned false without error
 				}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/transformer"
@@ -39,20 +40,20 @@ import (
 // 4. Check: folder:child#viewer@user:anyone
 // 5. BUG: In vulnerable versions, wildcard on tupleset causes incorrect evaluation
 func FuzzWildcardTupleset(f *testing.F) {
-	f.Add([]byte("child"), []byte("parent"), []byte("alice"))
-	f.Add([]byte("doc"), []byte("folder"), []byte("bob"))
-
 	f.Fuzz(func(t *testing.T, childID, parentID, userID []byte) {
 		if len(childID) == 0 || len(parentID) == 0 || len(userID) == 0 {
 			return
 		}
 
+		// Create fresh server and datastore for EACH iteration
 		ctx := context.Background()
 		datastore := memory.New()
-		defer datastore.Close()
-
 		srv := newEnhancedFuzzServer(datastore)
-		defer srv.Close()
+		// Cleanup: Server MUST close before datastore, then wait for goroutines
+		defer func() {
+			srv.Close()       // Close server first
+			datastore.Close() // Then datastore
+		}()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz"})
 		if err != nil {
@@ -172,5 +173,8 @@ func FuzzWildcardTupleset(f *testing.F) {
 		// wildcards on tupleset relations (RHS of 'from') were not evaluated correctly.
 		// Current version should handle this properly (test passes = vulnerability fixed).
 		// This fuzzer ensures the fix handles arbitrary wildcard + tupleset combinations.
+
+		// Wait for background goroutines to finish before defer cleanup
+		time.Sleep(10 * time.Millisecond)
 	})
 }

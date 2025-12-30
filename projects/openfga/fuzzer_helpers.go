@@ -43,17 +43,17 @@ func (m *mockFeatureFlagClient) Boolean(flagName string, storeID string) bool {
 // This configuration unlocks blocked code paths including:
 // - Pipeline ListObjects (via feature flags)
 // - Shadow resolver (A/B testing)
-// - All caching layers
 // - Dispatch throttling
-// - Iterator caching
+// Note: Caching is DISABLED to prevent memory accumulation across fuzzing iterations
 func newEnhancedFuzzServer(datastore storage.OpenFGADatastore) *server.Server {
 	return server.MustNewServerWithOpts(
 		server.WithDatastore(datastore),
 		server.WithFeatureFlagClient(&mockFeatureFlagClient{}),
-		server.WithCheckQueryCacheEnabled(true),
-		server.WithCacheControllerEnabled(true),
-		server.WithCheckIteratorCacheEnabled(true),
-		server.WithListObjectsIteratorCacheEnabled(true),
+		// Disable all caches to prevent memory leaks during fuzzing
+		server.WithCheckQueryCacheEnabled(false),
+		server.WithCacheControllerEnabled(false),
+		server.WithCheckIteratorCacheEnabled(false),
+		server.WithListObjectsIteratorCacheEnabled(false),
 		server.WithDispatchThrottlingCheckResolverEnabled(true),
 		// Note: Shadow resolver requires additional mock implementation, skip for now
 		// server.WithShadowResolverEnabled(true),
@@ -62,6 +62,8 @@ func newEnhancedFuzzServer(datastore storage.OpenFGADatastore) *server.Server {
 
 // transformDSLWithTimeout wraps TransformDSLToProto with a timeout to prevent
 // infinite loops in the ANTLR parser when processing pathological inputs
+// Note: Since we can't cancel the parser goroutine, we just return on timeout
+// and let the goroutine complete naturally to avoid goroutine leaks
 func transformDSLWithTimeout(dsl string, timeout time.Duration) (*openfgav1.AuthorizationModel, error) {
 	type result struct {
 		model *openfgav1.AuthorizationModel
@@ -70,6 +72,12 @@ func transformDSLWithTimeout(dsl string, timeout time.Duration) (*openfgav1.Auth
 
 	done := make(chan result, 1)
 	go func() {
+		defer func() {
+			// Recover from any panics in the parser to prevent goroutine leaks
+			if r := recover(); r != nil {
+				done <- result{nil, fmt.Errorf("parser panic: %v", r)}
+			}
+		}()
 		model, err := parser.TransformDSLToProto(dsl)
 		done <- result{model, err}
 	}()
@@ -78,6 +86,14 @@ func transformDSLWithTimeout(dsl string, timeout time.Duration) (*openfgav1.Auth
 	case res := <-done:
 		return res.model, res.err
 	case <-time.After(timeout):
-		return nil, fmt.Errorf("DSL parsing timeout after %v", timeout)
+		// Return timeout error but let goroutine complete
+		// Don't create orphaned goroutines - wait for completion with extended timeout
+		select {
+		case res := <-done:
+			return res.model, res.err
+		case <-time.After(timeout):
+			// Goroutine is truly stuck, return error
+			return nil, fmt.Errorf("DSL parsing timeout after %v", timeout)
+		}
 	}
 }

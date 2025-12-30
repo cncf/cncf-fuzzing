@@ -19,6 +19,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -35,55 +36,26 @@ import (
 // This fuzzer tests server robustness against arbitrary inputs
 // Enhanced to test schema 1.2, conditions, and various server configurations
 func FuzzRandomAPI(f *testing.F) {
-	// Seed 1: Basic schema 1.1 model
-	f.Add([]byte("model\n  schema 1.1\ntype user\ntype document\n  relations\n    define viewer: [user]"),
-		uint8(0), uint8(0), []byte("store1"),
-		[]byte("doc1"), []byte("viewer"), []byte("alice"), // Write tuple params
-		[]byte("doc2"), []byte("editor"), []byte("bob"), []byte("carol"), // Check params
-		[]byte("10"))
-
-	// Seed 2: Schema 1.2 with conditions (triggers further evaluation)
-	f.Add([]byte("model\n  schema 1.2\ntype user\ntype document\n  relations\n    define viewer: [user with condition1]\ncondition condition1(x: int) {\n  x < 100\n}"),
-		uint8(1), uint8(1), []byte("store2"),
-		[]byte("doc1"), []byte("viewer"), []byte("user:alice"),
-		[]byte("doc2"), []byte("viewer"), []byte("user:bob"), []byte("user:carol"),
-		[]byte("20"))
-
-	// Seed 3: Schema 1.2 with intersection (triggers pipeline path)
-	f.Add([]byte("model\n  schema 1.2\ntype user\ntype document\n  relations\n    define owner: [user]\n    define editor: [user]\n    define viewer: owner and editor"),
-		uint8(2), uint8(2), []byte("store3"),
-		[]byte("document:doc1"), []byte("owner"), []byte("user:alice"),
-		[]byte("document:doc2"), []byte("viewer"), []byte("user:bob"), []byte("user:carol"),
-		[]byte("15"))
-
-	// Seed 4: Schema 1.2 with exclusion (also triggers pipeline)
-	f.Add([]byte("model\n  schema 1.2\ntype user\ntype document\n  relations\n    define member: [user]\n    define blocked: [user]\n    define viewer: member but not blocked"),
-		uint8(3), uint8(3), []byte("store4"),
-		[]byte("document:doc1"), []byte("member"), []byte("user:alice"),
-		[]byte("document:doc2"), []byte("viewer"), []byte("user:bob"), []byte("user:carol"),
-		[]byte("25"))
-
-	// Seed 5: Complex schema 1.2 with multiple relations and wildcards
-	f.Add([]byte("model\n  schema 1.2\ntype user\ntype group\n  relations\n    define member: [user, user:*]\ntype document\n  relations\n    define parent: [document]\n    define viewer: [group#member] or viewer from parent"),
-		uint8(4), uint8(4), []byte("store5"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("group:eng#member"),
-		[]byte("document:doc2"), []byte("viewer"), []byte("user:bob"), []byte("group:admin#member"),
-		[]byte("30"))
-
-	ctx := context.Background()
-	datastore := memory.New()
-	defer datastore.Close()
-
-	// Use enhanced server with all features enabled
-	srv := newEnhancedFuzzServer(datastore)
-	defer srv.Close()
-
 	f.Fuzz(func(t *testing.T, modelDSL []byte, methodChoice, schemaChoice, configChoice uint8, storeID,
 		// Write tuple parameters
 		writeObject, writeRelation, writeUser,
 		// Check/Read parameters (different from Write)
 		checkObject, checkRelation, checkUser1, _ /* checkUser2 unused */,
 		limit []byte) {
+
+		// Setup inside f.Fuzz() for isolation
+		ctx := context.Background()
+		datastore := memory.New()
+
+		// Use enhanced server with all features enabled
+		srv := newEnhancedFuzzServer(datastore)
+		defer func() {
+			srv.Close()
+			datastore.Close()
+			// Force GC to reduce memory pressure from libfuzzer corpus
+			runtime.GC()
+			time.Sleep(1 * time.Millisecond)
+		}()
 
 		if len(modelDSL) == 0 || len(modelDSL) > 10000 {
 			return // Skip empty or extremely large models

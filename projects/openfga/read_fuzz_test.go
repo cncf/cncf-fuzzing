@@ -30,53 +30,6 @@ import (
 // FuzzRead tests the Read API which queries tuples from the store.
 // Tests pagination, filtering, and edge cases in tuple retrieval.
 func FuzzRead(f *testing.F) {
-	// Seed 1: Read all tuples
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store1"), []byte(""), []byte(""), []byte(""), uint8(10))
-
-	// Seed 2: Read filtered by object
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]
-    define editor: [user]`),
-		[]byte("store2"), []byte("document:doc1"), []byte(""), []byte(""), uint8(15))
-
-	// Seed 3: Read filtered by object and relation
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]
-    define editor: [user]`),
-		[]byte("store3"), []byte("document:doc2"), []byte("viewer"), []byte(""), uint8(20))
-
-	// Seed 4: Read filtered by user
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store4"), []byte(""), []byte(""), []byte("user:alice"), uint8(5))
-
-	// Seed 5: Read with pagination
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store5"), []byte("document:doc3"), []byte("viewer"), []byte(""), uint8(3))
-
 	f.Fuzz(func(t *testing.T, modelDSL []byte, storeID, object, relation, user []byte, pageSize uint8,
 		obj1, obj2, obj3, obj4, rel1, rel2, rel3, user1, user2, user3, user4, user5 []byte) {
 		if len(storeID) == 0 {

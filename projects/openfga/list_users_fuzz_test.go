@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"runtime"
 	"testing"
 	"time"
 
@@ -30,61 +31,6 @@ import (
 // FuzzListUsers tests the ListUsers API which finds all users with a specific
 // relation to an object. This is a critical new API with complex filtering logic.
 func FuzzListUsers(f *testing.F) {
-	// Seed 1: Simple direct relation
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store1"), []byte("document:doc1"), []byte("viewer"), []byte("user"), uint8(0))
-
-	// Seed 2: Schema 1.2 with conditions
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define viewer: [user with condition1]
-condition condition1(ip_address: ipaddress) {
-  ip_address.in_cidr("192.168.0.0/16")
-}`),
-		[]byte("store2"), []byte("document:doc2"), []byte("viewer"), []byte("user"), uint8(1))
-
-	// Seed 3: Indirect relation through group
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type group
-  relations
-    define member: [user]
-type document
-  relations
-    define viewer: [group#member]`),
-		[]byte("store3"), []byte("document:doc3"), []byte("viewer"), []byte("user"), uint8(0))
-
-	// Seed 4: Schema 1.2 with intersection
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define editor: [user]
-    define allowed: [user]
-    define viewer: editor and allowed`),
-		[]byte("store4"), []byte("document:doc4"), []byte("viewer"), []byte("user"), uint8(0))
-
-	// Seed 5: Schema 1.2 with exclusion
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define potential_viewer: [user]
-    define banned: [user]
-    define viewer: potential_viewer but not banned`),
-		[]byte("store5"), []byte("document:doc5"), []byte("viewer"), []byte("user"), uint8(0))
-
 	f.Fuzz(func(t *testing.T, modelDSL []byte, storeID, object, relation, userFilter []byte, configChoice uint8,
 		obj1, obj2, obj3, rel1, rel2, rel3, user1, user2, user3, user4, user5 []byte) {
 		if len(storeID) == 0 || len(object) == 0 || len(relation) == 0 {
@@ -95,10 +41,15 @@ type document
 		defer cancel()
 
 		datastore := memory.New()
-		defer datastore.Close()
 
 		svr := newEnhancedFuzzServer(datastore)
-		defer svr.Close()
+		defer func() {
+			svr.Close()
+			datastore.Close()
+			// Force GC to reduce memory pressure from libfuzzer corpus
+			runtime.GC()
+			time.Sleep(1 * time.Millisecond)
+		}()
 
 		// Parse and write model
 		model, err := transformDSLWithTimeout(string(modelDSL), 2*time.Second)

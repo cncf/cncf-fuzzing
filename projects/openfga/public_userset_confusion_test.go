@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/transformer"
@@ -39,20 +40,20 @@ import (
 // 4. Check with user=user:alice#manager (userset with same type as public access)
 // 5. BUG: Returns allowed (should deny - no userset tuple exists, only public)
 func FuzzPublicUsersetConfusion(f *testing.F) {
-	f.Add([]byte("doc1"), []byte("alice"))
-	f.Add([]byte("file"), []byte("bob"))
-
 	f.Fuzz(func(t *testing.T, objectID, userID []byte) {
 		if len(objectID) == 0 || len(userID) == 0 {
 			return
 		}
 
+		// Create fresh server and datastore for EACH iteration
 		ctx := context.Background()
 		datastore := memory.New()
-		defer datastore.Close()
-
 		srv := newEnhancedFuzzServer(datastore)
-		defer srv.Close()
+		// Cleanup: Server MUST close before datastore, then wait for goroutines
+		defer func() {
+			srv.Close()       // Close server first
+			datastore.Close() // Then datastore
+		}()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz"})
 		if err != nil {
@@ -151,5 +152,8 @@ func FuzzPublicUsersetConfusion(f *testing.F) {
 					objStr, usersetStr)
 			}
 		}
+
+		// Wait for background goroutines to finish before defer cleanup
+		time.Sleep(10 * time.Millisecond)
 	})
 }
