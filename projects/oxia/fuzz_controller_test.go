@@ -14,7 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-package fuzz
+package oxia
 
 import (
 	"testing"
@@ -23,59 +23,9 @@ import (
 	"github.com/oxia-db/oxia/oxiad/coordinator/model"
 )
 
-// FuzzMetadataLoadStore tests Load and Store operations.
-// Property: Store followed by Load returns the same ShardMetadata
-func FuzzMetadataLoadStore(f *testing.F) {
-	// Seeds: term, status (as uint16), hasLeader, leaderPublic, leaderInternal
-	f.Add(int64(1), uint16(0), false, "", "")
-	f.Add(int64(100), uint16(1), true, "localhost:6648", "localhost:6649")
-	f.Add(int64(0), uint16(2), false, "", "")
-	f.Add(int64(-1), uint16(3), true, "node-1.oxia:6648", "node-1.oxia:6649")
-
-	f.Fuzz(func(t *testing.T, term int64, statusVal uint16, hasLeader bool, leaderPublic, leaderInternal string) {
-		status := model.ShardStatus(statusVal % 4) // Keep in valid range
-
-		var leader *model.Server
-		if hasLeader && leaderPublic != "" {
-			leader = &model.Server{
-				Public:   leaderPublic,
-				Internal: leaderInternal,
-			}
-		}
-
-		original := model.ShardMetadata{
-			Term:   term,
-			Status: status,
-			Leader: leader,
-		}
-
-		md := controller.NewMetadata(model.ShardMetadata{})
-		md.Store(original)
-		loaded := md.Load()
-
-		// Property: Term must match
-		if loaded.Term != term {
-			t.Fatalf("Term mismatch: expected %d, got %d", term, loaded.Term)
-		}
-
-		// Property: Status must match
-		if loaded.Status != status {
-			t.Fatalf("Status mismatch: expected %v, got %v", status, loaded.Status)
-		}
-
-		// Property: Leader must match
-		if hasLeader && leaderPublic != "" {
-			if loaded.Leader == nil {
-				t.Fatalf("Expected leader to be set")
-			}
-			if loaded.Leader.Public != leaderPublic {
-				t.Fatalf("Leader public mismatch: expected %s, got %s", leaderPublic, loaded.Leader.Public)
-			}
-		} else if loaded.Leader != nil && hasLeader {
-			t.Fatalf("Expected leader to be nil")
-		}
-	})
-}
+// Note: FuzzMetadataLoadStore was moved to fuzz_metadata_test.go
+// for more comprehensive testing of the metadata storage layer.
+// This file now only contains FuzzMetadataLeaderHelper.
 
 // FuzzMetadataLeaderHelper tests Leader() helper.
 // Property: Leader() returns the current leader or nil

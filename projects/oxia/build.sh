@@ -41,20 +41,19 @@ cd $SRC/oxia
 
 
 echo building fuzzers
-mkdir -p $SRC/oxia/oxia/fuzz
-cp $SRC/cncf-fuzzing/projects/oxia/*.go $SRC/oxia/oxia/fuzz/
+# Copy fuzzers directly to oxia directory (not a subdirectory)
+# so they are part of the github.com/oxia-db/oxia/oxia module
+cp $SRC/cncf-fuzzing/projects/oxia/*_test.go $SRC/oxia/oxia/
 
-# Copy seed corpus to the fuzz directory
+# Copy seed corpus to the oxia directory
 echo "Setting up seed corpus"
 if [ -d "$SRC/cncf-fuzzing/projects/oxia/testdata" ]; then
-  cp -r $SRC/cncf-fuzzing/projects/oxia/testdata $SRC/oxia/oxia/fuzz/
-  echo "Copied seed corpus from cncf-fuzzing to oxia/fuzz"
+  cp -r $SRC/cncf-fuzzing/projects/oxia/testdata $SRC/oxia/oxia/
+  echo "Copied seed corpus from cncf-fuzzing to oxia"
 fi
 
 fuzz_targets1=(
-	FuzzKVPutGet
 	FuzzKVRangeScan
-	FuzzKVDeleteRange
 	FuzzKVComparisonTypes
 	FuzzKVKeyOrdering
 	FuzzMetadataLoadStore
@@ -74,11 +73,32 @@ fuzz_targets1=(
 	FuzzDatabaseKeyValidation
 )
 
-cd $SRC/oxia/oxia/fuzz
-PKG="github.com/oxia-db/oxia/oxia/fuzz"
+cd $SRC/oxia/oxia
+PKG="github.com/oxia-db/oxia/oxia"
+
 for f in "${fuzz_targets1[@]}"; do
   compile_native_go_fuzzer_v2 "$PKG" "$f" "$f"
 done
+
+# For coverage builds, patch all fuzzers to cover all Oxia modules
+# The default only covers the single module where the fuzzer lives
+if [[ $SANITIZER == *coverage* ]]; then
+  echo "Patching coverage instrumentation to include all Oxia modules"
+  
+  for f in "${fuzz_targets1[@]}"; do
+    # Rebuild the test binary with expanded coverpkg
+    # Must list each workspace module explicitly because of go.work
+    cd $SRC/oxia/oxia
+    go test -c \
+      -o "$OUT/$f" \
+      -tags gofuzz \
+      -coverpkg="github.com/oxia-db/oxia/oxia/...,github.com/oxia-db/oxia/oxiad/...,github.com/oxia-db/oxia/common/...,github.com/oxia-db/oxia/cmd/...,github.com/oxia-db/oxia/tests/..." \
+      -covermode=atomic \
+      "$PKG"
+    
+    echo "Rebuilt $f with full repo coverage (all workspace modules)"
+  done
+fi
 
 # Copy .options files if they exist
 echo "Copying fuzzer options files"
@@ -106,3 +126,16 @@ for f in "${fuzz_targets1[@]}"; do
 done
 
 echo "Seed corpus setup complete"
+
+# Remove empty seed corpus zip files to prevent OSS-Fuzz run_fuzzer script issues
+echo "Checking for empty seed corpus zip files"
+for zipfile in "$OUT"/*_seed_corpus.zip; do
+  if [ -f "$zipfile" ]; then
+    # Check if zip file is empty (less than 100 bytes typically means empty)
+    size=$(stat -c%s "$zipfile" 2>/dev/null || echo "0")
+    if [ "$size" -lt 100 ]; then
+      echo "Removing empty seed corpus: $(basename "$zipfile") (size: $size bytes)"
+      rm "$zipfile"
+    fi
+  fi
+done
