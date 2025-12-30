@@ -14,10 +14,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-package fuzz
+package oxia
 
 import (
-	"bytes"
 	"sort"
 	"strings"
 	"testing"
@@ -26,76 +25,6 @@ import (
 	"github.com/oxia-db/oxia/common/proto"
 	"github.com/oxia-db/oxia/oxiad/dataserver/database/kvstore"
 )
-
-// FuzzKVPutGet tests basic Put/Get roundtrip with arbitrary keys and values.
-// Property: Get(key) after Put(key, value) returns value
-func FuzzKVPutGet(f *testing.F) {
-	// Seeds - including extensive hierarchical patterns to exercise sepCount > 0
-	f.Add("key", []byte("value"))
-	f.Add("", []byte("empty-key"))
-	// Hierarchical keys with various separator counts
-	f.Add("a/b/c", []byte("hierarchical"))
-	f.Add("users/alice/profile", []byte("3-level"))
-	f.Add("data/2024/12/15/logs", []byte("5-level"))
-	f.Add("config/database/primary/host", []byte("4-level"))
-	f.Add("/root/path", []byte("leading-slash"))
-	f.Add("trailing/slash/", []byte("trailing-slash"))
-	f.Add("double//slash", []byte("double-separator"))
-	f.Add("metrics/cpu/usage/percent", []byte("deep-hierarchy"))
-	f.Add("api/v1/users/123", []byte("versioned-path"))
-	// Original seeds
-	f.Add("key-with-special-chars-!@#$%", []byte{0, 1, 2, 255})
-	f.Add(string(bytes.Repeat([]byte("k"), 1000)), bytes.Repeat([]byte("v"), 10000))
-
-	f.Fuzz(func(t *testing.T, key string, value []byte) {
-		if key == "" {
-			return // Empty keys may not be supported
-		}
-
-		factory, err := kvstore.NewPebbleKVFactory(kvstore.NewFactoryOptionsForTest(t))
-		if err != nil {
-			t.Fatalf("failed to create factory: %v", err)
-		}
-		defer factory.Close()
-
-		kv, err := factory.NewKV(constant.DefaultNamespace, 1, proto.KeySortingType_HIERARCHICAL)
-		if err != nil {
-			t.Fatalf("failed to create KV: %v", err)
-		}
-		defer kv.Close()
-
-		// Put the key-value
-		wb := kv.NewWriteBatch()
-		err = wb.Put(key, value)
-		if err != nil {
-			wb.Close()
-			return // Some keys might be rejected
-		}
-		err = wb.Commit()
-		if err != nil {
-			wb.Close()
-			return
-		}
-		wb.Close()
-
-		// Get it back
-		storedKey, storedValue, closer, err := kv.Get(key, kvstore.ComparisonEqual, kvstore.NoInternalKeys)
-		if err != nil {
-			t.Fatalf("Get failed for key %q: %v", key, err)
-		}
-		defer closer.Close()
-
-		// Property: stored key should match
-		if storedKey != key {
-			t.Fatalf("key mismatch: expected %q, got %q", key, storedKey)
-		}
-
-		// Property: stored value should match
-		if !bytes.Equal(storedValue, value) {
-			t.Fatalf("value mismatch for key %q", key)
-		}
-	})
-}
 
 // FuzzKVRangeScan tests range scan with arbitrary bounds.
 // Property: All returned keys are within bounds and in sorted order
@@ -152,58 +81,6 @@ func FuzzKVRangeScan(f *testing.F) {
 		if !sort.StringsAreSorted(keys) {
 			t.Fatalf("keys not in sorted order: %v", keys)
 		}
-	})
-}
-
-// FuzzKVDeleteRange tests delete range operations.
-// Property: After DeleteRange(lower, upper), no keys in range should exist
-func FuzzKVDeleteRange(f *testing.F) {
-	// Seeds
-	f.Add("b", "d", "a", "b", "c", "d", "e", "f")
-	f.Add("a", "z", "apple", "banana", "cherry", "date", "elder", "fig")
-	f.Add("test/", "test0", "test/1", "test/2", "test/3", "other/key", "another", "final")
-
-	f.Fuzz(func(t *testing.T, lowerBound, upperBound string, k0, k1, k2, k3, k4, k5 string) {
-		if lowerBound >= upperBound {
-			return
-		}
-
-		factory, err := kvstore.NewPebbleKVFactory(kvstore.NewFactoryOptionsForTest(t))
-		if err != nil {
-			t.Fatalf("failed to create factory: %v", err)
-		}
-		defer factory.Close()
-
-		kv, err := factory.NewKV(constant.DefaultNamespace, 1, proto.KeySortingType_HIERARCHICAL)
-		if err != nil {
-			t.Fatalf("failed to create KV: %v", err)
-		}
-		defer kv.Close()
-
-		// Insert test data using fuzzer-provided keys
-		wb := kv.NewWriteBatch()
-		testKeys := []string{k0, k1, k2, k3, k4, k5}
-		for _, k := range testKeys {
-			if k != "" { // Skip empty keys
-				_ = wb.Put(k, []byte(k))
-			}
-		}
-		_ = wb.Commit()
-		wb.Close()
-
-		// Delete range
-		wb = kv.NewWriteBatch()
-		err = wb.DeleteRange(lowerBound, upperBound)
-		if err != nil {
-			wb.Close()
-			return
-		}
-		err = wb.Commit()
-		if err != nil {
-			wb.Close()
-			return
-		}
-		wb.Close()
 	})
 }
 

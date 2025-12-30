@@ -1,26 +1,31 @@
-// Copyright 2023-2025 The Oxia Authors
+// Copyright 2025 the cncf-fuzzing authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+///////////////////////////////////////////////////////////////////////////
 
-package fuzz
+package oxia
 
 import (
 	"bytes"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/oxia-db/oxia/common/constant"
 	"github.com/oxia-db/oxia/common/proto"
+	time2 "github.com/oxia-db/oxia/common/time"
+	"github.com/oxia-db/oxia/oxiad/dataserver/database"
 	"github.com/oxia-db/oxia/oxiad/dataserver/database/kvstore"
 )
 
@@ -112,16 +117,19 @@ func parseOperations(stringPool []string, ops []uint8) []fuzzOp {
 	return result
 }
 
-// FuzzE2EOperations is an end-to-end style fuzzer that tests Oxia KV store
-// operations directly against the kvstore layer. It maintains expected state
-// and verifies that operations produce correct results.
+// FuzzE2EOperations tests Oxia database layer operations end-to-end.
+// This fuzzer exercises the database layer (one level above KV store) which includes
+// transactions, commit offsets, timestamps, and state tracking.
 //
-// This fuzzer is optimized for speed by:
-// 1. Parsing and validating operations BEFORE creating any infrastructure
-// 2. Using kvstore.KV directly (the lowest level) - no DB layer, no WAL, no RPC
-// 3. Skipping inputs that don't have at least 2 valid operations
+// The fuzzer performs randomized sequences of operations:
+// - Put: Store key-value pairs with transaction semantics
+// - Get: Retrieve values and verify consistency
+// - Delete: Remove keys with transaction tracking
+// - DeleteRange: Remove ranges of keys atomically
+// - List: Iterate over key ranges
 //
-// The fuzzer takes 20 strings and 5 uint8 operation selectors as input.
+// The fuzzer maintains an expected state map and validates that all database
+// operations maintain consistency with this expected state.
 func FuzzE2EOperations(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T,
@@ -140,18 +148,31 @@ func FuzzE2EOperations(f *testing.F) {
 			return // Skip if not enough valid operations
 		}
 
-		// Create KV store using test options (disk-based but fast)
+		// Create KV factory
 		factory, err := kvstore.NewPebbleKVFactory(kvstore.NewFactoryOptionsForTest(t))
 		if err != nil {
 			t.Fatalf("Failed to create KV factory: %v", err)
 		}
 		defer factory.Close()
 
-		kv, err := factory.NewKV(constant.DefaultNamespace, 1, proto.KeySortingType_HIERARCHICAL)
+		// Create Database layer (includes transactions, notifications, sequences)
+		db, err := database.NewDB(
+			constant.DefaultNamespace,
+			1, // shard ID
+			factory,
+			proto.KeySortingType_HIERARCHICAL,
+			1*time.Hour,
+			time2.SystemClock,
+		)
 		if err != nil {
-			t.Fatalf("Failed to create KV: %v", err)
+			t.Fatalf("Failed to create database: %v", err)
 		}
-		defer kv.Close()
+		defer db.Close()
+
+		// Initialize database term
+		if err := db.UpdateTerm(1, database.TermOptions{}); err != nil {
+			t.Fatalf("Failed to update term: %v", err)
+		}
 
 		// Track expected state: key -> value mapping
 		expectedState := make(map[string][]byte)
@@ -160,84 +181,89 @@ func FuzzE2EOperations(f *testing.F) {
 		for _, op := range parsedOps {
 			switch op.opType {
 			case OpPut:
-				wb := kv.NewWriteBatch()
-				if err := wb.Put(op.key, op.value); err != nil {
-					wb.Close()
-					continue
+				// Use database layer ProcessWrite for puts
+				wr := &proto.WriteRequest{
+					Puts: []*proto.PutRequest{
+						{
+							Key:   op.key,
+							Value: op.value,
+						},
+					},
 				}
-				if err := wb.Commit(); err != nil {
-					wb.Close()
-					continue
+				_, err := db.ProcessWrite(wr, 1, uint64(time.Now().UnixNano()), nil)
+				if err != nil {
+					continue // Skip on error
 				}
-				wb.Close()
 				expectedState[op.key] = op.value
 
 			case OpGet:
-				storedKey, storedValue, closer, err := kv.Get(op.key, kvstore.ComparisonEqual, kvstore.NoInternalKeys)
+				// Use database layer Get
+				gr := &proto.GetRequest{Key: op.key}
+				resp, err := db.Get(gr)
 				expectedValue, exists := expectedState[op.key]
 
 				if exists {
 					if err != nil {
-						if closer != nil {
-							closer.Close()
-						}
 						t.Errorf("Get(%q): expected value, got error: %v", op.key, err)
+					} else if resp.Status != proto.Status_OK {
+						t.Errorf("Get(%q): expected OK status, got %v", op.key, resp.Status)
 					} else {
-						if storedKey != op.key {
-							t.Errorf("Get(%q): key mismatch, got %q", op.key, storedKey)
+						if !bytes.Equal(resp.Value, expectedValue) {
+							t.Errorf("Get(%q): expected %q, got %q", op.key, expectedValue, resp.Value)
 						}
-						if !bytes.Equal(storedValue, expectedValue) {
-							t.Errorf("Get(%q): expected %q, got %q", op.key, expectedValue, storedValue)
-						}
-						closer.Close()
 					}
 				} else {
-					if err == nil {
-						closer.Close()
-						t.Errorf("Get(%q): expected key not found, got value %q", op.key, storedValue)
-					} else if closer != nil {
-						closer.Close()
+					if err == nil && resp.Status == proto.Status_OK {
+						t.Errorf("Get(%q): expected key not found, got value %q", op.key, resp.Value)
 					}
-					// Error is expected for non-existent key
+					// Error or non-OK status is expected for non-existent key
 				}
 
 			case OpDelete:
-				wb := kv.NewWriteBatch()
-				if err := wb.Delete(op.key); err != nil {
-					wb.Close()
-					continue
+				// Use database layer ProcessWrite for deletes
+				wr := &proto.WriteRequest{
+					Deletes: []*proto.DeleteRequest{
+						{
+							Key: op.key,
+						},
+					},
 				}
-				if err := wb.Commit(); err != nil {
-					wb.Close()
-					continue
+				_, err := db.ProcessWrite(wr, 2, uint64(time.Now().UnixNano()), nil)
+				if err != nil {
+					continue // Skip on error
 				}
-				wb.Close()
 				delete(expectedState, op.key)
 
 			case OpDeleteRange:
-				// Perform delete range
-				wb := kv.NewWriteBatch()
-				if err := wb.DeleteRange(op.key, op.endKey); err != nil {
-					wb.Close()
-					continue
+				// Use database layer ProcessWrite for delete range
+				wr := &proto.WriteRequest{
+					DeleteRanges: []*proto.DeleteRangeRequest{
+						{
+							StartInclusive: op.key,
+							EndExclusive:   op.endKey,
+						},
+					},
 				}
-				if err := wb.Commit(); err != nil {
-					wb.Close()
-					continue
+				_, err := db.ProcessWrite(wr, 3, uint64(time.Now().UnixNano()), nil)
+				if err != nil {
+					continue // Skip on error
 				}
-				wb.Close()
 
-				// With HIERARCHICAL encoding, we cannot predict which keys will be deleted
-				// using simple string comparison. Instead, we need to query the actual state.
-				// Clear expected state and rebuild it from actual KV state.
+				// Rebuild expected state from actual database state
 				expectedState = make(map[string][]byte)
-				iter, err := kv.RangeScan("", "\xff\xff\xff\xff", kvstore.NoInternalKeys)
+				lr := &proto.ListRequest{
+					StartInclusive: "",
+					EndExclusive:   "",
+				}
+				iter, err := db.List(lr)
 				if err == nil {
 					for iter.Valid() {
 						k := iter.Key()
-						v, err := iter.Value()
-						if err == nil {
-							expectedState[k] = v
+						// Get the value for this key
+						gr := &proto.GetRequest{Key: k}
+						resp, gerr := db.Get(gr)
+						if gerr == nil && resp.Status == proto.Status_OK {
+							expectedState[k] = resp.Value
 						}
 						if !iter.Next() {
 							break
@@ -247,8 +273,12 @@ func FuzzE2EOperations(f *testing.F) {
 				}
 
 			case OpList:
-				// Just exercise the List operation
-				iter, err := kv.KeyRangeScan(op.key, op.endKey, kvstore.NoInternalKeys)
+				// Use database layer List
+				lr := &proto.ListRequest{
+					StartInclusive: op.key,
+					EndExclusive:   op.endKey,
+				}
+				iter, err := db.List(lr)
 				if err == nil {
 					for iter.Valid() {
 						_ = iter.Key()
@@ -263,20 +293,16 @@ func FuzzE2EOperations(f *testing.F) {
 
 		// Final verification: all expected keys should exist with correct values
 		for key, expectedValue := range expectedState {
-			storedKey, storedValue, closer, err := kv.Get(key, kvstore.ComparisonEqual, kvstore.NoInternalKeys)
-			if err != nil {
+			gr := &proto.GetRequest{Key: key}
+			resp, err := db.Get(gr)
+			if err != nil || resp.Status != proto.Status_OK {
 				t.Errorf("Final check - Get(%q): expected %q, got error: %v", key, expectedValue, err)
 				continue
 			}
 
-			if storedKey != key {
-				t.Errorf("Final check - Get(%q): key mismatch, got %q", key, storedKey)
+			if !bytes.Equal(resp.Value, expectedValue) {
+				t.Errorf("Final check - Get(%q): expected %q, got %q", key, expectedValue, resp.Value)
 			}
-			if !bytes.Equal(storedValue, expectedValue) {
-				t.Errorf("Final check - Get(%q): expected %q, got %q", key, expectedValue, storedValue)
-			}
-
-			closer.Close() // Close immediately, not deferred, to avoid accumulating closers in the loop
 		}
 
 		// Force garbage collection to release CGO/Pebble resources
