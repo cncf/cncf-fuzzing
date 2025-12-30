@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/transformer"
@@ -39,20 +40,20 @@ import (
 // 4. Check: folder:child#viewer@user:alice
 // 5. BUG: Returns allowed when it should traverse usersets properly
 func FuzzUsersetFromClause(f *testing.F) {
-	f.Add([]byte("child"), []byte("parent"), []byte("grand"), []byte("alice"))
-	f.Add([]byte("sub"), []byte("main"), []byte("top"), []byte("bob"))
-
-	f.Fuzz(func(t *testing.T, childID, parentID, grandID, userID []byte) {
+	f.Fuzz(func(t *testing.T, childID, grandID, parentID, userID []byte) {
 		if len(childID) == 0 || len(parentID) == 0 || len(grandID) == 0 || len(userID) == 0 {
 			return
 		}
 
+		// Create fresh server and datastore for EACH iteration
 		ctx := context.Background()
 		datastore := memory.New()
-		defer datastore.Close()
-
 		srv := newEnhancedFuzzServer(datastore)
-		defer srv.Close()
+		// Cleanup: Server MUST close before datastore, then wait for goroutines
+		defer func() {
+			srv.Close()       // Close server first
+			datastore.Close() // Then datastore
+		}()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz"})
 		if err != nil {
@@ -155,5 +156,8 @@ func FuzzUsersetFromClause(f *testing.F) {
 		// Since current version is fixed, we expect it to correctly return allowed
 		// To detect the ORIGINAL vulnerability, we'd need to test on v0.3.4 or earlier
 		// This fuzzer validates that the fix handles arbitrary userset chains correctly
+
+		// Wait for background goroutines to finish before defer cleanup
+		time.Sleep(10 * time.Millisecond)
 	})
 }

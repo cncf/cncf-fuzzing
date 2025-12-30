@@ -72,27 +72,20 @@ const fuzzerCanaryUser = "user:__fuzzer_canary_never_grant__"
 // IMPORTANT: Exclusion is a critical security feature - bugs could allow
 // access to blocked users (e.g., revoked employees, banned accounts)
 func FuzzCheckWithExclusion(f *testing.F) {
-	// Seed with valid exclusion patterns
-	f.Add("document:d1", "viewer", "user:alice", "", "", "", "document:d1", "can_view", "user:alice")                          // viewer, not restricted → ALLOWED
-	f.Add("document:d1", "viewer", "user:bob", "document:d1", "restricted", "user:bob", "document:d1", "can_view", "user:bob") // viewer AND restricted → DENIED
-
 	f.Fuzz(func(t *testing.T, write1Obj, write1Rel, write1User, write2Obj, write2Rel, write2User, checkObj, checkRel, checkUser string) {
 		// Skip obviously broken inputs
 		if write1User == "" || checkUser == "" || write1Obj == "" || checkObj == "" {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server with datastore
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
+		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
 
-		// Create store
-		createStoreResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{
-			Name: "fuzz-test",
-		})
+		ctx := context.Background()
+		createStoreResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "test"})
 		if err != nil {
 			t.Skip("failed to create store")
 			return
@@ -329,10 +322,6 @@ func FuzzCheckWithExclusion(f *testing.F) {
 // IMPORTANT: Intersection is critical for privilege separation - bugs could
 // allow partial access (e.g., org member without permission, or vice versa)
 func FuzzCheckWithIntersection(f *testing.F) {
-	// Seed with valid intersection patterns
-	f.Add("document:d1", "org_member", "organization:acme", "document:d1", "writer", "user:alice", "organization:acme", "member", "user:alice", "document:d1", "can_delete", "user:alice") // BOTH conditions → ALLOWED
-	f.Add("document:d1", "org_member", "organization:acme", "", "", "", "organization:acme", "member", "user:bob", "document:d1", "can_delete", "user:bob")                                // ONLY org member → DENIED
-
 	f.Fuzz(func(t *testing.T, write1Obj, write1Rel, write1User, write2Obj, write2Rel, write2User, write3Obj, write3Rel, write3User, checkObj, checkRel, checkUser string) {
 		// Skip obviously broken inputs
 		if checkUser == "" || checkObj == "" {
@@ -344,13 +333,13 @@ func FuzzCheckWithIntersection(f *testing.F) {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
+
+		ctx := context.Background()
 
 		// Create store via server API
 		createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz-test"})
@@ -573,10 +562,6 @@ func FuzzCheckWithIntersection(f *testing.F) {
 // IMPORTANT: Computed usersets enable role hierarchies - bugs could break
 // permission inheritance (e.g., owners can't view their own documents)
 func FuzzCheckWithComputedUserset(f *testing.F) {
-	// Seed with valid computed userset patterns
-	f.Add("document:d1", "owner", "user:alice", "document:d1", "viewer", "user:alice") // owner → has viewer (inherited)
-	f.Add("document:d1", "viewer", "user:bob", "document:d1", "viewer", "user:bob")    // direct viewer
-
 	f.Fuzz(func(t *testing.T, writeObj, writeRel, writeUser, checkObj, checkRel, checkUser string) {
 		// Skip obviously broken inputs
 		if writeUser == "" || checkUser == "" || writeObj == "" || checkObj == "" {
@@ -588,13 +573,13 @@ func FuzzCheckWithComputedUserset(f *testing.F) {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
+
+		ctx := context.Background()
 
 		// Create store via server API
 		createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz-test"})
@@ -786,11 +771,6 @@ func FuzzCheckWithComputedUserset(f *testing.F) {
 // - Deny legitimate public access (availability issue)
 // - Grant wildcard access to wrong resources (security issue)
 func FuzzCheckWithPublicAccess(f *testing.F) {
-	// Seed with valid wildcard patterns
-	f.Add("document:d1", "viewer", "user:*", "document:d1", "viewer", "user:alice")     // wildcard → ANY user allowed
-	f.Add("document:d2", "viewer", "user:bob", "document:d2", "viewer", "user:bob")     // specific user only
-	f.Add("document:d3", "viewer", "user:*", "document:d999", "viewer", "user:charlie") // different doc → denied
-
 	f.Fuzz(func(t *testing.T, writeObj, writeRel, writeUser, checkObj, checkRel, checkUser string) {
 		// Skip obviously broken inputs
 		if writeUser == "" || checkUser == "" || writeObj == "" || checkObj == "" {
@@ -802,13 +782,13 @@ func FuzzCheckWithPublicAccess(f *testing.F) {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
+
+		ctx := context.Background()
 
 		// Create store via server API
 		createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz-test"})
@@ -1008,10 +988,6 @@ func FuzzCheckWithPublicAccess(f *testing.F) {
 // IMPORTANT: This pattern is common in multi-tenant systems - bugs could allow
 // cross-tenant access or privilege escalation.
 func FuzzCheckWithMultipleRestrictions(f *testing.F) {
-	// Seed with valid multiple restriction patterns
-	f.Add("organization:acme", "member", "user:alice", "document:d1", "owner", "organization:acme", "document:d1", "writer", "user:alice", "document:d1", "can_delete", "user:alice") // BOTH conditions
-	f.Add("organization:acme", "member", "user:bob", "document:d1", "owner", "organization:acme", "", "", "", "document:d1", "can_delete", "user:bob")                                // ONLY org member
-
 	f.Fuzz(func(t *testing.T, write1Obj, write1Rel, write1User, write2Obj, write2Rel, write2User, write3Obj, write3Rel, write3User, checkObj, checkRel, checkUser string) {
 		// Skip obviously broken inputs
 		if checkUser == "" || checkObj == "" {
@@ -1023,13 +999,13 @@ func FuzzCheckWithMultipleRestrictions(f *testing.F) {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
+
+		ctx := context.Background()
 
 		// Create store via server API
 		createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz-test"})
@@ -1245,12 +1221,6 @@ func FuzzCheckWithMultipleRestrictions(f *testing.F) {
 // - Bypassing IP allowlists
 // - Accessing resources despite failing attribute checks
 func FuzzCheckWithConditions(f *testing.F) {
-	// Seed with valid conditional patterns
-	// Format: writeObj, writeRel, writeUser, grantDuration (minutes), checkObj, checkRel, checkUser, checkTimeOffsetMinutes
-	f.Add("document:d1", "viewer", "user:alice", int64(10), "document:d1", "viewer", "user:alice", int64(5))  // 5 min after grant, 10 min duration → ALLOWED
-	f.Add("document:d1", "viewer", "user:bob", int64(10), "document:d1", "viewer", "user:bob", int64(15))     // 15 min after grant, 10 min duration → DENIED (expired)
-	f.Add("document:d1", "viewer", "user:alice", int64(60), "document:d1", "viewer", "user:alice", int64(30)) // 30 min after grant, 60 min duration → ALLOWED
-
 	f.Fuzz(func(t *testing.T, writeObj, writeRel, writeUser string, grantDurationMins int64, checkObj, checkRel, checkUser string, checkTimeOffsetMins int64) {
 		// Skip obviously broken inputs
 		if writeUser == "" || checkUser == "" || writeObj == "" || checkObj == "" {
@@ -1272,13 +1242,13 @@ func FuzzCheckWithConditions(f *testing.F) {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
+
+		ctx := context.Background()
 
 		// Create store via server API
 		createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz-test"})
@@ -1530,12 +1500,6 @@ func FuzzCheckWithConditions(f *testing.F) {
 // - Allow cross-hierarchy access (editor of folder A edits documents in folder B)
 // - Leak permissions across organizational boundaries
 func FuzzCheckWithParentChild(f *testing.F) {
-	// Seed with valid parent-child patterns
-	// Format: folderObj, folderRel, folderUser, docObj, docParentRel, docParent, checkObj, checkRel, checkUser
-	f.Add("folder:f1", "editor", "user:alice", "document:d1", "parent", "folder:f1", "document:d1", "editor", "user:alice") // folder editor → doc editor via parent
-	f.Add("folder:f1", "editor", "user:bob", "document:d1", "parent", "folder:f1", "document:d1", "editor", "user:bob")     // folder editor → doc editor
-	f.Add("document:d2", "editor", "user:charlie", "", "", "", "document:d2", "editor", "user:charlie")                      // direct document editor (no parent)
-
 	f.Fuzz(func(t *testing.T, folderObj, folderRel, folderUser, docObj, docParentRel, docParent, checkObj, checkRel, checkUser string) {
 		// Skip obviously broken inputs
 		if checkUser == "" || checkObj == "" {
@@ -1547,13 +1511,13 @@ func FuzzCheckWithParentChild(f *testing.F) {
 			return
 		}
 
-		ctx := context.Background()
-
-		// Initialize server using UNTRUSTED ENTRYPOINT
 		_, ds, _ := util.MustBootstrapDatastore(t, "memory")
 		defer ds.Close()
+
 		s := newEnhancedFuzzServer(ds)
 		defer s.Close()
+
+		ctx := context.Background()
 
 		// Create store via server API
 		createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz-test"})

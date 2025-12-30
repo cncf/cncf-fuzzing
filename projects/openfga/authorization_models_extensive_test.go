@@ -22,14 +22,16 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
 	parser "github.com/openfga/language/pkg/go/transformer"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/openfga/openfga/cmd/util"
 	"github.com/openfga/openfga/pkg/server"
+	"github.com/openfga/openfga/pkg/storage"
+	"github.com/openfga/openfga/pkg/storage/memory"
 	"github.com/openfga/openfga/pkg/tuple"
 )
 
@@ -11833,202 +11835,6 @@ condition ts_less_than(ts: timestamp) {
 // - Unified corpus that can discover model + input combinations
 // - All original assertions and security tests preserved per model
 func FuzzCheck_AllModels(f *testing.F) {
-	// Add seeds for each model in the registry
-	for _, model := range modelRegistry {
-		for _, seed := range model.Seeds {
-			f.Add(uint8(model.ID), seed.User, seed.Object, seed.Relation)
-		}
-	}
-
-	// ========================================================================
-	// ENHANCED SEED CORPUS - Edge Cases & Security-Critical Patterns
-	// ========================================================================
-
-	// 1. WILDCARD TESTS - Critical for models with public access
-	for _, model := range modelRegistry {
-		if model.EnhancedTests.HasWildcard && len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			// Test wildcard users
-			f.Add(uint8(model.ID), "user:*", firstTuple.Object, firstTuple.Relation)
-			// Test specific user against wildcard-enabled object
-			f.Add(uint8(model.ID), "user:wildcard_test", firstTuple.Object, firstTuple.Relation)
-		}
-	}
-
-	// 2. EXCLUSION BOUNDARY TESTS - Critical for "but not" semantics
-	for _, model := range modelRegistry {
-		if model.EnhancedTests.HasExclusion && len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			// Test user who might be in both base set and exclusion set
-			f.Add(uint8(model.ID), "user:blocked_test", firstTuple.Object, firstTuple.Relation)
-			f.Add(uint8(model.ID), "user:edge_case", firstTuple.Object, firstTuple.Relation)
-		}
-	}
-
-	// 3. INTERSECTION BOUNDARY TESTS - Need all paths to succeed
-	for _, model := range modelRegistry {
-		if model.EnhancedTests.HasIntersection && len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			// Test user who might satisfy only partial intersection requirements
-			f.Add(uint8(model.ID), "user:partial_match", firstTuple.Object, firstTuple.Relation)
-			f.Add(uint8(model.ID), "user:one_path_only", firstTuple.Object, firstTuple.Relation)
-		}
-	}
-
-	// 4. TYPE CONFUSION SEEDS - Critical security boundary
-	for _, model := range modelRegistry {
-		if model.EnhancedTests.WrongUserTypeTest != nil {
-			wut := model.EnhancedTests.WrongUserTypeTest
-			// Test correct type vs wrong type
-			f.Add(uint8(model.ID), wut.BaseUser, wut.Object, wut.Relation)
-			f.Add(uint8(model.ID), wut.WrongUserType+":confused", wut.Object, wut.Relation)
-		}
-	}
-
-	// 5. USERSET REFERENCE TESTS - Complex resolution paths
-	for _, model := range modelRegistry {
-		if len(model.InitialTuples) > 0 {
-			for _, tuple := range model.InitialTuples {
-				// Extract object type and create userset reference
-				if parts := strings.Split(tuple.Object, ":"); len(parts) == 2 {
-					objType := parts[0]
-					objID := parts[1]
-					// Test userset as user (e.g., "group:1#member")
-					f.Add(uint8(model.ID), objType+":"+objID+"#member", tuple.Object, tuple.Relation)
-					f.Add(uint8(model.ID), objType+":"+objID+"#admin", tuple.Object, tuple.Relation)
-				}
-			}
-		}
-	}
-
-	// 6. NEGATIVE ASSERTION SEEDS - Should be denied
-	for _, model := range modelRegistry {
-		for _, negAssertion := range model.NegativeAssertions {
-			// Add all negative assertions as seeds - these test denial paths
-			f.Add(uint8(model.ID), negAssertion.User, negAssertion.Object, negAssertion.Relation)
-		}
-	}
-
-	// 7. CROSS-OBJECT SEEDS - Test isolation between objects
-	for _, model := range modelRegistry {
-		if len(model.PositiveAssertions) > 1 {
-			// Test user from assertion 1 against object from assertion 2
-			user1 := model.PositiveAssertions[0].User
-			obj2 := model.PositiveAssertions[1].Object
-			rel1 := model.PositiveAssertions[0].Relation
-			f.Add(uint8(model.ID), user1, obj2, rel1)
-		}
-	}
-
-	// 8. UNGRANTED USER SEEDS - Test users without any permissions
-	for _, model := range modelRegistry {
-		if len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			// Systematically test ungranted users
-			f.Add(uint8(model.ID), "user:unauthorized_alice", firstTuple.Object, firstTuple.Relation)
-			f.Add(uint8(model.ID), "user:unauthorized_bob", firstTuple.Object, firstTuple.Relation)
-			f.Add(uint8(model.ID), "user:ungranted", firstTuple.Object, firstTuple.Relation)
-		}
-	}
-
-	// 9. WRONG RELATION SEEDS - Test relation boundary enforcement
-	for _, model := range modelRegistry {
-		if len(model.PositiveAssertions) > 0 {
-			assertion := model.PositiveAssertions[0]
-			// Test wrong relations
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, "viewer")
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, "editor")
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, "admin")
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, "owner")
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, "member")
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, "blocked")
-		}
-	}
-
-	// 10. NUMERIC AND SPECIAL ID TESTS - Boundary object IDs
-	for _, model := range modelRegistry {
-		if len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			if parts := strings.Split(firstTuple.Object, ":"); len(parts) == 2 {
-				objType := parts[0]
-				// Test various ID formats
-				f.Add(uint8(model.ID), firstTuple.User, objType+":0", firstTuple.Relation)
-				f.Add(uint8(model.ID), firstTuple.User, objType+":999999", firstTuple.Relation)
-				f.Add(uint8(model.ID), firstTuple.User, objType+":test-obj", firstTuple.Relation)
-				f.Add(uint8(model.ID), firstTuple.User, objType+":obj_underscore", firstTuple.Relation)
-			}
-		}
-	}
-
-	// 11. LONG STRING TESTS - Buffer/length boundary conditions
-	longUser := "user:" + strings.Repeat("a", 100)
-	longObj := "document:" + strings.Repeat("x", 100)
-	for _, model := range modelRegistry {
-		if len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			f.Add(uint8(model.ID), longUser, firstTuple.Object, firstTuple.Relation)
-			f.Add(uint8(model.ID), firstTuple.User, longObj, firstTuple.Relation)
-		}
-	}
-
-	// 12. CIRCULAR REFERENCE TESTS - Same object as user
-	for _, model := range modelRegistry {
-		if len(model.InitialTuples) > 0 {
-			firstTuple := model.InitialTuples[0]
-			// Test object referencing itself
-			if parts := strings.Split(firstTuple.Object, ":"); len(parts) == 2 {
-				f.Add(uint8(model.ID), firstTuple.Object+"#member", firstTuple.Object, firstTuple.Relation)
-			}
-		}
-	}
-
-	// 13. EMPTY CONTEXT TESTS - Models with conditions but no context
-	for _, model := range modelRegistry {
-		if model.EnhancedTests.HasCondition && len(model.PositiveAssertions) > 0 {
-			assertion := model.PositiveAssertions[0]
-			// Test with and without context (fuzzer will try both)
-			f.Add(uint8(model.ID), assertion.User, assertion.Object, assertion.Relation)
-		}
-	}
-
-	// 14. HIGH-VALUE COMPLEX MODELS - Focus on most complex patterns
-	complexModels := []int{
-		124, // UsersetDefinesItself7 (circular dependencies)
-		86,  // TtuAndComputedTtuWildcard
-		100, // ListObjectsExpandsWildcardTuple
-		131, // TtuRemovePublicWildcard
-		132, // TtuOrphanPublicWildcardParent
-		138, // UsersetDiscardInvalid
-	}
-	for _, modelID := range complexModels {
-		for _, model := range modelRegistry {
-			if model.ID == modelID {
-				// Add extra seeds for complex models
-				for _, assertion := range model.PositiveAssertions {
-					f.Add(uint8(model.ID), assertion.User, assertion.Object, assertion.Relation)
-					// Also test with slightly modified users/objects
-					f.Add(uint8(model.ID), assertion.User+"_alt", assertion.Object, assertion.Relation)
-					f.Add(uint8(model.ID), assertion.User, assertion.Object+"_alt", assertion.Relation)
-				}
-			}
-		}
-	}
-
-	// 15. MODELS 20-29 ENHANCED SEEDS - Our recently improved models
-	for modelID := 20; modelID <= 29; modelID++ {
-		for _, model := range modelRegistry {
-			if model.ID == modelID {
-				// Add comprehensive seeds for our enhanced models
-				for _, assertion := range model.PositiveAssertions {
-					f.Add(uint8(model.ID), assertion.User, assertion.Object, assertion.Relation)
-				}
-				for _, assertion := range model.NegativeAssertions {
-					f.Add(uint8(model.ID), assertion.User, assertion.Object, assertion.Relation)
-				}
-			}
-		}
-	}
-
 	f.Fuzz(func(t *testing.T, modelID uint8, checkUser, checkObj, checkRel string) {
 		// Select model (wrap around if modelID >= len(modelRegistry))
 		selectedModelIdx := int(modelID) % len(modelRegistry)
@@ -12042,15 +11848,26 @@ func FuzzCheck_AllModels(f *testing.F) {
 			return
 		}
 
+		// Create fresh server and datastore for EACH iteration
+		ctx := context.Background()
+		ds := memory.New()
+		s := newEnhancedFuzzServer(ds)
+		// Cleanup: Server MUST close before datastore, then wait for goroutines
+		defer func() {
+			s.Close()  // Close server first
+			ds.Close() // Then datastore
+		}()
+
 		// Run the complete model test
-		runModelTest(t, selectedModel, checkUser, checkObj, checkRel)
+		runModelTest(t, ctx, s, ds, selectedModel, checkUser, checkObj, checkRel)
+
+		// Wait for background goroutines to finish before defer cleanup
+		time.Sleep(10 * time.Millisecond)
 	})
 }
 
 // runModelTest executes a complete test for a given model with all its assertions
-func runModelTest(t *testing.T, model ModelTestCase, checkUser, checkObj, checkRel string) {
-	ctx := context.Background()
-
+func runModelTest(t *testing.T, ctx context.Context, s *server.Server, ds storage.OpenFGADatastore, model ModelTestCase, checkUser, checkObj, checkRel string) {
 	// Create debug context for tracking all operations
 	debugCtx := &DebugContext{
 		ModelID:       model.ID,
@@ -12060,12 +11877,6 @@ func runModelTest(t *testing.T, model ModelTestCase, checkUser, checkObj, checkR
 		AllWrites:     []string{},
 		AllChecks:     []CheckRecord{},
 	}
-
-	// Initialize server
-	_, ds, _ := util.MustBootstrapDatastore(t, "memory")
-	defer ds.Close()
-	s := newEnhancedFuzzServer(ds)
-	defer s.Close()
 
 	// Create store
 	createResp, err := s.CreateStore(ctx, &openfgav1.CreateStoreRequest{

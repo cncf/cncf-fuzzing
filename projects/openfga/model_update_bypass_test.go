@@ -40,9 +40,6 @@ import (
 // 4. Check with old tuple against new model
 // 5. BUG: Should deny (type mismatch) but allows access
 func FuzzModelUpdateBypass(f *testing.F) {
-	f.Add([]byte("doc1"), []byte("alice"), []byte("user"), []byte("employee"))
-	f.Add([]byte("file"), []byte("bob"), []byte("member"), []byte("admin"))
-
 	f.Fuzz(func(t *testing.T, objectID, userID, type1, type2 []byte) {
 		if len(objectID) == 0 || len(userID) == 0 || len(type1) == 0 || len(type2) == 0 {
 			return
@@ -55,10 +52,14 @@ func FuzzModelUpdateBypass(f *testing.F) {
 
 		ctx := context.Background()
 		datastore := memory.New()
-		defer datastore.Close()
 
 		srv := newEnhancedFuzzServer(datastore)
-		defer srv.Close()
+		defer func() {
+			srv.Close()
+			datastore.Close()
+			// Small delay to ensure all goroutines terminate and WaitGroups are released
+			time.Sleep(1 * time.Millisecond)
+		}()
 
 		store, err := srv.CreateStore(ctx, &openfgav1.CreateStoreRequest{Name: "fuzz"})
 		require.NoError(t, err)

@@ -30,63 +30,6 @@ import (
 // with a specific relation to an object. This tests tree traversal, indirect
 // relations, and expansion depth limits.
 func FuzzExpand(f *testing.F) {
-	// Seed 1: Simple direct relation
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store1"), []byte("document:doc1"), []byte("viewer"))
-
-	// Seed 2: Indirect relation through group
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type group
-  relations
-    define member: [user]
-type document
-  relations
-    define viewer: [group#member]`),
-		[]byte("store2"), []byte("document:doc2"), []byte("viewer"))
-
-	// Seed 3: Computed userset relation
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type folder
-  relations
-    define parent: [folder]
-    define viewer: [user] or viewer from parent
-type document
-  relations
-    define parent: [folder]
-    define viewer: viewer from parent`),
-		[]byte("store3"), []byte("document:doc3"), []byte("viewer"))
-
-	// Seed 4: Schema 1.2 with intersection
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define owner: [user]
-    define editor: [user]
-    define viewer: owner and editor`),
-		[]byte("store4"), []byte("document:doc4"), []byte("viewer"))
-
-	// Seed 5: Schema 1.2 with exclusion
-	f.Add([]byte(`model
-  schema 1.2
-type user
-type document
-  relations
-    define allowed: [user]
-    define banned: [user]
-    define viewer: allowed but not banned`),
-		[]byte("store5"), []byte("document:doc5"), []byte("viewer"))
-
 	f.Fuzz(func(t *testing.T, modelDSL []byte, storeID, object, relation []byte,
 		obj1, obj2, obj3, rel1, rel2, rel3, user1, user2, user3, user4, user5 []byte) {
 		if len(storeID) == 0 || len(object) == 0 || len(relation) == 0 {

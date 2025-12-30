@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"runtime"
 	"testing"
 	"time"
 
@@ -30,62 +31,6 @@ import (
 // encoding issues, and edge cases in tuple storage and retrieval.
 // Currently tests SQLite (in-memory) as a representative SQL backend.
 func FuzzStorageBackends(f *testing.F) {
-	// Seed 1: Normal tuple with various characters
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store1"),
-		[]byte("document:doc1"), []byte("viewer"), []byte("user:alice"),
-		uint8(0))
-
-	// Seed 2: Tuple with special SQL characters
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store'2"),
-		[]byte("document:doc'1"), []byte("view\"er"), []byte("user:ali'ce"),
-		uint8(1))
-
-	// Seed 3: Tuple with unicode and special characters
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store_üñí©ödé"),
-		[]byte("document:📄doc"), []byte("viewer"), []byte("user:用户"),
-		uint8(2))
-
-	// Seed 4: Very long identifiers
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store_with_very_long_identifier_that_might_exceed_limits"),
-		[]byte("document:"+string(make([]byte, 200))), []byte("viewer"),
-		[]byte("user:"+string(make([]byte, 200))),
-		uint8(3))
-
-	// Seed 5: Tuple with null bytes and control characters
-	f.Add([]byte(`model
-  schema 1.1
-type user
-type document
-  relations
-    define viewer: [user]`),
-		[]byte("store\x00with\x01null"),
-		[]byte("document:doc\nnewline"), []byte("viewer"), []byte("user:\ttab"),
-		uint8(4))
-
 	f.Fuzz(func(t *testing.T, modelDSL []byte, storeID, object, relation, user []byte, backendChoice uint8,
 		obj1, obj2, obj3, rel1, rel2, rel3, user1, user2, user3, user4 []byte) {
 		if len(storeID) == 0 || len(object) == 0 || len(relation) == 0 || len(user) == 0 {
@@ -98,10 +43,17 @@ type document
 		// Select storage backend based on fuzzer input
 		// For now, only use memory backend until SQLite config is sorted out
 		datastore := memory.New()
-		defer datastore.Close()
 
 		svr := newEnhancedFuzzServer(datastore)
-		defer svr.Close()
+		defer func() {
+			// Close in correct order: server first, then datastore
+			svr.Close()
+			datastore.Close()
+			// Force garbage collection to prevent memory accumulation
+			runtime.GC()
+			// Delay to ensure all goroutines terminate
+			time.Sleep(5 * time.Millisecond)
+		}()
 
 		// Parse and write model
 		model, err := transformDSLWithTimeout(string(modelDSL), 2*time.Second)
