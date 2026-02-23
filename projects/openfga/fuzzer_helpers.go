@@ -60,6 +60,22 @@ func newEnhancedFuzzServer(datastore storage.OpenFGADatastore) *server.Server {
 	)
 }
 
+// newRecursiveFuzzServer creates a server with a low resolve node limit (5)
+// to exercise the maxResolutionDepth exceeded path in breadthFirstRecursiveMatch.
+// With 5 objects in chains, this limit can be hit by 2-3 levels of BFS depth.
+func newRecursiveFuzzServer(datastore storage.OpenFGADatastore) *server.Server {
+	return server.MustNewServerWithOpts(
+		server.WithDatastore(datastore),
+		server.WithFeatureFlagClient(&mockFeatureFlagClient{}),
+		server.WithCheckQueryCacheEnabled(false),
+		server.WithCacheControllerEnabled(false),
+		server.WithCheckIteratorCacheEnabled(false),
+		server.WithListObjectsIteratorCacheEnabled(false),
+		server.WithDispatchThrottlingCheckResolverEnabled(true),
+		server.WithResolveNodeLimit(3),
+	)
+}
+
 // transformDSLWithTimeout wraps TransformDSLToProto with a timeout to prevent
 // infinite loops in the ANTLR parser when processing pathological inputs
 // Note: Since we can't cancel the parser goroutine, we just return on timeout
