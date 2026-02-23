@@ -21,7 +21,7 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/golang-jwt/jwt/v4"
 
-	"github.com/argoproj/pkg/sync"
+	"github.com/argoproj/pkg/v2/sync"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,15 +29,15 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	k8scache "k8s.io/client-go/tools/cache"
 
-	"github.com/argoproj/argo-cd/v2/pkg/apiclient/project"
-	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	apps "github.com/argoproj/argo-cd/v2/pkg/client/clientset/versioned/fake"
-	informer "github.com/argoproj/argo-cd/v2/pkg/client/informers/externalversions"
-	"github.com/argoproj/argo-cd/v2/server/rbacpolicy"
-	"github.com/argoproj/argo-cd/v2/test"
-	"github.com/argoproj/argo-cd/v2/util/db"
-	"github.com/argoproj/argo-cd/v2/util/session"
-	"github.com/argoproj/argo-cd/v2/util/settings"
+	"github.com/argoproj/argo-cd/v3/pkg/apiclient/project"
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+	apps "github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned/fake"
+	informer "github.com/argoproj/argo-cd/v3/pkg/client/informers/externalversions"
+	"github.com/argoproj/argo-cd/v3/server/rbacpolicy"
+	"github.com/argoproj/argo-cd/v3/test"
+	"github.com/argoproj/argo-cd/v3/util/db"
+	"github.com/argoproj/argo-cd/v3/util/session"
+	"github.com/argoproj/argo-cd/v3/util/settings"
 )
 
 var (
@@ -140,7 +140,7 @@ func FuzzCreateToken(data []byte) int {
 	policyEnf := rbacpolicy.NewRBACPolicyEnforcer(enforcer, nil)
 	policyEnf.SetScopes([]string{"groups"})
 
-	projectServer := NewServer("default", fake.NewSimpleClientset(), apps.NewSimpleClientset(projectWithRole), enforcer, sync.NewKeyLock(), sessionMgr, policyEnf, projInformer, settingsMgr, argoDB)
+	projectServer := NewServer("default", fake.NewSimpleClientset(), apps.NewSimpleClientset(projectWithRole), enforcer, sync.NewKeyLock(), sessionMgr, policyEnf, projInformer, settingsMgr, argoDB, nil)
 
 	_, _ = projectServer.CreateToken(ctx, r)
 	return 1

@@ -1,4 +1,4 @@
-// Copyright 2021 ADA Logics Ltd
+// Copyright 2025 the cncf-fuzzing authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,29 +13,32 @@
 // limitations under the License.
 //
 
-package common
+package evaluate
 
 import (
-	"encoding/json"
-
-	"github.com/argoproj/argo-workflows/v3/util/logging"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzParseObjects(data []byte) int {
-	ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
-	results := ParseObjects(ctx, data, false)
-	_ = ParseObjects(ctx, data, true)
+func FuzzEvalCondition(data []byte) int {
+	f := fuzz.NewConsumer(data)
 
-	// Roundtrip: marshal successful parses back to JSON and re-parse
-	for _, r := range results {
-		if r.Err != nil || r.Object == nil {
-			continue
-		}
-		jsonBytes, err := json.Marshal(r.Object)
-		if err != nil {
-			continue
-		}
-		_ = ParseObjects(ctx, jsonBytes, false)
+	condition, err := f.GetString()
+	if err != nil {
+		return 0
 	}
+
+	// Test with string result value
+	strVal, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	_, _ = EvalCondition(strVal, condition)
+
+	// Test with int result value
+	intVal, err := f.GetInt()
+	if err == nil {
+		_, _ = EvalCondition(intVal, condition)
+	}
+
 	return 1
 }

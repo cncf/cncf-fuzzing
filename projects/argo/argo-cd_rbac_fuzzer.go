@@ -16,8 +16,10 @@
 package rbac
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
 func FuzzLoadPolicy(data []byte) int {
@@ -41,5 +43,43 @@ func FuzzLoadPolicy(data []byte) int {
 	}
 	argocdAdapter := newAdapter(builtinPolicy, userDefinedPolicy, runtimePolicy)
 	argocdAdapter.LoadPolicy(m)
+	return 1
+}
+
+func FuzzEnforce(data []byte) int {
+	defer func() { recover() }()
+	f := fuzz.NewConsumer(data)
+	builtinPolicy, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	userPolicy, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	runtimePolicy, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	sub, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	resource, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+	action, err := f.GetString()
+	if err != nil {
+		return 0
+	}
+
+	adapter := newAdapter(builtinPolicy, userPolicy, runtimePolicy)
+	builtInModel := newBuiltInModel()
+	enf, err := casbin.NewEnforcer(builtInModel, adapter)
+	if err != nil {
+		return 0
+	}
+	enf.Enforce(sub, resource, action)
 	return 1
 }

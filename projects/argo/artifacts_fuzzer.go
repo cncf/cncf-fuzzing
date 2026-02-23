@@ -16,11 +16,27 @@
 package artifacts
 
 import (
-	testhttp "github.com/stretchr/testify/http"
 	"net/http"
 	"net/url"
 	"strings"
+	"testing"
+
+	testhttp "github.com/stretchr/testify/http"
 )
+
+func newServerFuzz() *ArtifactServer {
+	var s *ArtifactServer
+	tests := []testing.InternalTest{
+		{
+			Name: "FuzzHelper",
+			F: func(t *testing.T) {
+				s = newServer(t)
+			},
+		},
+	}
+	testing.RunTests(func(pat, str string) (bool, error) { return true, nil }, tests)
+	return s
+}
 
 func mustParseFuzz(text string) (*url.URL, error) {
 	u, err := url.Parse(text)
@@ -34,7 +50,7 @@ func FuzzGetOutputArtifact(data []byte) int {
 	var url strings.Builder
 	url.WriteString("/")
 	url.WriteString(string(data))
-	s := newServer()
+	s := newServerFuzz()
 	r := &http.Request{}
 	parsedUrl, err := mustParseFuzz(url.String())
 	if err != nil {
@@ -50,7 +66,7 @@ func FuzzGetOutputArtifactByUID(data []byte) int {
 	var url strings.Builder
 	url.WriteString("/")
 	url.WriteString(string(data))
-	s := newServer()
+	s := newServerFuzz()
 	r := &http.Request{}
 	parsedUrl, err := mustParseFuzz(url.String())
 	if err != nil {

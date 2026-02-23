@@ -16,35 +16,27 @@
 package controller
 
 import (
-        "context"
-        "runtime"
         "strings"
         wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+        "github.com/argoproj/argo-workflows/v3/util/logging"
 )
 
-// We ignore these panics, as they don't represent real bugs.
+// catchPanics recovers from expected MustUnmarshal panics.
 func catchPanics() {
         if r := recover(); r != nil {
-                var err string
-                switch r.(type) {
+                var msg string
+                switch v := r.(type) {
                 case string:
-                        err = r.(string)
-                case runtime.Error:
-                        err = r.(runtime.Error).Error()
+                        msg = v
                 case error:
-                        err = r.(error).Error()
+                        msg = v.Error()
+                default:
+                        panic(r)
                 }
-                if strings.Contains(err, "failed to unmarshal JSON") {
+                if strings.Contains(msg, "unmarshal") || strings.Contains(msg, "failed to read file") {
                         return
-                }else if strings.Contains(err, "failed to unmarshal YAML") {
-                        return
-                }else if strings.Contains(err, "failed to read file") {
-                        return
-		} else if strings.Contains(err, "no text to unmarshal") {
-			return
-                } else {
-                        panic(err)
                 }
+                panic(r)
         }
 }
 
@@ -57,11 +49,11 @@ func FuzzWorkflowController(data []byte) int {
         if wf==nil {
                 return 0
         }
-        cancel, controller := newController(wf)
+        ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
+        cancel, controller := newController(ctx, wf)
         defer cancel()
 
-        ctx := context.Background()
-        woc := newWorkflowOperationCtx(wf, controller)
+        woc := newWorkflowOperationCtx(ctx, wf, controller)
         woc.operate(ctx)
         return 1
 }

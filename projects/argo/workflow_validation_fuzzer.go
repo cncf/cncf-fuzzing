@@ -16,6 +16,8 @@
 package validate
 
 import (
+	"context"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -37,10 +39,7 @@ func FuzzValidateWorkflow(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	if wf.Spec.WorkflowTemplateRef == nil {
-		return 0
-	}
-	opts := ValidateOpts{}
-	_ = ValidateWorkflow(wftmplGetterFuzz, cwftmplGetterFuzz, wf, opts)
+	opts := Opts{}
+	_ = Workflow(context.Background(), wftmplGetterFuzz, cwftmplGetterFuzz, wf, nil, opts)
 	return 1
 }

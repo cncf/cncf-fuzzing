@@ -1,4 +1,4 @@
-// Copyright 2021 ADA Logics Ltd
+// Copyright 2025 the cncf-fuzzing authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,29 +13,20 @@
 // limitations under the License.
 //
 
-package common
+package validation
 
 import (
-	"encoding/json"
-
-	"github.com/argoproj/argo-workflows/v3/util/logging"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/argoproj/argo-rollouts/pkg/apis/rollouts/v1alpha1"
 )
 
-func FuzzParseObjects(data []byte) int {
-	ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
-	results := ParseObjects(ctx, data, false)
-	_ = ParseObjects(ctx, data, true)
-
-	// Roundtrip: marshal successful parses back to JSON and re-parse
-	for _, r := range results {
-		if r.Err != nil || r.Object == nil {
-			continue
-		}
-		jsonBytes, err := json.Marshal(r.Object)
-		if err != nil {
-			continue
-		}
-		_ = ParseObjects(ctx, jsonBytes, false)
+func FuzzValidateRollout(data []byte) int {
+	f := fuzz.NewConsumer(data)
+	rollout := &v1alpha1.Rollout{}
+	err := f.GenerateStruct(rollout)
+	if err != nil {
+		return 0
 	}
+	_ = ValidateRollout(rollout)
 	return 1
 }

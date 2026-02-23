@@ -16,7 +16,8 @@
 package argo
 
 import (
-	"github.com/argoproj/argo-cd/v2/common"
+	"github.com/argoproj/argo-cd/v3/common"
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -34,10 +35,10 @@ func FuzzGetAppName(data []byte) int {
 		return 0
 	}
 	resourceTracking := NewResourceTracking()
-	err = resourceTracking.SetAppInstance(&obj, common.LabelKeyAppInstance, "my-app", "", TrackingMethodLabel)
+	err = resourceTracking.SetAppInstance(&obj, common.LabelKeyAppInstance, "my-app", "", v1alpha1.TrackingMethodLabel, "")
 	if err != nil {
 		return 0
 	}
-	_ = resourceTracking.GetAppName(&obj, common.LabelKeyAppInstance, TrackingMethodAnnotation)
+	_ = resourceTracking.GetAppName(&obj, common.LabelKeyAppInstance, v1alpha1.TrackingMethodAnnotation, "")
 	return 1
 }

@@ -18,8 +18,8 @@ package db
 import (
 	"context"
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
-	"github.com/argoproj/argo-cd/v2/util/settings"
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+	"github.com/argoproj/argo-cd/v3/util/settings"
 )
 
 const (

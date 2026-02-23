@@ -15,40 +15,40 @@
 package cron
 
 import (
-	"context"
-	"runtime"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned/fake"
-	"github.com/argoproj/argo-workflows/v3/workflow/metrics"
+	"github.com/argoproj/argo-workflows/v3/util/logging"
 	"github.com/argoproj/argo-workflows/v3/util/telemetry"
+	"github.com/argoproj/argo-workflows/v3/workflow/metrics"
+	"github.com/argoproj/argo-workflows/v3/workflow/templateresolution"
+	"github.com/argoproj/argo-workflows/v3/workflow/validate"
+)
+
+var (
+	cronWfClientset   = fake.NewSimpleClientset()
+	cronWftmplGetter  = templateresolution.WrapWorkflowTemplateInterface(cronWfClientset.ArgoprojV1alpha1().WorkflowTemplates(metav1.NamespaceDefault))
+	cronCwftmplGetter = templateresolution.WrapClusterWorkflowTemplateInterface(cronWfClientset.ArgoprojV1alpha1().ClusterWorkflowTemplates())
 )
 
 func catchPanics() {
 	if r := recover(); r != nil {
-		var err string
-		switch r.(type) {
+		var msg string
+		switch v := r.(type) {
 		case string:
-			err = r.(string)
-		case runtime.Error:
-			err = r.(runtime.Error).Error()
+			msg = v
 		case error:
-			err = r.(error).Error()
+			msg = v.Error()
+		default:
+			panic(r)
 		}
-		if strings.Contains(err, "failed to unmarshal JSON") {
+		if strings.Contains(msg, "unmarshal") || strings.Contains(msg, "failed to read file") {
 			return
-		} else if strings.Contains(err, "failed to unmarshal YAML") {
-			return
-		} else if strings.Contains(err, "failed to read file") {
-			return
-		} else if strings.Contains(err, "no text to unmarshal") {
-			return
-		} else {
-			panic(err)
 		}
+		panic(r)
 	}
 }
 
@@ -58,7 +58,8 @@ func FuzzWoCRun(data []byte) int {
 	v1alpha1.MustUnmarshal(data, &cronWf)
 
 	cs := fake.NewSimpleClientset()
-	testMetrics, err := metrics.New(context.Background(), telemetry.TestScopeName, telemetry.TestScopeName, &telemetry.Config{}, metrics.Callbacks{})
+	ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
+	testMetrics, err := metrics.New(ctx, telemetry.TestScopeName, telemetry.TestScopeName, &telemetry.Config{}, metrics.Callbacks{})
 	if err != nil {
 		panic(err)
 	}
@@ -67,10 +68,20 @@ func FuzzWoCRun(data []byte) int {
 		wfClient:          cs.ArgoprojV1alpha1().Workflows(""),
 		cronWfIf:          cs.ArgoprojV1alpha1().CronWorkflows(""),
 		cronWf:            &cronWf,
-		log:               logrus.WithFields(logrus.Fields{}),
+		log:               logging.NewSlogLogger(logging.Info, logging.Text),
 		metrics:           testMetrics,
 		scheduledTimeFunc: inferScheduledTime,
+		ctx:               ctx,
 	}
 	woc.Run()
+	return 1
+}
+
+func FuzzCronValidation(data []byte) int {
+	defer catchPanics()
+	var cronWf v1alpha1.CronWorkflow
+	v1alpha1.MustUnmarshal(data, &cronWf)
+	ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
+	_ = validate.CronWorkflow(ctx, cronWftmplGetter, cronCwftmplGetter, &cronWf, nil)
 	return 1
 }

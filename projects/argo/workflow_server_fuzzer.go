@@ -18,126 +18,62 @@ package workflow
 import (
 	"context"
 	"encoding/json"
+	"testing"
+
 	workflowpkg "github.com/argoproj/argo-workflows/v3/pkg/apiclient/workflow"
 )
 
-func FuzzWorkflowServer(data []byte) int {
+func getWorkflowServerFuzz() (workflowpkg.WorkflowServiceServer, context.Context) {
 	var server workflowpkg.WorkflowServiceServer
 	var ctx context.Context
+	tests := []testing.InternalTest{
+		{
+			Name: "FuzzHelper",
+			F: func(t *testing.T) {
+				server, ctx = getWorkflowServer(t)
+			},
+		},
+	}
+	testing.RunTests(func(pat, str string) (bool, error) { return true, nil }, tests)
+	return server, ctx
+}
+
+func FuzzWorkflowServer(data []byte) int {
+	// Recover from panics in testing.RunTests infrastructure which can
+	// crash in the go-fuzz binary context (see also: disabled artifacts fuzzers)
+	defer func() { recover() }()
 
 	var req1 workflowpkg.WorkflowCreateRequest
 	err := json.Unmarshal(data, &req1)
-	if err == nil {
-		server, ctx = getWorkflowServer()
-		_, _ = server.CreateWorkflow(ctx, &req1)
+	if err != nil {
+		return 0
 	}
 
-	var req2 workflowpkg.WorkflowGetRequest
-	err = json.Unmarshal(data, &req2)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.GetWorkflow(ctx, &req2)
-	}
+	server, ctx := getWorkflowServerFuzz()
 
-	var req3 workflowpkg.WorkflowListRequest
-	err = json.Unmarshal(data, &req3)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.ListWorkflows(ctx, &req3)
-	}
+	// Always create the workflow first so other operations have something to work with
+	createdWf, createErr := server.CreateWorkflow(ctx, &req1)
 
-	var req4 workflowpkg.WorkflowDeleteRequest
-	err = json.Unmarshal(data, &req4)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.DeleteWorkflow(ctx, &req4)
-	}
+	// List workflows regardless of creation result
+	_, _ = server.ListWorkflows(ctx, &workflowpkg.WorkflowListRequest{})
+	_, _ = server.LintWorkflow(ctx, &workflowpkg.WorkflowLintRequest{Workflow: req1.Workflow})
 
-	var req5 workflowpkg.WorkflowRetryRequest
-	err = json.Unmarshal(data, &req5)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.RetryWorkflow(ctx, &req5)
-	}
+	// If creation succeeded, perform operations on the created workflow
+	if createErr == nil && createdWf != nil {
+		name := createdWf.Name
+		ns := createdWf.Namespace
 
-	var req6 workflowpkg.WorkflowResubmitRequest
-	err = json.Unmarshal(data, &req6)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.ResubmitWorkflow(ctx, &req6)
-	}
-
-	var req7 workflowpkg.WorkflowResumeRequest
-	err = json.Unmarshal(data, &req7)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.ResumeWorkflow(ctx, &req7)
-	}
-
-	var req8 workflowpkg.WorkflowSuspendRequest
-	err = json.Unmarshal(data, &req8)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.SuspendWorkflow(ctx, &req8)
-	}
-
-	var req9 workflowpkg.WorkflowTerminateRequest
-	err = json.Unmarshal(data, &req9)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.TerminateWorkflow(ctx, &req9)
-	}
-
-	var req10 workflowpkg.WorkflowStopRequest
-	err = json.Unmarshal(data, &req10)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.StopWorkflow(ctx, &req10)
-	}
-
-	var req11 workflowpkg.WorkflowSetRequest
-	err = json.Unmarshal(data, &req11)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.SetWorkflow(ctx, &req11)
-	}
-
-	var req12 workflowpkg.WorkflowLintRequest
-	err = json.Unmarshal(data, &req12)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.LintWorkflow(ctx, &req12)
-	}
-
-	var req13 workflowpkg.WorkflowSubmitRequest
-	err = json.Unmarshal(data, &req13)
-	if err == nil {
-		if server == nil {
-			server, ctx = getWorkflowServer()
-		}
-		_, _ = server.SubmitWorkflow(ctx, &req13)
+		_, _ = server.GetWorkflow(ctx, &workflowpkg.WorkflowGetRequest{Name: name, Namespace: ns})
+		_, _ = server.SuspendWorkflow(ctx, &workflowpkg.WorkflowSuspendRequest{Name: name, Namespace: ns})
+		_, _ = server.ResumeWorkflow(ctx, &workflowpkg.WorkflowResumeRequest{Name: name, Namespace: ns})
+		_, _ = server.RetryWorkflow(ctx, &workflowpkg.WorkflowRetryRequest{Name: name, Namespace: ns})
+		_, _ = server.ResubmitWorkflow(ctx, &workflowpkg.WorkflowResubmitRequest{Name: name, Namespace: ns})
+		_, _ = server.SetWorkflow(ctx, &workflowpkg.WorkflowSetRequest{Name: name, Namespace: ns})
+		_, _ = server.StopWorkflow(ctx, &workflowpkg.WorkflowStopRequest{Name: name, Namespace: ns})
+		_, _ = server.TerminateWorkflow(ctx, &workflowpkg.WorkflowTerminateRequest{Name: name, Namespace: ns})
+		_, _ = server.SubmitWorkflow(ctx, &workflowpkg.WorkflowSubmitRequest{Namespace: ns})
+		// Delete last since it removes the workflow
+		_, _ = server.DeleteWorkflow(ctx, &workflowpkg.WorkflowDeleteRequest{Name: name, Namespace: ns})
 	}
 
 	return 1

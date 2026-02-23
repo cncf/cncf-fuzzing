@@ -16,11 +16,13 @@
 package common
 
 import (
-	fuzz "github.com/AdaLogics/go-fuzz-headers"
-	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+	"context"
 	"runtime"
 	"strings"
 	"time"
+
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 )
 
 func catchPanics() {
@@ -47,7 +49,7 @@ type testFuzzContext struct {
 	testTasks []*wfv1.DAGTask
 }
 
-func (d *testFuzzContext) GetTask(taskName string) *wfv1.DAGTask {
+func (d *testFuzzContext) GetTask(_ context.Context, taskName string) *wfv1.DAGTask {
 	for _, task := range d.testTasks {
 		if task.Name == taskName {
 			return task
@@ -57,11 +59,11 @@ func (d *testFuzzContext) GetTask(taskName string) *wfv1.DAGTask {
 	return nil
 }
 
-func (d *testFuzzContext) GetTaskDependencies(taskName string) []string {
-	return d.GetTask(taskName).Dependencies
+func (d *testFuzzContext) GetTaskDependencies(ctx context.Context, taskName string) []string {
+	return d.GetTask(ctx, taskName).Dependencies
 }
 
-func (d *testFuzzContext) GetTaskFinishedAtTime(taskName string) time.Time {
+func (d *testFuzzContext) GetTaskFinishedAtTime(_ context.Context, taskName string) time.Time {
 	if finished, ok := d.status[taskName]; ok {
 		return finished
 	}
@@ -93,6 +95,6 @@ func FuzzGetTaskDependencies(data []byte) int {
 		testTasks: testTasks,
 	}
 	defer catchPanics()
-	_, _ = GetTaskDependencies(task, ctx)
+	_, _ = GetTaskDependencies(context.Background(), task, ctx)
 	return 1
 }

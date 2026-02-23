@@ -15,7 +15,35 @@
 
 package sso
 
+import (
+	"encoding/json"
+
+	josejwt "github.com/go-jose/go-jose/v3/jwt"
+
+	"github.com/argoproj/argo-workflows/v3/server/auth/types"
+)
+
 func FuzzSSOAuthorize(data []byte) int {
-	_, _ = NullSSO.Authorize(string(data))
+	token := string(data)
+
+	// Parse as signed JWT (JWS)
+	parsed, err := josejwt.ParseSigned(token)
+	if err == nil {
+		var claims types.Claims
+		_ = parsed.UnsafeClaimsWithoutVerification(&claims)
+	}
+
+	// Parse as encrypted JWT (JWE)
+	_, _ = josejwt.ParseEncrypted(token)
+
+	// Test Claims JSON deserialization
+	var claims types.Claims
+	if err := json.Unmarshal(data, &claims); err == nil {
+		_ = claims.Groups
+		_ = claims.Email
+		_ = claims.Name
+		_ = claims.PreferredUsername
+	}
+
 	return 1
 }

@@ -90,5 +90,39 @@ func FuzzGitopsDiff(data []byte) int {
 		liveArray = append(liveArray, us)
 	}
 	_, _ = DiffArray(configArray, liveArray)
+
+	// Test individual Diff
+	if configBytes, err := f.GetBytes(); err == nil {
+		if config, err := bytesToUnstructuredFuzz(configBytes); err == nil {
+			if liveBytes, err := f.GetBytes(); err == nil {
+				if live, err := bytesToUnstructuredFuzz(liveBytes); err == nil {
+					_, _ = Diff(config, live)
+				}
+			}
+		}
+	}
+
+	// Test ThreeWayDiff
+	if origBytes, err := f.GetBytes(); err == nil {
+		if orig, err := bytesToUnstructuredFuzz(origBytes); err == nil {
+			if configBytes, err := f.GetBytes(); err == nil {
+				if config, err := bytesToUnstructuredFuzz(configBytes); err == nil {
+					if liveBytes, err := f.GetBytes(); err == nil {
+						if live, err := bytesToUnstructuredFuzz(liveBytes); err == nil {
+							_, _ = ThreeWayDiff(orig, config, live)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Test Normalize
+	if normBytes, err := f.GetBytes(); err == nil {
+		if un, err := bytesToUnstructuredFuzz(normBytes); err == nil {
+			Normalize(un)
+		}
+	}
+
 	return 1
 }

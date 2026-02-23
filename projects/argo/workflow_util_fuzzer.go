@@ -15,47 +15,39 @@
 package util
 
 import (
-	"context"
 	"reflect"
-	"runtime"
 	"strings"
 
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	argofake "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned/fake"
+	"github.com/argoproj/argo-workflows/v3/util/logging"
 )
 
 func catchPanics() {
 	if r := recover(); r != nil {
-		var err string
-		switch r.(type) {
+		var msg string
+		switch v := r.(type) {
 		case string:
-			err = r.(string)
-		case runtime.Error:
-			err = r.(runtime.Error).Error()
+			msg = v
 		case error:
-			err = r.(error).Error()
+			msg = v.Error()
+		default:
+			panic(r)
 		}
-		if strings.Contains(err, "failed to unmarshal JSON") {
+		if strings.Contains(msg, "unmarshal") || strings.Contains(msg, "failed to read file") {
 			return
-		} else if strings.Contains(err, "failed to unmarshal YAML") {
-			return
-		} else if strings.Contains(err, "failed to read file") {
-			return
-		} else if strings.Contains(err, "no text to unmarshal") {
-			return
-		} else {
-			panic(err)
 		}
+		panic(r)
 	}
 }
 
 func FuzzSubmitWorkflow(data []byte) int {
 	defer catchPanics()
-	ctx := context.Background()
+	ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
 	wf := wfv1.MustUnmarshalWorkflow(data)
 	newWf := wf.DeepCopy()
 	wfClientSet := argofake.NewSimpleClientset()
-	newWf, err := SubmitWorkflow(ctx, nil, wfClientSet, "test-namespace", newWf, &wfv1.SubmitOpts{DryRun: true})
+	newWf, err := SubmitWorkflow(ctx, nil, wfClientSet, "test-namespace", newWf, nil, &wfv1.SubmitOpts{DryRun: true})
 	if err != nil {
 		return 0
 	}

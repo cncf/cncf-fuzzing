@@ -15,7 +15,32 @@
 
 package sync
 
+import (
+	"fmt"
+
+	"github.com/argoproj/argo-workflows/v3/util/logging"
+)
+
 func FuzzDecodeLockName(data []byte) int {
-	_, _ = DecodeLockName(string(data))
+	ctx := logging.NewSlogLogger(logging.Info, logging.Text).NewBackgroundContext()
+	lock, err := DecodeLockName(ctx, string(data))
+	if err != nil {
+		return 0
+	}
+	// Roundtrip: encode back to string, then decode again
+	encoded := lock.String(ctx)
+	lock2, err := DecodeLockName(ctx, encoded)
+	if err != nil {
+		panic(fmt.Sprintf("roundtrip decode failed: input=%q encoded=%q err=%v", string(data), encoded, err))
+	}
+	// Verify fields match
+	if lock.GetNamespace() != lock2.GetNamespace() ||
+		lock.GetResourceName() != lock2.GetResourceName() ||
+		lock.GetKey() != lock2.GetKey() {
+		panic(fmt.Sprintf("roundtrip mismatch: ns=%q/%q res=%q/%q key=%q/%q",
+			lock.GetNamespace(), lock2.GetNamespace(),
+			lock.GetResourceName(), lock2.GetResourceName(),
+			lock.GetKey(), lock2.GetKey()))
+	}
 	return 1
 }

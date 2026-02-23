@@ -142,10 +142,10 @@ func FuzzOperator(data []byte) int {
 		return 0
 	}
 	defer catchOperatorPanics()
-	cancel, controller := newController(wf)
-	defer cancel()
 	ctx := context.Background()
-	woc := newWorkflowOperationCtx(wf, controller)
+	cancel, controller := newController(ctx, wf)
+	defer cancel()
+	woc := newWorkflowOperationCtx(ctx, wf, controller)
 	woc.operate(ctx)
 	return 1
 }

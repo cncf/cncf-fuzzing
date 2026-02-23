@@ -81,6 +81,6 @@ func FuzzuserAgentEnforcer(data []byte) int {
 	}
 	md := metadata.New(mdMap)
 	ctx := metadata.NewIncomingContext(context.Background(), md)
-	_ = userAgentEnforcer(ctx, clientName, constraintStr, semverConstraint)
+	_ = userAgentEnforcer(ctx, clientName, semverConstraint)
 	return 1
 }
