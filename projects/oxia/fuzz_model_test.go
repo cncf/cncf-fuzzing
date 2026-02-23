@@ -14,7 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-package oxia
+package fuzz
 
 import (
 	"encoding/json"
@@ -60,12 +60,30 @@ func FuzzShardStatusUnmarshalInvalid(f *testing.F) {
 // FuzzServerGetIdentifier tests Server.GetIdentifier().
 // Property: Returns Name if set, otherwise Internal
 func FuzzServerGetIdentifier(f *testing.F) {
-	f.Add(true, "node-1", "localhost:6648", "localhost:6649")
-	f.Add(false, "", "localhost:6648", "localhost:6649")
-	f.Add(true, "", "localhost:6648", "localhost:6649")
-	f.Add(true, "my-server", "pub:1", "int:2")
+	f.Add(buildSeed(encBool(true), encStr("node-1"), encStr("localhost:6648"), encStr("localhost:6649")))
+	f.Add(buildSeed(encBool(false), encStr(""), encStr("localhost:6648"), encStr("localhost:6649")))
+	f.Add(buildSeed(encBool(true), encStr(""), encStr("localhost:6648"), encStr("localhost:6649")))
+	f.Add(buildSeed(encBool(true), encStr("my-server"), encStr("pub:1"), encStr("int:2")))
 
-	f.Fuzz(func(t *testing.T, hasName bool, name, public, internal string) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		hasName, ok := c.consumeBool()
+		if !ok {
+			return
+		}
+		name, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		public, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		internal, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+
 		server := model.Server{
 			Public:   public,
 			Internal: internal,
@@ -76,7 +94,6 @@ func FuzzServerGetIdentifier(f *testing.F) {
 
 		result := server.GetIdentifier()
 
-		// Property: if Name is set, return Name; otherwise return Internal
 		if hasName {
 			if result != name {
 				t.Fatalf("Expected name %q, got %q", name, result)

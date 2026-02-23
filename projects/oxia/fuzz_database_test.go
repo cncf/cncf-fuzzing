@@ -14,7 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-package oxia
+package fuzz
 
 import (
 	"bytes"
@@ -25,46 +25,51 @@ import (
 
 // FuzzDatabaseRangeOperations tests range scan boundary conditions
 func FuzzDatabaseRangeOperations(f *testing.F) {
-	f.Add([]byte(""), []byte("z"), int32(10))     // Full range
-	f.Add([]byte("a"), []byte("a"), int32(1))     // Single key
-	f.Add([]byte("a"), []byte("b"), int32(100))   // Normal range
-	f.Add([]byte("/"), []byte("0/"), int32(10))   // Slash boundary (hierarchical encoder bug!)
-	f.Add([]byte("key"), []byte("key"), int32(0)) // Point query
+	f.Add(buildSeed(encStr(""), encStr("z"), encInt32(10)))
+	f.Add(buildSeed(encStr("a"), encStr("a"), encInt32(1)))
+	f.Add(buildSeed(encStr("a"), encStr("b"), encInt32(100)))
+	f.Add(buildSeed(encStr("/"), encStr("0/"), encInt32(10)))
+	f.Add(buildSeed(encStr("key"), encStr("key"), encInt32(0)))
 
-	f.Fuzz(func(t *testing.T, startKey, endKey []byte, limit int32) {
-		if limit < 0 || limit > 10000 {
-			return // Invalid limit
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		startKeyStr, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		endKeyStr, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		limit, ok := c.consumeInt32()
+		if !ok {
+			return
 		}
 
-		// Property 1: Range comparison must be consistent
+		startKey := []byte(startKeyStr)
+		endKey := []byte(endKeyStr)
+
+		if limit < 0 || limit > 10000 {
+			return
+		}
+
 		cmp := compare.CompareWithSlash(startKey, endKey)
 
-		// Property 2: Empty range (startKey >= endKey) should be detected
 		if cmp >= 0 && len(startKey) > 0 && len(endKey) > 0 {
-			// Invalid range - startKey must be < endKey
-			// System should handle this gracefully
+			// Invalid range
 		}
 
-		// Property 3: Range boundaries must respect CompareWithSlash semantics
 		if len(startKey) > 0 && len(endKey) > 0 && cmp < 0 {
-			// Valid range [startKey, endKey)
-			// Verify that any key in range satisfies:
-			// startKey <= key < endKey (using CompareWithSlash)
-
-			// Test a key exactly at startKey
 			keyAtStart := compare.CompareWithSlash(startKey, startKey)
 			if keyAtStart != 0 {
 				t.Fatalf("Key comparison with itself failed: %d", keyAtStart)
 			}
 
-			// Test ordering is transitive
 			if bytes.Equal(startKey, endKey) {
 				// Same key - empty range
 			}
 		}
 
-		// Property 4: Special character handling (the hierarchical encoder bug)
-		// Test that "/" vs "0/" ordering is consistent
 		if bytes.Equal(startKey, []byte("/")) && bytes.Equal(endKey, []byte("0/")) {
 			cmpTest := compare.CompareWithSlash(startKey, endKey)
 			if cmpTest >= 0 {
@@ -72,7 +77,6 @@ func FuzzDatabaseRangeOperations(f *testing.F) {
 			}
 		}
 
-		// Property 5: Limit must be non-negative
 		if limit < 0 {
 			t.Fatalf("Negative limit: %d", limit)
 		}
@@ -89,37 +93,26 @@ func FuzzDatabaseKeyValidation(f *testing.F) {
 	f.Add([]byte("\xff")) // High byte
 
 	f.Fuzz(func(t *testing.T, key []byte) {
-		// Property 1: Empty keys should be rejected
 		if len(key) == 0 {
-			// Empty key - should be invalid
 			return
 		}
 
-		// Property 2: Keys with null bytes might be invalid
 		if bytes.Contains(key, []byte{0x00}) {
 			// Null byte - might be rejected
 		}
 
-		// Property 3: Keys with 0xFF might conflict with encoding
 		if bytes.Contains(key, []byte{0xff}) {
-			// 0xFF is used as encoded separator in hierarchical encoder
-			// More critically, keys starting with \xff\xff will conflict with internal key encoding
-			// in the natural encoder, which uses \xff\xff to mark internal keys (__oxia/...)
-			// Skip such keys as they're not valid user keys in Oxia
 			if bytes.HasPrefix(key, []byte{0xff, 0xff}) {
-				return // Skip keys that would create encoding ambiguity
+				return
 			}
 		}
 
-		// Property 4: Key length limits
-		const maxKeyLen = 8192 // Example limit
+		const maxKeyLen = 8192
 		if len(key) > maxKeyLen {
-			// Key too long - should be rejected
+			// Key too long
 		}
 
-		// Property 5: Encoding/decoding roundtrip
 		if len(key) > 0 {
-			// Test natural encoder
 			encoded := compare.EncoderNatural.Encode(string(key))
 			decoded := compare.EncoderNatural.Decode(encoded)
 			if decoded != string(key) {

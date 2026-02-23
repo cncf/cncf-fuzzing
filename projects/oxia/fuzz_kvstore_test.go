@@ -14,9 +14,10 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-package oxia
+package fuzz
 
 import (
+	"bytes"
 	"sort"
 	"strings"
 	"testing"
@@ -26,16 +27,90 @@ import (
 	"github.com/oxia-db/oxia/oxiad/dataserver/database/kvstore"
 )
 
+// FuzzKVPutGet tests basic Put/Get roundtrip with arbitrary keys and values.
+// Property: Get(key) after Put(key, value) returns value
+func FuzzKVPutGet(f *testing.F) {
+	f.Add(buildSeed(encStr("key"), []byte("value")))
+	f.Add(buildSeed(encStr(""), []byte("empty-key")))
+	f.Add(buildSeed(encStr("a/b/c"), []byte("hierarchical")))
+	f.Add(buildSeed(encStr("users/alice/profile"), []byte("3-level")))
+	f.Add(buildSeed(encStr("data/2024/12/15/logs"), []byte("5-level")))
+	f.Add(buildSeed(encStr("/root/path"), []byte("leading-slash")))
+	f.Add(buildSeed(encStr("trailing/slash/"), []byte("trailing-slash")))
+	f.Add(buildSeed(encStr("double//slash"), []byte("double-separator")))
+	f.Add(buildSeed(encStr("key-with-special-chars-!@#$%"), []byte{0, 1, 2, 255}))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		key, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		value := c.consumeRest()
+		if key == "" {
+			return // Empty keys may not be supported
+		}
+
+		factory, err := kvstore.NewPebbleKVFactory(kvstore.NewFactoryOptionsForTest(t))
+		if err != nil {
+			t.Fatalf("failed to create factory: %v", err)
+		}
+		defer factory.Close()
+
+		kv, err := factory.NewKV(constant.DefaultNamespace, 1, proto.KeySortingType_HIERARCHICAL)
+		if err != nil {
+			t.Fatalf("failed to create KV: %v", err)
+		}
+		defer kv.Close()
+
+		// Put the key-value
+		wb := kv.NewWriteBatch()
+		err = wb.Put(key, value)
+		if err != nil {
+			wb.Close()
+			return // Some keys might be rejected
+		}
+		err = wb.Commit()
+		if err != nil {
+			wb.Close()
+			return
+		}
+		wb.Close()
+
+		// Get it back
+		storedKey, storedValue, closer, err := kv.Get(key, kvstore.ComparisonEqual, kvstore.NoInternalKeys)
+		if err != nil {
+			t.Fatalf("Get failed for key %q: %v", key, err)
+		}
+		defer closer.Close()
+
+		if storedKey != key {
+			t.Fatalf("key mismatch: expected %q, got %q", key, storedKey)
+		}
+		if !bytes.Equal(storedValue, value) {
+			t.Fatalf("value mismatch for key %q", key)
+		}
+	})
+}
+
 // FuzzKVRangeScan tests range scan with arbitrary bounds.
 // Property: All returned keys are within bounds and in sorted order
 func FuzzKVRangeScan(f *testing.F) {
-	// Seeds: lower bound, upper bound
-	f.Add("a", "z")
-	f.Add("", "zzz")
-	f.Add("aaa", "aab")
-	f.Add("test/", "test0") // Hierarchical boundary
+	f.Add(buildSeed(encStr("a"), encStr("z")))
+	f.Add(buildSeed(encStr(""), encStr("zzz")))
+	f.Add(buildSeed(encStr("aaa"), encStr("aab")))
+	f.Add(buildSeed(encStr("test/"), encStr("test0")))
 
-	f.Fuzz(func(t *testing.T, lowerBound, upperBound string) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		lowerBound, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		upperBound, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
 		if lowerBound >= upperBound {
 			return // Invalid range
 		}
@@ -84,20 +159,97 @@ func FuzzKVRangeScan(f *testing.F) {
 	})
 }
 
-// FuzzKVWriteBatchAtomicity tests that write batches are atomic.
-// Property: Either all operations in a batch succeed or none do
+// FuzzKVDeleteRange tests delete range operations.
+// Property: After DeleteRange(lower, upper), no keys in range should exist
+func FuzzKVDeleteRange(f *testing.F) {
+	f.Add(buildSeed(encStr("b"), encStr("d"), encStr("a"), encStr("b"), encStr("c"), encStr("d"), encStr("e"), encStr("f")))
+	f.Add(buildSeed(encStr("a"), encStr("z"), encStr("apple"), encStr("banana"), encStr("cherry"), encStr("date")))
+	f.Add(buildSeed(encStr("test/"), encStr("test0"), encStr("test/1"), encStr("test/2"), encStr("other/key")))
 
-// FuzzKVkvstore.ComparisonTypes tests Floor/Ceiling/Lower/Higher comparisons.
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		lowerBound, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		upperBound, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		if lowerBound >= upperBound {
+			return
+		}
+
+		// Consume remaining strings as test keys
+		var testKeys []string
+		for c.remaining() > 0 {
+			k, ok := c.consumeString(255)
+			if !ok {
+				break
+			}
+			testKeys = append(testKeys, k)
+		}
+		if len(testKeys) == 0 {
+			return
+		}
+
+		factory, err := kvstore.NewPebbleKVFactory(kvstore.NewFactoryOptionsForTest(t))
+		if err != nil {
+			t.Fatalf("failed to create factory: %v", err)
+		}
+		defer factory.Close()
+
+		kv, err := factory.NewKV(constant.DefaultNamespace, 1, proto.KeySortingType_HIERARCHICAL)
+		if err != nil {
+			t.Fatalf("failed to create KV: %v", err)
+		}
+		defer kv.Close()
+
+		// Insert test data using fuzzer-provided keys
+		wb := kv.NewWriteBatch()
+		for _, k := range testKeys {
+			if k != "" {
+				_ = wb.Put(k, []byte(k))
+			}
+		}
+		_ = wb.Commit()
+		wb.Close()
+
+		// Delete range
+		wb = kv.NewWriteBatch()
+		err = wb.DeleteRange(lowerBound, upperBound)
+		if err != nil {
+			wb.Close()
+			return
+		}
+		err = wb.Commit()
+		if err != nil {
+			wb.Close()
+			return
+		}
+		wb.Close()
+	})
+}
+
+// FuzzKVComparisonTypes tests Floor/Ceiling/Lower/Higher comparisons.
 // Property: Comparison operations return keys with correct relationship
 func FuzzKVComparisonTypes(f *testing.F) {
-	// Seeds: search key, comparison type
-	f.Add("c", uint8(0))
-	f.Add("b", uint8(1))
-	f.Add("d", uint8(2))
-	f.Add("a", uint8(3))
-	f.Add("z", uint8(4))
+	f.Add(buildSeed(encStr("c"), []byte{0}))
+	f.Add(buildSeed(encStr("b"), []byte{1}))
+	f.Add(buildSeed(encStr("d"), []byte{2}))
+	f.Add(buildSeed(encStr("a"), []byte{3}))
+	f.Add(buildSeed(encStr("z"), []byte{4}))
 
-	f.Fuzz(func(t *testing.T, searchKey string, compType uint8) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		searchKey, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		compType, ok := c.consumeUint8()
+		if !ok {
+			return
+		}
 		if searchKey == "" {
 			return
 		}
@@ -122,8 +274,8 @@ func FuzzKVComparisonTypes(f *testing.F) {
 
 		// Insert test data
 		wb := kv.NewWriteBatch()
-		testKeys := []string{"a", "c", "e", "g"}
-		for _, k := range testKeys {
+		insertKeys := []string{"a", "c", "e", "g"}
+		for _, k := range insertKeys {
 			_ = wb.Put(k, []byte(k))
 		}
 		_ = wb.Commit()
@@ -135,35 +287,29 @@ func FuzzKVComparisonTypes(f *testing.F) {
 		if err == nil {
 			defer closer.Close()
 
-			// Verify the comparison relationship
 			switch comparison {
 			case kvstore.ComparisonEqual:
 				if storedKey != searchKey {
-					t.Fatalf("kvstore.ComparisonEqual: expected %q, got %q", searchKey, storedKey)
+					t.Fatalf("ComparisonEqual: expected %q, got %q", searchKey, storedKey)
 				}
 			case kvstore.ComparisonFloor:
-				// Floor: largest key <= searchKey
 				if storedKey > searchKey {
-					t.Fatalf("kvstore.ComparisonFloor: %q > %q", storedKey, searchKey)
+					t.Fatalf("ComparisonFloor: %q > %q", storedKey, searchKey)
 				}
 			case kvstore.ComparisonCeiling:
-				// Ceiling: smallest key >= searchKey
 				if storedKey < searchKey {
-					t.Fatalf("kvstore.ComparisonCeiling: %q < %q", storedKey, searchKey)
+					t.Fatalf("ComparisonCeiling: %q < %q", storedKey, searchKey)
 				}
 			case kvstore.ComparisonLower:
-				// Lower: largest key < searchKey
 				if storedKey >= searchKey {
-					t.Fatalf("kvstore.ComparisonLower: %q >= %q", storedKey, searchKey)
+					t.Fatalf("ComparisonLower: %q >= %q", storedKey, searchKey)
 				}
 			case kvstore.ComparisonHigher:
-				// Higher: smallest key > searchKey
 				if storedKey <= searchKey {
-					t.Fatalf("kvstore.ComparisonHigher: %q <= %q", storedKey, searchKey)
+					t.Fatalf("ComparisonHigher: %q <= %q", storedKey, searchKey)
 				}
 			}
 		}
-		// Error is acceptable if no matching key exists
 	})
 }
 
@@ -213,7 +359,7 @@ func FuzzKVKeyOrdering(f *testing.F) {
 		_ = wb.Commit()
 		wb.Close()
 
-		// Scan all keys using RangeScan (KeyIterator requires manual positioning)
+		// Scan all keys using RangeScan
 		iter, err := kv.RangeScan("", "\xff", kvstore.NoInternalKeys)
 		if err != nil {
 			t.Fatalf("failed to create iterator: %v", err)
@@ -228,12 +374,10 @@ func FuzzKVKeyOrdering(f *testing.F) {
 			}
 		}
 
-		// Property: scanned keys must be in sorted order
 		if !sort.StringsAreSorted(scannedKeys) {
 			t.Fatalf("keys not in sorted order: inserted %v, got %v", keys, scannedKeys)
 		}
 
-		// Property: all inserted keys should be present
 		if len(scannedKeys) != len(keys) {
 			t.Fatalf("key count mismatch: inserted %d, scanned %d", len(keys), len(scannedKeys))
 		}

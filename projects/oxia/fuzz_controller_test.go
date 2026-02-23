@@ -14,7 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-package oxia
+package fuzz
 
 import (
 	"testing"
@@ -23,28 +23,106 @@ import (
 	"github.com/oxia-db/oxia/oxiad/coordinator/model"
 )
 
-// Note: FuzzMetadataLoadStore was moved to fuzz_metadata_test.go
-// for more comprehensive testing of the metadata storage layer.
-// This file now only contains FuzzMetadataLeaderHelper.
+// FuzzMetadataLoadStore tests Load and Store operations.
+// Property: Store followed by Load returns the same ShardMetadata
+func FuzzMetadataLoadStore(f *testing.F) {
+	f.Add(buildSeed(encInt64(1), encUint16(0), encBool(false), encStr(""), encStr("")))
+	f.Add(buildSeed(encInt64(100), encUint16(1), encBool(true), encStr("localhost:6648"), encStr("localhost:6649")))
+	f.Add(buildSeed(encInt64(0), encUint16(2), encBool(false), encStr(""), encStr("")))
+	f.Add(buildSeed(encInt64(-1), encUint16(3), encBool(true), encStr("node-1.oxia:6648"), encStr("node-1.oxia:6649")))
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		term, ok := c.consumeInt64()
+		if !ok {
+			return
+		}
+		statusVal, ok := c.consumeUint16()
+		if !ok {
+			return
+		}
+		hasLeader, ok := c.consumeBool()
+		if !ok {
+			return
+		}
+		leaderPublic, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		leaderInternal, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+
+		status := model.ShardStatus(statusVal % 4) // Keep in valid range
+
+		var leader *model.Server
+		if hasLeader && leaderPublic != "" {
+			leader = &model.Server{
+				Public:   leaderPublic,
+				Internal: leaderInternal,
+			}
+		}
+
+		original := model.ShardMetadata{
+			Term:   term,
+			Status: status,
+			Leader: leader,
+		}
+
+		md := controller.NewMetadata(model.ShardMetadata{})
+		md.Store(original)
+		loaded := md.Load()
+
+		if loaded.Term != term {
+			t.Fatalf("Term mismatch: expected %d, got %d", term, loaded.Term)
+		}
+		if loaded.Status != status {
+			t.Fatalf("Status mismatch: expected %v, got %v", status, loaded.Status)
+		}
+		if hasLeader && leaderPublic != "" {
+			if loaded.Leader == nil {
+				t.Fatalf("Expected leader to be set")
+			}
+			if loaded.Leader.Public != leaderPublic {
+				t.Fatalf("Leader public mismatch: expected %s, got %s", leaderPublic, loaded.Leader.Public)
+			}
+		} else if loaded.Leader != nil && hasLeader {
+			t.Fatalf("Expected leader to be nil")
+		}
+	})
+}
 
 // FuzzMetadataLeaderHelper tests Leader() helper.
 // Property: Leader() returns the current leader or nil
 func FuzzMetadataLeaderHelper(f *testing.F) {
-	f.Add(true, "localhost:6648", "localhost:6649")
-	f.Add(false, "", "")
-	f.Add(true, "node-1:6648", "node-1:6649")
+	f.Add(buildSeed(encBool(true), encStr("localhost:6648"), encStr("localhost:6649")))
+	f.Add(buildSeed(encBool(false), encStr(""), encStr("")))
+	f.Add(buildSeed(encBool(true), encStr("node-1:6648"), encStr("node-1:6649")))
 
-	f.Fuzz(func(t *testing.T, hasLeader bool, public, internal string) {
+	f.Fuzz(func(t *testing.T, data []byte) {
+		c := newConsumer(data)
+		hasLeader, ok := c.consumeBool()
+		if !ok {
+			return
+		}
+		public, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+		internal, ok := c.consumeString(255)
+		if !ok {
+			return
+		}
+
 		var leader *model.Server
 		if hasLeader && public != "" {
 			leader = &model.Server{Public: public, Internal: internal}
 		}
 
 		md := controller.NewMetadata(model.ShardMetadata{Leader: leader})
-
 		result := md.Leader()
 
-		// Property: Leader() should match what was stored
 		if hasLeader && public != "" {
 			if result == nil {
 				t.Fatalf("Expected leader, got nil")
