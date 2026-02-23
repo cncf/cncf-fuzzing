@@ -50,7 +50,7 @@ import (
 
 const maxFuzzers = 50
 
-func FuzzAllValidation(data []byte) int {
+func fuzzAllValidation(data []byte) int {
 	if len(data) < 10 {
 		return 0
 	}
@@ -129,7 +129,7 @@ func FuzzAllValidation(data []byte) int {
 	} else if op == 39 {
 		return FuzzValidatePolicy(inputData)
 	} else if op == 40 {
-		return FuzzLoadPolicyFromBytes(inputData)
+		return fuzzLoadPolicyFromBytes(inputData)
 	} else if op == 41 {
 		return FuzzValidateRoleUpdate(inputData)
 	} else if op == 42 {

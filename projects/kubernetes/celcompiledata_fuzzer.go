@@ -25,21 +25,18 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzCelDataCompile(data []byte) int {
+func fuzzCelDataCompile(data []byte) int {
 	f := fuzz.NewConsumer(data)
 
 	expr, err := f.GetString()
 	if err != nil {
-		//fmt.Println("Error getting string:", err)
 		return 0
 	}
 
-	compositionEnvTemplate, err := admissioncel.NewCompositionEnv(admissioncel.VariablesTypeName, environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion()))
+	compiler, err := admissioncel.NewCompositedCompiler(environment.MustBaseEnvSet(environment.DefaultCompatibilityVersion()))
 	if err != nil {
-		//fmt.Println("Error creating composition env:", err)
 		return 0
 	}
-	compiler := admissioncel.NewCompositedCompilerFromTemplate(compositionEnvTemplate)
 	options := admissioncel.OptionalVariableDeclarations{HasParams: true, HasAuthorizer: false}
 
 	variable := &validatingadmissionpolicy.Variable{
@@ -65,7 +62,6 @@ func FuzzCelDataCompile(data []byte) int {
 		}
 
 		result := compiler.CompileCELExpression(validation, options, environment.StoredExpressions)
-		// there's a bug in CompileCELExpression that returns nil error even if the expression is invalid
 		if err := result.Error; err != nil {
 			fmt.Printf("Got error: %s\n", result.Error)
 			return 1

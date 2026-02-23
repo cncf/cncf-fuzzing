@@ -16,7 +16,6 @@
 package fuzzing
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/AdaLogics/go-fuzz-headers/bytesource"
@@ -36,16 +35,7 @@ import (
 	proxyScheme "k8s.io/kubernetes/pkg/proxy/apis/config/scheme"
 )
 
-var (
-	initter sync.Once
-)
-
-func initForFuzzing() {
-	testing.Init()
-}
-
-func FuzzRoundTripSpecificKind(data []byte) int {
-	initter.Do(initForFuzzing)
+func fuzzRoundTripSpecificKind(data []byte) int {
 	t := &testing.T{}
 	internalGVK := schema.GroupVersionKind{Group: "apps", Version: runtime.APIVersionInternal, Kind: "DaemonSet"}
 
@@ -56,8 +46,7 @@ func FuzzRoundTripSpecificKind(data []byte) int {
 	return 1
 }
 
-func FuzzControllerRoundtrip(data []byte) int {
-	initter.Do(initForFuzzing)
+func fuzzControllerRoundtrip(data []byte) int {
 	t := &testing.T{}
 
 	seed := bytesource.New(data)
@@ -68,8 +57,7 @@ func FuzzControllerRoundtrip(data []byte) int {
 	return 1
 }
 
-func FuzzKubeletSchemeRoundtrip(data []byte) int {
-	initter.Do(initForFuzzing)
+func fuzzKubeletSchemeRoundtrip(data []byte) int {
 	t := &testing.T{}
 
 	seed := bytesource.New(data)
@@ -84,8 +72,7 @@ func FuzzKubeletSchemeRoundtrip(data []byte) int {
 	return 1
 }
 
-func FuzzProxySchemeRoundtrip(data []byte) int {
-	initter.Do(initForFuzzing)
+func fuzzProxySchemeRoundtrip(data []byte) int {
 	t := &testing.T{}
 
 	seed := bytesource.New(data)
@@ -96,8 +83,7 @@ func FuzzProxySchemeRoundtrip(data []byte) int {
 	return 1
 }
 
-func FuzzRoundTripType(data []byte) int {
-	initter.Do(initForFuzzing)
+func fuzzRoundTripType(data []byte) int {
 	t := &testing.T{}
 
 	seed := bytesource.New(data)

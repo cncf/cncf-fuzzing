@@ -29,7 +29,7 @@ import (
 	aestransformer "k8s.io/apiserver/pkg/storage/value/encrypt/aes"
 )
 
-func FuzzAesRoundtrip(data []byte) int {
+func fuzzAesRoundtrip(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	cipherBytes, err := f.GetBytes()
 	if err != nil {

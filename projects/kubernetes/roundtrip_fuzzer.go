@@ -17,8 +17,6 @@ package fuzzing
 
 import (
 	"reflect"
-	"sync"
-	"testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
@@ -30,8 +28,7 @@ import (
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
-	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
-	autoscalingv2 "k8s.io/api/autoscaling/v2beta2"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -57,8 +54,7 @@ import (
 	appsv1beta1SGV "k8s.io/kubernetes/pkg/apis/apps/v1beta1"
 	appsv1beta2SGV "k8s.io/kubernetes/pkg/apis/apps/v1beta2"
 	autoscalingV1SGV "k8s.io/kubernetes/pkg/apis/autoscaling/v1"
-	autoscalingV2beta1SGV "k8s.io/kubernetes/pkg/apis/autoscaling/v2beta1"
-	autoscalingV2beta2SGV "k8s.io/kubernetes/pkg/apis/autoscaling/v2beta2"
+	autoscalingV2SGV "k8s.io/kubernetes/pkg/apis/autoscaling/v2"
 	batchV1SGV "k8s.io/kubernetes/pkg/apis/batch/v1"
 	batchV1beta1SGV "k8s.io/kubernetes/pkg/apis/batch/v1beta1"
 	corev1SGV "k8s.io/kubernetes/pkg/apis/core/v1"
@@ -68,20 +64,15 @@ import (
 )
 
 var (
-	initLocalTest sync.Once
-	totalFuncs    = 39
+	totalFuncs = 38
 )
 
 // initTesting implements an init function that
 // is invoked using sync.Do. It is only used
 // by a few of the fuzzers, and its invocation
 // is therefore isolated to those.
-func initTesting() {
-	testing.Init()
-}
-
 /*
-FuzzRoundtrip implements a fuzzer for the logic
+fuzzRoundtrip implements a fuzzer for the logic
 of the following roundtrip tests:
 - https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/apps/v1/defaults_test.go#L585
 - https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/apps/v1beta1/defaults_test.go#L199
@@ -101,7 +92,7 @@ of the following roundtrip tests:
 - https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/storage/v1/defaults_test.go#L33
 - https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/storage/v1beta1/defaults_test.go#L33
 */
-func FuzzRoundtrip(data []byte) int {
+func fuzzRoundtrip(data []byte) int {
 	if len(data) < 10 {
 		return 0
 	}
@@ -126,64 +117,62 @@ func FuzzRoundtrip(data []byte) int {
 	} else if op%totalFuncs == 8 {
 		return FuzzAutoscalingV1HorizontalPodAutoscaler(inputData)
 	} else if op%totalFuncs == 9 {
-		return FuzzAutoscalingV2beta1HorizontalPodAutoscaler(inputData)
+		return FuzzAutoscalingV2HorizontalPodAutoscaler(inputData)
 	} else if op%totalFuncs == 10 {
-		return FuzzAutoscalingV2beta2HorizontalPodAutoscaler(inputData)
-	} else if op%totalFuncs == 11 {
 		return FuzzBatchV1Job(inputData)
-	} else if op%totalFuncs == 12 {
+	} else if op%totalFuncs == 11 {
 		return FuzzBatchV1CronJob(inputData)
-	} else if op%totalFuncs == 13 {
+	} else if op%totalFuncs == 12 {
 		return FuzzBatchV1beta1CronJob(inputData)
-	} else if op%totalFuncs == 14 {
+	} else if op%totalFuncs == 13 {
 		return FuzzCoreV1ReplicationController(inputData)
-	} else if op%totalFuncs == 15 {
+	} else if op%totalFuncs == 14 {
 		return FuzzCoreV1Pod(inputData)
-	} else if op%totalFuncs == 16 {
+	} else if op%totalFuncs == 15 {
 		return FuzzCoreV1Secret(inputData)
-	} else if op%totalFuncs == 17 {
+	} else if op%totalFuncs == 16 {
 		return FuzzCoreV1PersistentVolume(inputData)
-	} else if op%totalFuncs == 18 {
+	} else if op%totalFuncs == 17 {
 		return FuzzCoreV1PersistentVolumeClaim(inputData)
+	} else if op%totalFuncs == 18 {
+		return FuzzCoreV1Endpoints(inputData)
 	} else if op%totalFuncs == 19 {
-		return FuzzCoreV1Endpoints(inputData)
-	} else if op%totalFuncs == 20 {
 		return FuzzCoreV1Service(inputData)
-	} else if op%totalFuncs == 21 {
+	} else if op%totalFuncs == 20 {
 		return FuzzCoreV1Namespace(inputData)
-	} else if op%totalFuncs == 22 {
+	} else if op%totalFuncs == 21 {
 		return FuzzCoreV1Node(inputData)
-	} else if op%totalFuncs == 23 {
+	} else if op%totalFuncs == 22 {
 		return FuzzCoreV1Endpoints(inputData)
-	} else if op%totalFuncs == 24 {
+	} else if op%totalFuncs == 23 {
 		return FuzzCoreV1LimitRange(inputData)
-	} else if op%totalFuncs == 25 {
+	} else if op%totalFuncs == 24 {
 		return FuzzExtensionsV1beta1DaemonSet(inputData)
-	} else if op%totalFuncs == 26 {
+	} else if op%totalFuncs == 25 {
 		return FuzzExtensionsV1beta1Deployment(inputData)
-	} else if op%totalFuncs == 27 {
+	} else if op%totalFuncs == 26 {
 		return FuzzExtensionsV1beta1ReplicaSet(inputData)
-	} else if op%totalFuncs == 28 {
+	} else if op%totalFuncs == 27 {
 		return FuzzExtensionsV1beta1NetworkPolicy(inputData)
-	} else if op%totalFuncs == 29 {
+	} else if op%totalFuncs == 28 {
 		return FuzzNetworkingV1NetworkPolicy(inputData)
-	} else if op%totalFuncs == 30 {
+	} else if op%totalFuncs == 29 {
 		return FuzzNetworkingV1IngressClass(inputData)
-	} else if op%totalFuncs == 31 {
+	} else if op%totalFuncs == 30 {
 		return FuzzNetworkingV1beta1Ingress(inputData)
-	} else if op%totalFuncs == 32 {
+	} else if op%totalFuncs == 31 {
 		return FuzzSchedulingV1PriorityClass(inputData)
-	} else if op%totalFuncs == 33 {
+	} else if op%totalFuncs == 32 {
 		return FuzzSchedulingV1alpa1PriorityClass(inputData)
-	} else if op%totalFuncs == 34 {
+	} else if op%totalFuncs == 33 {
 		return FuzzSchedulingV1beta1PriorityClass(inputData)
-	} else if op%totalFuncs == 35 {
+	} else if op%totalFuncs == 34 {
 		return FuzzStorageV1CSIDriver(inputData)
-	} else if op%totalFuncs == 36 {
+	} else if op%totalFuncs == 35 {
 		return FuzzStorageV1StorageClass(inputData)
-	} else if op%totalFuncs == 37 {
+	} else if op%totalFuncs == 36 {
 		return FuzzStorageV1beta1CSIDriver(inputData)
-	} else if op%totalFuncs == 38 {
+	} else if op%totalFuncs == 37 {
 		return FuzzStorageV1beta1StorageClass(inputData)
 	}
 	return 1
@@ -252,16 +241,9 @@ func FuzzAutoscalingV1HorizontalPodAutoscaler(data []byte) int {
 	return 1
 }
 
-func FuzzAutoscalingV2beta1HorizontalPodAutoscaler(data []byte) int {
-	o := &autoscalingv2beta1.HorizontalPodAutoscaler{}
-	sgv := autoscalingV2beta1SGV.SchemeGroupVersion
-	prepAndDoRoundtrip(sgv, o, data)
-	return 1
-}
-
-func FuzzAutoscalingV2beta2HorizontalPodAutoscaler(data []byte) int {
+func FuzzAutoscalingV2HorizontalPodAutoscaler(data []byte) int {
 	o := &autoscalingv2.HorizontalPodAutoscaler{}
-	sgv := autoscalingV2beta2SGV.SchemeGroupVersion
+	sgv := autoscalingV2SGV.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
 	return 1
 }
@@ -429,7 +411,6 @@ func FuzzSchedulingV1beta1PriorityClass(data []byte) int {
 }
 
 func FuzzStorageV1CSIDriver(data []byte) int {
-	initLocalTest.Do(initTesting)
 	o := &storagev1.CSIDriver{}
 	sgv := storagev1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
@@ -437,7 +418,6 @@ func FuzzStorageV1CSIDriver(data []byte) int {
 }
 
 func FuzzStorageV1StorageClass(data []byte) int {
-	initLocalTest.Do(initTesting)
 	o := &storagev1.StorageClass{}
 	sgv := storagev1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
@@ -445,7 +425,6 @@ func FuzzStorageV1StorageClass(data []byte) int {
 }
 
 func FuzzStorageV1beta1CSIDriver(data []byte) int {
-	initLocalTest.Do(initTesting)
 	o := &storagev1beta1.CSIDriver{}
 	sgv := storagev1beta1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)
@@ -453,7 +432,6 @@ func FuzzStorageV1beta1CSIDriver(data []byte) int {
 }
 
 func FuzzStorageV1beta1StorageClass(data []byte) int {
-	initLocalTest.Do(initTesting)
 	o := &storagev1beta1.StorageClass{}
 	sgv := storagev1beta1.SchemeGroupVersion
 	prepAndDoRoundtrip(sgv, o, data)

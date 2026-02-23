@@ -1,9 +1,10 @@
 package fuzzing
 
 import (
+	"testing"
+
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 	"github.com/AdaLogics/go-fuzz-headers/bytesource"
-	"testing"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -19,8 +20,6 @@ import (
 	authorizationv1beta1 "k8s.io/api/authorization/v1beta1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
-	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
-	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	certificatesv1 "k8s.io/api/certificates/v1"
@@ -77,8 +76,6 @@ var groups = []runtime.SchemeBuilder{
 	authorizationv1.SchemeBuilder,
 	autoscalingv1.SchemeBuilder,
 	autoscalingv2.SchemeBuilder,
-	autoscalingv2beta1.SchemeBuilder,
-	autoscalingv2beta2.SchemeBuilder,
 	batchv1beta1.SchemeBuilder,
 	batchv1.SchemeBuilder,
 	certificatesv1.SchemeBuilder,
@@ -114,11 +111,7 @@ var groups = []runtime.SchemeBuilder{
 	storagev1.SchemeBuilder,
 }
 
-func init() {
-	testing.Init()
-}
-
-func FuzzApiRoundtrip(data []byte) int {
+func fuzzApiRoundtrip(data []byte) int {
 	t := &testing.T{}
 	f := fuzz.NewConsumer(data)
 

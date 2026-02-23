@@ -26,17 +26,14 @@ import (
 	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	containertest "k8s.io/kubernetes/pkg/kubelet/container/testing"
 
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func init() {
-	testing.Init()
-}
-
-func FuzzSyncPod(data []byte) int {
+func fuzzSyncPod(data []byte) int {
 	syncTypes := []kubetypes.SyncPodType{kubetypes.SyncPodCreate,
 		kubetypes.SyncPodUpdate,
 		kubetypes.SyncPodSync,
@@ -66,7 +63,7 @@ func FuzzSyncPod(data []byte) int {
 	return 1
 }
 
-func FuzzStrategicMergePatch(data []byte) int {
+func fuzzStrategicMergePatch(data []byte) int {
 	if len(data) < 10 {
 		return 0
 	}
@@ -79,7 +76,7 @@ func FuzzStrategicMergePatch(data []byte) int {
 	return 1
 }
 
-func FuzzconvertToAPIContainerStatuses(data []byte) int {
+func fuzzConvertToAPIContainerStatuses(data []byte) int {
 	t := &testing.T{}
 	f := fuzz.NewConsumer(data)
 	pod := &v1.Pod{}
@@ -123,7 +120,7 @@ func FuzzconvertToAPIContainerStatuses(data []byte) int {
 	defer testKubelet.Cleanup()
 	kl := testKubelet.kubelet
 
-	_ = kl.convertToAPIContainerStatuses(pod, currentStatus, previousStatus, containers, hasInitContainers, isInitContainer, podRestarting)
+	_ = kl.convertToAPIContainerStatuses(context.Background(), pod, currentStatus, previousStatus, containers, sets.New[string](), hasInitContainers, isInitContainer, podRestarting)
 	return 1
 }
 
@@ -161,7 +158,7 @@ func createContainerStatuses(f *fuzz.ConsumeFuzzer) ([]v1.ContainerStatus, error
 	return containerStatuses, nil
 }
 
-func FuzzHandlePodCleanups(data []byte) int {
+func fuzzHandlePodCleanups(data []byte) int {
 	t := &testing.T{}
 	f := fuzz.NewConsumer(data)
 	pod := &kubecontainer.Pod{}
@@ -192,7 +189,7 @@ func FuzzHandlePodCleanups(data []byte) int {
 	return 1
 }
 
-func FuzzMakeEnvironmentVariables(data []byte) int {
+func fuzzMakeEnvironmentVariables(data []byte) int {
 	t := &testing.T{}
 	f := fuzz.NewConsumer(data)
 	testPod := &v1.Pod{}
@@ -216,6 +213,6 @@ func FuzzMakeEnvironmentVariables(data []byte) int {
 	}
 	kl := newTestKubelet(t, false /* controllerAttachDetachEnabled */)
 	defer kl.Cleanup()
-	_, _ = kl.kubelet.makeEnvironmentVariables(testPod, container, podIP, podIPs, kubecontainer.VolumeMap{})
+	_, _ = kl.kubelet.makeEnvironmentVariables(context.Background(), testPod, container, podIP, podIPs, kubecontainer.VolumeMap{})
 	return 1
 }

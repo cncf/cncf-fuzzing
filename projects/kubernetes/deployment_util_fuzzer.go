@@ -56,7 +56,7 @@ var (
 	}
 )
 
-func FuzzEntireDeploymentUtil(data []byte) int {
+func fuzzEntireDeploymentUtil(data []byte) int {
 	if len(data) < 10 {
 		return 0
 	}

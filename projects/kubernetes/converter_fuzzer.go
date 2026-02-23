@@ -45,7 +45,7 @@ type F struct {
 	I []float32         `json:"fi"`
 }
 
-func FuzzUnrecognized(data []byte) int {
+func fuzzUnrecognized(data []byte) int {
 	_ = doUnrecognized(string(data), &F{})
 	return 1
 }

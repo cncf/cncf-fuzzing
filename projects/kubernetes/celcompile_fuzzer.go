@@ -26,7 +26,7 @@ func (v *fakeValidationCondition) ReturnTypes() []*celgo.Type {
 	return []*celgo.Type{celgo.BoolType}
 }
 
-func FuzzCelCompile(data []byte) int {
+func fuzzCelCompile(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	expr, err := f.GetString()
 	if err != nil {

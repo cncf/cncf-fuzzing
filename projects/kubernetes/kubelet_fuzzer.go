@@ -30,7 +30,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func FuzzReadLogs(data []byte) int {
+func fuzzReadLogs(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	logFileBytes, err := f.GetBytes()
 	if err != nil {

@@ -27,9 +27,9 @@ import (
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 )
 
-// FuzzDeepCopy implements a fuzzer for the logic defined in:
+// fuzzDeepCopy implements a fuzzer for the logic defined in:
 // https://github.com/kubernetes/kubernetes/blob/master/pkg/api/testing/copy_test.go
-func FuzzDeepCopy(data []byte) int {
+func fuzzDeepCopy(data []byte) int {
 	f := fuzz.NewConsumer(data)
 
 	// get groupversion

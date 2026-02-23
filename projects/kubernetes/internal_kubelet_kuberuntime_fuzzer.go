@@ -23,7 +23,7 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-func FuzzKubeRuntime(data []byte) int {
+func fuzzKubeRuntime(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	pod := &v1.Pod{}
 	status := &kubecontainer.PodStatus{}

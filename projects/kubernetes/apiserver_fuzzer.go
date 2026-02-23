@@ -25,13 +25,13 @@ import (
 	auditpolicy "k8s.io/apiserver/pkg/audit/policy"
 )
 
-func FuzzLoadPolicyFromBytes(data []byte) int {
+func fuzzLoadPolicyFromBytes(data []byte) int {
 	_, _ = auditpolicy.LoadPolicyFromBytes(data)
 	return 1
 }
 
 // tests https://github.com/kubernetes/kubernetes/blob/master/staging/src/k8s.io/apiserver/pkg/registry/generic/registry/store_test.go#L386
-func RegistryFuzzer(data []byte) int {
+func doRegistryFuzzer(data []byte) int {
 	f := fuzz.NewConsumer(data)
 	in := &metav1.UpdateOptions{}
 
