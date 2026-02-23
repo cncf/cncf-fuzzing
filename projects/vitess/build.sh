@@ -22,6 +22,11 @@ set -x
 go get github.com/AdaLogics/go-fuzz-headers
 go mod vendor
 
+# Replace vendored go-fuzz-headers with custom fuzz consumer
+rm -f $SRC/vitess/vendor/github.com/AdaLogics/go-fuzz-headers/*.go
+cp $SRC/cncf-fuzzing/projects/vitess/fzconsumer/*.go \
+   $SRC/vitess/vendor/github.com/AdaLogics/go-fuzz-headers/
+
 # Disable logging for mysql conn
 # This affects the mysql fuzzers
 sed -i '/log.Errorf/c\\/\/log.Errorf' $SRC/vitess/go/mysql/conn.go
@@ -109,6 +114,10 @@ printf "package vtadmin\nimport _ \"github.com/AdamKorcz/go-118-fuzz-build/testi
 go mod tidy
 go mod vendor
 
+# Re-apply custom fuzz consumer after vendor refresh
+rm -f $SRC/vitess/vendor/github.com/AdaLogics/go-fuzz-headers/*.go
+cp $SRC/cncf-fuzzing/projects/vitess/fzconsumer/*.go \
+   $SRC/vitess/vendor/github.com/AdaLogics/go-fuzz-headers/
 
 # autogenerate and build api_marshal_fuzzer:
 cd $SRC/vitess/go/vt
@@ -128,6 +137,8 @@ compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzGRPCTMServer fuzz_grpc_tm
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzOnlineDDLFromCommentedStatement fuzz_online_ddl_from_commented_statement
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzNewOnlineDDLs fuzz_new_online_ddls
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzEqualsSQLNode fuzz_equals_sql_node
+compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzASTCloneAndRewrite fuzz_ast_clone_and_rewrite
+compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzFormatRoundTrip fuzz_format_round_trip
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzSplitStatementToPieces fuzz_split_statement_to_pieces
 compile_go_fuzzer vitess.io/vitess/go/test/fuzzing FuzzUnmarshalJSON fuzz_tabletserver_rules_unmarshal_json
 

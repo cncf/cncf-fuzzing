@@ -104,15 +104,19 @@ func (t fuzztestRun) ComRegisterReplica(c *Conn, replicaHost string, replicaPort
 }
 
 func (t fuzztestRun) ComQuery(c *Conn, query string, callback func(*sqltypes.Result) error) error {
+	return callback(&sqltypes.Result{})
+}
+
+func (t fuzztestRun) ComQueryMulti(c *Conn, sql string, callback func(qr sqltypes.QueryResponse, more bool, firstPacket bool) error) error {
 	return nil
 }
 
-func (t fuzztestRun) ComPrepare(c *Conn, query string, bindVars map[string]*querypb.BindVariable) ([]*querypb.Field, error) {
-	return nil, nil
+func (t fuzztestRun) ComPrepare(c *Conn, query string) ([]*querypb.Field, uint16, error) {
+	return nil, 0, nil
 }
 
 func (t fuzztestRun) ComStmtExecute(c *Conn, prepare *PrepareData, callback func(*sqltypes.Result) error) error {
-	return nil
+	return callback(&sqltypes.Result{})
 }
 
 func (t fuzztestRun) WarningCount(c *Conn) uint16 {
@@ -136,7 +140,7 @@ func (t fuzztestConn) Read(b []byte) (n int, err error) {
 
 func (t fuzztestConn) Write(b []byte) (n int, err error) {
 	t.pos = t.pos + 1
-	if t.writeToPass[t.pos] {
+	if t.pos < len(t.writeToPass) && t.writeToPass[t.pos] {
 		return 0, nil
 	}
 	return 0, fmt.Errorf("error in writing to connection")
@@ -304,16 +308,19 @@ func (th *fuzzTestHandler) NewConnection(c *Conn) {
 }
 
 func (th *fuzzTestHandler) ComQuery(c *Conn, query string, callback func(*sqltypes.Result) error) error {
+	return callback(&sqltypes.Result{})
+}
 
+func (th *fuzzTestHandler) ComQueryMulti(c *Conn, sql string, callback func(qr sqltypes.QueryResponse, more bool, firstPacket bool) error) error {
 	return nil
 }
 
-func (th *fuzzTestHandler) ComPrepare(c *Conn, query string, bindVars map[string]*querypb.BindVariable) ([]*querypb.Field, error) {
-	return nil, nil
+func (th *fuzzTestHandler) ComPrepare(c *Conn, query string) ([]*querypb.Field, uint16, error) {
+	return nil, 0, nil
 }
 
 func (th *fuzzTestHandler) ComStmtExecute(c *Conn, prepare *PrepareData, callback func(*sqltypes.Result) error) error {
-	return nil
+	return callback(&sqltypes.Result{})
 }
 
 func (th *fuzzTestHandler) ComResetConnection(c *Conn) {
@@ -360,7 +367,7 @@ func FuzzTLSServer(data []byte) int {
 		Password: "password1",
 	}}
 	defer authServer.close()
-	l, err := NewListener("tcp", "127.0.0.1:", authServer, th, 0, 0, false, false, 0, 0)
+	l, err := NewListener("tcp", "127.0.0.1:", authServer, th, 0, 0, false, false, 0, 0, false)
 	if err != nil {
 		return -1
 	}

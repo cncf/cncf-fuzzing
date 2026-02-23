@@ -389,7 +389,7 @@ func (fs *fuzzStore) callDemotePrimary() error {
 	if err != nil {
 		return err
 	}
-	_, _ = fs.client.DemotePrimary(context.Background(), tablet)
+	_, _ = fs.client.DemotePrimary(context.Background(), tablet, false)
 	return nil
 }
 

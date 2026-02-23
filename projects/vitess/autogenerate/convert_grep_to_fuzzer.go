@@ -55,6 +55,8 @@ var importPathShort = map[string]string{
 	"vitess.io/vitess/go/vt/proto/vtadmin":           "vtadmin",
 	"vitess.io/vitess/go/vt/proto/throttlerdata":     "throttlerdata",
 	"vitess.io/vitess/go/vt/proto/topodata":          "topodata",
+	"vitess.io/vitess/go/vt/proto/querythrottler":    "querythrottler",
+	"vitess.io/vitess/go/vt/proto/vtorcdata":         "vtorcdata",
 }
 
 // pathToImportPath is a map to convert filepaths to import paths.
@@ -77,6 +79,8 @@ var pathToImportPath = map[string]string{
 	"./proto/vtadmin/vtadmin_vtproto.pb.go":                     "vitess.io/vitess/go/vt/proto/vtadmin",
 	"./proto/throttlerdata/throttlerdata_vtproto.pb.go":         "vitess.io/vitess/go/vt/proto/throttlerdata",
 	"./proto/topodata/topodata_vtproto.pb.go":                   "vitess.io/vitess/go/vt/proto/topodata",
+	"./proto/querythrottler/querythrottler_vtproto.pb.go":       "vitess.io/vitess/go/vt/proto/querythrottler",
+	"./proto/vtorcdata/vtorcdata_vtproto.pb.go":                 "vitess.io/vitess/go/vt/proto/vtorcdata",
 }
 
 // contains checks if a string is present in a string slice

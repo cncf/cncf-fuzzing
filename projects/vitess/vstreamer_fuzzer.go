@@ -61,18 +61,28 @@ func FuzzbuildPlan(data []byte) int {
 		vschema:  vschema,
 	}
 
-	str1, err := c.GetString()
+	numRules, err := c.GetInt()
 	if err != nil {
 		return -1
 	}
-	str2, err := c.GetString()
-	if err != nil {
+	numRules = numRules%5 + 1
+	filterRules := make([]*binlogdatapb.Rule, 0, numRules)
+	for i := 0; i < numRules; i++ {
+		match, err := c.GetString()
+		if err != nil {
+			break
+		}
+		filter, err := c.GetString()
+		if err != nil {
+			break
+		}
+		filterRules = append(filterRules, &binlogdatapb.Rule{Match: match, Filter: filter})
+	}
+	if len(filterRules) == 0 {
 		return -1
 	}
 	_, _ = buildPlan(vtenv.NewTestEnv(), t1, testLocalVSchema, &binlogdatapb.Filter{
-		Rules: []*binlogdatapb.Rule{
-			{Match: str1, Filter: str2},
-		},
+		Rules: filterRules,
 	})
 	return 1
 }

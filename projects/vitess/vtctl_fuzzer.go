@@ -138,7 +138,6 @@ In this fuzzer we split the input into 3 chunks:
 	corresponding command.
 */
 func Fuzz(data []byte) int {
-
 	//  Basic checks
 	if len(data) == 0 {
 		return -1

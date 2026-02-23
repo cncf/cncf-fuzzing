@@ -37,12 +37,38 @@ func FuzzNormalizer(data []byte) int {
 			fmt.Println("Recovered. Error:\n", r)
 		}
 	}()
-	stmt, reservedVars, err := sqlparser.NewTestParser().Parse2(string(data))
+	f := fuzz.NewConsumer(data)
+	queryBytes, err := f.GetBytes()
+	if err != nil {
+		return 0
+	}
+	stmt, reservedVars, err := sqlparser.NewTestParser().Parse2(string(queryBytes))
 	if err != nil {
 		return -1
 	}
+	parameterize, _ := f.GetBool()
+	keyspace, _ := f.GetString()
+	selectLimit, _ := f.GetInt()
+	setVarComment, _ := f.GetString()
 	bv := make(map[string]*querypb.BindVariable)
-	sqlparser.Normalize(stmt, sqlparser.NewReservedVars("bv", reservedVars), bv)
+	sqlparser.Normalize(stmt, sqlparser.NewReservedVars("bv", reservedVars), bv, parameterize, keyspace, selectLimit%1000, setVarComment, nil, nil, nil)
+	return 1
+}
+
+func FuzzFormatRoundTrip(data []byte) int {
+	stmt, err := sqlparser.NewTestParser().Parse(string(data))
+	if err != nil {
+		return -1
+	}
+	s1 := sqlparser.String(stmt)
+	stmt2, err := sqlparser.NewTestParser().Parse(s1)
+	if err != nil {
+		return 0
+	}
+	s2 := sqlparser.String(stmt2)
+	if s1 != s2 {
+		panic("format not idempotent: " + s1 + " vs " + s2)
+	}
 	return 1
 }
 

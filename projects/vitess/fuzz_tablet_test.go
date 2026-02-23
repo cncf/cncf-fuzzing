@@ -19,7 +19,7 @@ import (
 	"context"
 	"testing"
 
-	fuzz "github.com/AdamKorcz/go-fuzz-headers-1"
+	fuzz "github.com/AdaLogics/go-fuzz-headers"
 
 	topodatapb "vitess.io/vitess/go/vt/proto/topodata"
 	"vitess.io/vitess/go/vt/topo/memorytopo"

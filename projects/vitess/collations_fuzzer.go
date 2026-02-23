@@ -19,16 +19,6 @@ import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
 )
 
-var (
-	fuzzCollations = []string{"utf8mb4_bin", "utf8mb4_0900_ai_ci",
-		"utf8mb4_0900_as_ci", "utf8mb4_0900_as_cs",
-		"utf8mb4_0900_ai_ci", "utf8mb4_0900_as_ci",
-		"utf8mb4_0900_ai_ci", "utf8mb4_0900_ai_ci",
-		"utf8mb4_hu_0900_as_cs", "utf8mb4_ja_0900_as_cs",
-		"utf8mb4_ja_0900_as_cs_ks", "utf8mb4_zh_0900_as_cs",
-		"utf8mb4_zh_0900_as_cs"}
-)
-
 func FuzzCollations(data []byte) int {
 	testinit()
 	f := fuzz.NewConsumer(data)
@@ -36,8 +26,7 @@ func FuzzCollations(data []byte) int {
 	if err != nil {
 		return 0
 	}
-	collString := fuzzCollations[collIndex%len(fuzzCollations)]
-	coll := testcollationMap[collString]
+	coll := testcollationSlice[collIndex%len(testcollationSlice)]
 	left, err := f.GetBytes()
 	if err != nil {
 		return 0
@@ -47,5 +36,8 @@ func FuzzCollations(data []byte) int {
 		return 0
 	}
 	_ = coll.Collate(left, right, false)
+	_ = coll.Collate(left, right, true)
+	numCodepoints, _ := f.GetInt()
+	_ = coll.WeightString(nil, left, numCodepoints%100)
 	return 1
 }

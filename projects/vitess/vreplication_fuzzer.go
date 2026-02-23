@@ -101,6 +101,10 @@ func FuzzEngine(data []byte) int {
 	if err != nil {
 		return 0
 	}
+	// Add catch-all regex expectations to handle unexpected queries
+	for i := 0; i < 20; i++ {
+		dbClient.ExpectRequestRE(".*", &sqltypes.Result{}, nil)
+	}
 	vre.Open(context.Background())
 	defer vre.Close()
 	if !vre.IsOpen() {

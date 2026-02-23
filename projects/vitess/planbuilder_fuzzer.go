@@ -82,12 +82,24 @@ func loadFormalForFuzzing(f *fuzz.ConsumeFuzzer) (*vschemapb.SrvVSchema, error) 
 func FuzzTestBuilder(data []byte) int {
 	initter.Do(onceInit)
 	f := fuzz.NewConsumer(data)
+	query, err := f.GetSQLString()
+	if err != nil {
+		return 0
+	}
+	keyspace, err := f.GetString()
+	if err != nil {
+		return 0
+	}
 	s, err := loadSchemaForFuzzing(f)
 	if err != nil {
 		return 0
 	}
 	env := vtenv.NewTestEnv()
 
-	_, _ = vschemawrapper.NewVschemaWrapper(env, s, TestBuilder)
+	vw, err := vschemawrapper.NewVschemaWrapper(env, s, TestBuilder)
+	if err != nil {
+		return 0
+	}
+	_, _ = TestBuilder(query, vw, keyspace)
 	return 1
 }

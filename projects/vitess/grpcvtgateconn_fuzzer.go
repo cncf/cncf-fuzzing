@@ -112,7 +112,21 @@ func FuzzGrpcvtgateconn(data []byte) int {
 	for i := 0; i < len(data); i = i + chunkSize {
 		from := i           //lower
 		to := i + chunkSize //upper
-		_, _ = session.Execute(ctx, string(data[from:to]), nil)
+		_, _ = session.Execute(ctx, string(data[from:to]), nil, false)
+	}
+
+	// Test StreamExecute
+	chunkSize2 := len(data) / 5
+	for i := 0; i < len(data) && i+chunkSize2 <= len(data); i = i + chunkSize2 {
+		stream, err := session.StreamExecute(ctx, string(data[i:i+chunkSize2]), nil)
+		if err == nil {
+			for {
+				_, err := stream.Recv()
+				if err != nil {
+					break
+				}
+			}
+		}
 	}
 	return 1
 }

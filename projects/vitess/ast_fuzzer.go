@@ -35,3 +35,28 @@ func FuzzEqualsSQLNode(data []byte) int {
 	_ = sqlparser.RewritePredicate(expr)
 	return 1
 }
+
+// FuzzASTCloneAndRewrite tests Clone and SafeRewrite on parsed AST
+func FuzzASTCloneAndRewrite(data []byte) int {
+	if len(data) < 10 {
+		return -1
+	}
+	stmt, err := sqlparser.NewTestParser().Parse(string(data))
+	if err != nil {
+		return -1
+	}
+	// Test Clone
+	cloned := sqlparser.CloneSQLNode(stmt)
+	s1 := sqlparser.String(stmt)
+	s2 := sqlparser.String(cloned.(sqlparser.Statement))
+	if s1 != s2 {
+		panic("clone mismatch: " + s1 + " vs " + s2)
+	}
+	// Test SafeRewrite (identity rewrite)
+	rewritten := sqlparser.SafeRewrite(stmt, func(n, p sqlparser.SQLNode) bool { return true }, nil)
+	s3 := sqlparser.String(rewritten.(sqlparser.Statement))
+	if s1 != s3 {
+		panic("rewrite mismatch: " + s1 + " vs " + s3)
+	}
+	return 1
+}

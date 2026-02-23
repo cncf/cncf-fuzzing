@@ -141,7 +141,33 @@ func FuzzVindex(data []byte) int {
 	// Target 1:
 	_, _ = Map(context.Background(), l, nil, allValues)
 
-	// Target 2:
+	// Target 2: Verify for SingleColumn vindexes
+	if sc, ok := l.(SingleColumn); ok {
+		singleValues := make([]sqltypes.Value, 0)
+		for _, row := range allValues {
+			if len(row) > 0 {
+				singleValues = append(singleValues, row[0])
+			}
+		}
+		ksidBytes, _ := createKsids(f)
+		if len(singleValues) > 0 && len(ksidBytes) > 0 {
+			minLen := len(singleValues)
+			if len(ksidBytes) < minLen {
+				minLen = len(ksidBytes)
+			}
+			_, _ = sc.Verify(context.Background(), nil, singleValues[:minLen], ksidBytes[:minLen])
+		}
+	}
+
+	// Target 3: ReverseMap for Reversible vindexes
+	if rev, ok := l.(Reversible); ok {
+		ksidBytes, _ := createKsids(f)
+		if len(ksidBytes) > 0 {
+			_, _ = rev.ReverseMap(nil, ksidBytes)
+		}
+	}
+
+	// Target 4: Create/Delete for Lookup vindexes
 	s1 := reflect.TypeOf(l).String()
 	switch s1 {
 	case "*vindexes.ConsistentLookup", "*vindexes.LookupHash",
@@ -153,7 +179,12 @@ func FuzzVindex(data []byte) int {
 		if err != nil {
 			return 0
 		}
-		_ = l.(Lookup).Create(context.Background(), nil, allValues, ksids, false)
+		if len(ksids) > 0 {
+			_ = l.(Lookup).Create(context.Background(), nil, allValues, ksids, false)
+			if len(allValues) > 0 {
+				_ = l.(Lookup).Delete(context.Background(), nil, allValues, ksids[0])
+			}
+		}
 	}
 	return 1
 }

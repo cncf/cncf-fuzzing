@@ -21,6 +21,15 @@ import (
 
 func FuzzUnmarshalJSON(data []byte) int {
 	qrs := rules.New()
-	_ = qrs.UnmarshalJSON(data)
+	err := qrs.UnmarshalJSON(data)
+	if err != nil {
+		return 0
+	}
+	// Exercise more rule methods
+	_ = qrs.Copy()
+	_, _ = qrs.MarshalJSON()
+	// Test Equal with a copy
+	cp := qrs.Copy()
+	_ = qrs.Equal(cp)
 	return 1
 }

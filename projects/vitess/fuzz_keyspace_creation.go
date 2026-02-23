@@ -58,5 +58,10 @@ func FuzzKeyspaceCreation(f *testing.F) {
 				panic("ks was nil")
 			}
 		}
+
+		// Test DeleteKeyspace
+		for _, k := range createdKs {
+			_ = ts.DeleteKeyspace(ctx, k)
+		}
 	})
 }

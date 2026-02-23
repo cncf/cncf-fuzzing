@@ -23,6 +23,7 @@ import (
 
 	_flag "vitess.io/vitess/go/internal/flag"
 	topodatapb "vitess.io/vitess/go/vt/proto/topodata"
+	"vitess.io/vitess/go/vt/topo"
 	"vitess.io/vitess/go/vt/topo/memorytopo"
 )
 
@@ -66,10 +67,15 @@ func FuzzShardCreation(f *testing.F) {
 		}
 
 		for _, sh := range createdS {
-			_, err := ts.GetShard(ctx, ks, sh)
+			si, err := ts.GetShard(ctx, ks, sh)
 			if err != nil {
 				panic(err)
 			}
+			// Test UpdateShardFields
+			_, _ = ts.UpdateShardFields(ctx, ks, sh, func(s *topo.ShardInfo) error {
+				s.KeyRange = si.KeyRange
+				return nil
+			})
 		}
 	})
 }
