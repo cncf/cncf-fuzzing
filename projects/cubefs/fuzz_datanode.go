@@ -22,11 +22,12 @@ import (
 )
 
 type NewDiskParam struct {
-	Path            string
-	ReservedSpace   uint64
-	DiskRdonlySpace uint64
-	MaxErrCnt       int
-	Space           *SpaceManager
+	Path                            string
+	ReservedSpace                   uint64
+	DiskRdonlySpace                 uint64
+	MaxErrCnt                       int
+	Space                           *SpaceManager
+	DiskEnableReadRepairExtentLimit bool
 }
 
 func FuzzNewDisk(data []byte) int {
@@ -41,7 +42,7 @@ func FuzzNewDisk(data []byte) int {
 		return 0
 	}
 
-	disk, err := NewDisk(param.Path, param.ReservedSpace, param.DiskRdonlySpace, param.MaxErrCnt, param.Space)
+	disk, err := NewDisk(param.Path, param.ReservedSpace, param.DiskRdonlySpace, param.MaxErrCnt, param.Space, param.DiskEnableReadRepairExtentLimit)
 	if disk == nil {
 		return 0
 	}

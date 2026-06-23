@@ -23,9 +23,11 @@ import (
 )
 
 type MetaNodeParam struct {
-	Addr      string
-	ZoneName  string
-	ClusterID string
+	Addr          string
+	HeartbeatPort string
+	ReplicaPort   string
+	ZoneName      string
+	ClusterID     string
 }
 
 func FuzzCreateVol(data []byte) int {
@@ -53,7 +55,7 @@ func FuzzNewMetaNode(data []byte) int {
 		return 0
 	}
 
-	node := newMetaNode(param.Addr, param.ZoneName, param.ClusterID)
+	node := newMetaNode(param.Addr, param.HeartbeatPort, param.ReplicaPort, param.ZoneName, param.ClusterID)
 	if node == nil {
 		return 0
 	}
