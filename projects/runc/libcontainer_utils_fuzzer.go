@@ -20,6 +20,7 @@ package utils
 
 import (
 	fuzz "github.com/AdaLogics/go-fuzz-headers"
+	"github.com/opencontainers/runc/internal/pathrs"
 )
 
 func FuzzstripRoot(data []byte) int {
@@ -33,6 +34,6 @@ func FuzzstripRoot(data []byte) int {
 		return 0
 	}
 
-	_ = stripRoot(root, path)
+	_ = pathrs.LexicallyStripRoot(root, path)
 	return 1
 }

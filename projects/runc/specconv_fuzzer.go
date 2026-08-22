@@ -22,8 +22,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups/systemd"
-	"github.com/opencontainers/runc/libcontainer/configs"
+	"github.com/opencontainers/cgroups"
+	"github.com/opencontainers/cgroups/systemd"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
 	gofuzzheaders "github.com/AdaLogics/go-fuzz-headers"
@@ -67,7 +67,7 @@ func Fuzz(data []byte) int {
 	}
 	opts.Spec = spec
 
-	config := &configs.Resources{}
+	config := &cgroups.Resources{}
 	err = f.GenerateStruct(config)
 	if err != nil {
 		return 0
