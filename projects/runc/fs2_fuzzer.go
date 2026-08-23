@@ -22,7 +22,7 @@ import (
 	"bytes"
 	"errors"
 	gofuzzheaders "github.com/AdaLogics/go-fuzz-headers"
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 	"os"
 )
 

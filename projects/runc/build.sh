@@ -16,23 +16,30 @@ go get github.com/AdaLogics/go-fuzz-headers
 
 export RUNC_PATH=github.com/opencontainers/runc
 export RUNC_FUZZERS=/src/cncf-fuzzing/projects/runc
+export CGROUPS_PATH=github.com/opencontainers/cgroups
+export CGROUPS_SRC=/src/opencontainers-cgroups
+
+CGROUPS_VERSION="$(go list -m -f '{{.Version}}' "$CGROUPS_PATH")"
+CGROUPS_CACHE="$(
+  go mod download -json "$CGROUPS_PATH@$CGROUPS_VERSION" |
+    python3 -c 'import json, sys; print(json.load(sys.stdin)["Dir"])'
+)"
+rm -rf "$CGROUPS_SRC"
+cp -a "$CGROUPS_CACHE" "$CGROUPS_SRC"
+chmod -R u+w "$CGROUPS_SRC"
 
 
 mv $RUNC_FUZZERS/libcontainer_utils_fuzzer.go $SRC/runc/libcontainer/utils/
 compile_go_fuzzer $RUNC_PATH/libcontainer/utils FuzzstripRoot fuzz_strip_root
 
-mv $RUNC_FUZZERS/fs2_fuzzer.go $SRC/runc/libcontainer/cgroups/fs2/
-compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/fs2 FuzzGetStats get_stats_fuzzer
-compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/fs2 FuzzCgroupReader cgroup_reader_fuzzer
+mv $RUNC_FUZZERS/fs2_fuzzer.go $CGROUPS_SRC/fs2/
 
 mv $RUNC_FUZZERS/specconv_fuzzer.go $SRC/runc/libcontainer/specconv/
 compile_go_fuzzer $RUNC_PATH/libcontainer/specconv Fuzz specconv_fuzzer
 
-mv $RUNC_FUZZERS/devices_fuzzer.go $SRC/runc/libcontainer/cgroups/devices
-compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/devices Fuzz devices_fuzzer
+mv $RUNC_FUZZERS/devices_fuzzer.go $CGROUPS_SRC/devices/
 
-mv $RUNC_FUZZERS/fscommon_fuzzer.go $SRC/runc/libcontainer/cgroups/fscommon/
-compile_go_fuzzer $RUNC_PATH/libcontainer/cgroups/fscommon FuzzSecurejoin securejoin_fuzzer
+mv $RUNC_FUZZERS/fscommon_fuzzer.go $CGROUPS_SRC/fscommon/
 
 mv $RUNC_FUZZERS/intelrdt_fuzzer.go $SRC/runc/libcontainer/intelrdt/
 mv $SRC/runc/libcontainer/intelrdt/util_test.go $SRC/runc/libcontainer/intelrdt/util_test_fuzz.go
@@ -44,3 +51,14 @@ mv $SRC/runc/libcontainer/container_linux_test.go \
    $SRC/runc/libcontainer/container_linux_test_fuzz.go
 CFLAGS=-O1 make -B runc-dmz || echo -n >runc-dmz
 compile_go_fuzzer $RUNC_PATH/libcontainer FuzzStateApi state_api_fuzzer
+
+gofmt -w $CGROUPS_SRC/fs2/fs2_fuzzer.go \
+  $CGROUPS_SRC/devices/devices_fuzzer.go \
+  $CGROUPS_SRC/fscommon/fscommon_fuzzer.go
+cd $CGROUPS_SRC
+go get github.com/AdaLogics/go-fuzz-headers
+go mod tidy
+compile_go_fuzzer $CGROUPS_PATH/fs2 FuzzGetStats get_stats_fuzzer
+compile_go_fuzzer $CGROUPS_PATH/fs2 FuzzCgroupReader cgroup_reader_fuzzer
+compile_go_fuzzer $CGROUPS_PATH/devices Fuzz devices_fuzzer
+compile_go_fuzzer $CGROUPS_PATH/fscommon FuzzSecurejoin securejoin_fuzzer
